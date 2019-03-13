@@ -34,7 +34,6 @@ import org.apache.jmeter.util.JMeterUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.sun.jmx.snmp.Timestamp;
 
 /**
  * FileToString Function to read a complete file into a String.
@@ -57,9 +56,6 @@ public class StringToFile extends AbstractFunction {
 
 	static String myValue = ERR_IND;
 
-	static String timestamp = "null_timestamp";
-
-	private boolean firstTime = false; // should we try to open the file?
 	static {
 		desc.add(JMeterUtils.getResString("string_from_file_file_name"));//$NON-NLS-1$
 		desc.add("Charset (optional)");//$NON-NLS-1$
@@ -131,7 +127,6 @@ public class StringToFile extends AbstractFunction {
 	public synchronized void setParameters(Collection<CompoundVariable> parameters) throws InvalidVariableException {
 		checkParameterCount(parameters, 2, 4);
 		values = parameters.toArray();
-		firstTime = true;
 	}
 
 	/** {@inheritDoc} */

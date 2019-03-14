@@ -120,6 +120,7 @@ Alternatively, just use <code>/</code> instead for the path separator - e.g. <co
         <tr><td>Input</td><td> <a href="#__FileToString">FileToString</a></td><td>read an entire file</td><td>2.4</td></tr>
         <tr><td>Input</td><td> <a href="#__CSVRead">CSVRead</a></td><td>read from CSV delimited file</td><td>1.9</td></tr>
         <tr><td>Input</td><td> <a href="#__XPath">XPath</a></td><td>Use an XPath expression to read from a file</td><td>2.0.3</td></tr>
+        <tr><td>Input</td><td> <a href="#__StringToFile">StringToFile</a></td><td>write a string to a file</td><td>2.4</td></tr>
         <tr><td>Calculation</td><td> <a href="#__counter">counter</a></td><td>generate an incrementing number</td><td>1.X</td></tr>
         <tr><td>Formatting</td><td> <a href="#__dateTimeConvert">dateTimeConvert</a></td><td>Convert a date or time from source to target format</td><td>4.0</td></tr>
         <tr><td>Calculation</td><td> <a href="#__digest">digest</a></td><td>Generate a digest (SHA-1, SHA-256, MD5...)</td><td>4.0</td></tr>
@@ -1484,6 +1485,31 @@ A reference name - <code>refName</code> - for reusing the value created by this 
 <p>The file name, encoding and reference name parameters are resolved every time the function is executed.</p>
 </component>
 
+<component index="&sect-num;.5.29" name="__StringToFile">
+
+<description>
+    <p>
+    The FileToString function can be used to write a string to file.
+    Each time it is called it writes a string to file.
+    </p>
+    <p>If an error occurs writing a string to file, then the function returns the string "<code>**ERR**</code>"</p>
+</description>
+
+<properties>
+        <property name="File Name" required="Yes">Path to the file name.
+            (The path can be relative to the JMeter launch directory)
+        </property>
+        <property name="File encoding if not the platform default" required="No">
+        The encoding to be used to read the file. If not specified, the platform default is used.
+        </property>
+        <property name="Append or overwrite" required="No">
+        the way to write the string,append the string to the end of file or overwrite the file.
+        </property>
+        <property name="Value" required="Yes">
+        the value to write to the file
+        </property>
+</properties>
+</component>
 <component index="&sect-num;.5.30" name="__samplerName">
 
 <description>

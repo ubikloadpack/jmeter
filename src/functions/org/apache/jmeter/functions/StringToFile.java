@@ -34,7 +34,6 @@ import org.apache.jmeter.util.JMeterUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
 /**
  * FileToString Function to read a complete file into a String.
  *
@@ -46,98 +45,94 @@ import org.slf4j.LoggerFactory;
  * @since 2.4
  */
 public class StringToFile extends AbstractFunction {
-	private static final Logger log = LoggerFactory.getLogger(StringToFile.class);
+    private static final Logger log = LoggerFactory.getLogger(StringToFile.class);
 
-	private static final List<String> desc = new LinkedList<>();
+    private static final List<String> desc = new LinkedList<>();
 
-	private static final String KEY = "__StringToFile";//$NON-NLS-1$
+    private static final String KEY = "__StringToFile";//$NON-NLS-1$
 
-	static final String ERR_IND = "**ERR**";//$NON-NLS-1$
+    static final String ERR_IND = "**ERR**";//$NON-NLS-1$
 
-	static String myValue = ERR_IND;
+    static String myValue = ERR_IND;
 
-	static {
-		desc.add(JMeterUtils.getResString("string_from_file_file_name"));//$NON-NLS-1$
-		desc.add("Charset (optional)");//$NON-NLS-1$
-		desc.add("The value of String");//$NON-NLS-1$
-		desc.add("Append or overwrite (append or overwrite,default append, optional)");//$NON-NLS-1$
-	}
-	private Object[] values;
+    static {
+        desc.add(JMeterUtils.getResString("string_from_file_file_name"));
+        desc.add("Charset (optional)");//$NON-NLS-1$
+        desc.add("The value of String");//$NON-NLS-1$
+        desc.add("Append or overwrite (append or overwrite,default append, optional)");//$NON-NLS-1$
+    }
+    private Object[] values;
 
-	public StringToFile() {
-	}
+    public StringToFile() {
+    }
 
-	private synchronized void openFile() {
+    /**
+     * 
+     */
+    private synchronized void openFile() {
 
-		String tn = Thread.currentThread().getName();
-		String fileName = ((CompoundVariable) values[0]).execute();
-		String charcode = ((CompoundVariable) values[1]).execute();
-		String content = ((CompoundVariable) values[2]).execute() + System.lineSeparator();
-		String myName = "res";
-		String optionalWriter = ((CompoundVariable) values[3]).execute().toLowerCase().trim();
-		Boolean optionalWriterBool = true;
-		if (optionalWriter.equals("overwrite")) {
-			optionalWriterBool = false;
-		}
-		JMeterVariables vars = getVariables();
-		Charset cst = Charset.defaultCharset();
-		if (charcode.trim().length() > 0) {
-			cst = Charset.forName(charcode);
-		}
-		log.info("the encoding is {}", cst.toString());
-		try {
-			File file = new File(fileName);
-			FileUtils.writeStringToFile(file, content, cst, optionalWriterBool);
-			myValue = "<StringToFile> true";
+        String tn = Thread.currentThread().getName();
+        String fileName = ((CompoundVariable) values[0]).execute();
+        String charcode = ((CompoundVariable) values[1]).execute();
+        String content = ((CompoundVariable) values[2]).execute() + System.lineSeparator();
+        String myName = "res";
+        String optionalWriter = ((CompoundVariable) values[3]).execute().toLowerCase().trim();
+        Boolean optionalWriterBool = true;
+        if (optionalWriter.equals("overwrite")) {
+            optionalWriterBool = false;
+        }
+        JMeterVariables vars = getVariables();
+        Charset cst = Charset.defaultCharset();
+        if (charcode.trim().length() > 0) {
+            cst = Charset.forName(charcode);
+        }
+        log.info("the encoding is {}", cst.toString());
+        try {
+            File file = new File(fileName);
+            FileUtils.writeStringToFile(file, content, cst, optionalWriterBool);
+            myValue = "<StringToFile> true";
+        } catch (IOException e) {
+          log.warn("Could not read file: " + fileName + " " + e.getMessage(), e);
+        }
 
-		} catch (IOException e) {
-			log.warn("Could not read file: " + fileName + " " + e.getMessage(), e);	
-		}
+        if (myName.length() > 0) {
+            if (vars != null) {
+             vars.put(myName, myValue);
+            }
+        }
 
-		if (myName.length() > 0) {
+        if (log.isDebugEnabled()) {
+            tn = Thread.currentThread().getName();
+            log.debug(tn + " name:" //$NON-NLS-1$
+                 + myName + " value:" + myValue);//$NON-NLS-1$
+        }
+    
+    }
 
-			if (vars != null) {// Can be null if called from Config item
-								// testEnded() method
-				vars.put(myName, myValue);
-			}
-		}
+    /** {@inheritDoc} */
+    @Override
+     public synchronized String execute(SampleResult previousResult, Sampler currentSampler)
+            throws InvalidVariableException {
+            this.openFile();
+            return myValue;
+    }
 
-		if (log.isDebugEnabled()) {
-			tn = Thread.currentThread().getName();
-			log.debug(tn + " name:" //$NON-NLS-1$
-					+ myName + " value:" + myValue);//$NON-NLS-1$
-		}
+    /** {@inheritDoc} */
+    @Override
+    public synchronized void setParameters(Collection<CompoundVariable> parameters) throws InvalidVariableException {
+        checkParameterCount(parameters, 2, 4);
+        values = parameters.toArray();
+    }
 
-	}
+    /** {@inheritDoc} */
+    @Override
+    public String getReferenceKey() {
+        return KEY;
+    }
 
-	/** {@inheritDoc} */
-	@Override
-	public synchronized String execute(SampleResult previousResult, Sampler currentSampler)
-			throws InvalidVariableException {
-
-		// Timestamp d = new Timestamp(System.currentTimeMillis());
-		// timestamp = String.valueOf(d.getDateTime());
-
-		this.openFile();
-		return myValue;
-	}
-
-	/** {@inheritDoc} */
-	@Override
-	public synchronized void setParameters(Collection<CompoundVariable> parameters) throws InvalidVariableException {
-		checkParameterCount(parameters, 2, 4);
-		values = parameters.toArray();
-	}
-
-	/** {@inheritDoc} */
-	@Override
-	public String getReferenceKey() {
-		return KEY;
-	}
-
-	/** {@inheritDoc} */
-	@Override
-	public List<String> getArgumentDesc() {
-		return desc;
-	}
+    /** {@inheritDoc} */
+    @Override
+    public List<String> getArgumentDesc() {
+        return desc;
+    }
 }

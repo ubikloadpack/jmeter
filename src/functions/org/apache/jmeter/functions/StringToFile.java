@@ -15,7 +15,6 @@
  * limitations under the License.
  *
  */
-
 package org.apache.jmeter.functions;
 
 import java.io.File;
@@ -29,6 +28,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.jmeter.engine.util.CompoundVariable;
 import org.apache.jmeter.samplers.SampleResult;
@@ -50,18 +50,13 @@ import org.slf4j.LoggerFactory;
  */
 public class StringToFile extends AbstractFunction {
     private static final Logger log = LoggerFactory.getLogger(StringToFile.class);
-
     private static final List<String> desc = new LinkedList<>();
-
     private static final String KEY = "__StringToFile";//$NON-NLS-1$
-
-
-    
     private static final ConcurrentHashMap<String, Lock> lockMap = new ConcurrentHashMap<>();
     static {
         desc.add(JMeterUtils.getResString("string_to_file_pathname"));
         desc.add(JMeterUtils.getResString("string_to_file_content"));//$NON-NLS-1$
-        desc.add(JMeterUtils.getResString("string_to_file_way_to_write"));//$NON-NLS-1$     
+        desc.add(JMeterUtils.getResString("string_to_file_way_to_write"));//$NON-NLS-1$
         desc.add(JMeterUtils.getResString("string_to_file_encoding"));//$NON-NLS-1$
     }
     private Object[] values;
@@ -78,21 +73,20 @@ public class StringToFile extends AbstractFunction {
      * @throws IOException
      */
     private boolean writeToFile() throws IOException {
-
         String fileName = ((CompoundVariable) values[0]).execute();
         String content = ((CompoundVariable) values[1]).execute();
         String optionalWriter = ((CompoundVariable) values[2]).execute().toLowerCase().trim();
         String charcode = ((CompoundVariable) values[3]).execute();
         Charset cst = Charset.defaultCharset();
         Boolean isAppended = true;
-        if (fileName.equals("") || fileName.isEmpty()||content.equals("") || content.isEmpty()) {
+        if (fileName.equals("") || fileName.isEmpty() || content.equals("") || content.isEmpty()) {
             return false;
         }
-        if (!optionalWriter.equals("true")&&!optionalWriter.equals("false")&&!optionalWriter.equals("")&&!optionalWriter.isEmpty()) {
+        if (!optionalWriter.equals("true") && !optionalWriter.equals("false") && !optionalWriter.equals("")
+                && !optionalWriter.isEmpty()) {
             log.error("True is to add a string at the end of the file, false is to overwrite the file");
-             return false;
-        }
-        else if (optionalWriter.equals("false")) {
+            return false;
+        } else if (optionalWriter.equals("false")) {
             isAppended = false;
         }
         if (charcode.trim().length() > 0) {
@@ -106,18 +100,14 @@ public class StringToFile extends AbstractFunction {
             } else {
                 lock.lock();
             }
-
             File file = new File(fileName);
             File fileParent = file.getParentFile();
             if (fileParent == null || (fileParent.exists() && fileParent.isDirectory() && fileParent.canWrite())) {
-
                 FileUtils.writeStringToFile(file, content, cst, isAppended);
-
             } else {
                 log.error("The parent file doesn't exist or is not writable");
                 return false;
             }
-
         } finally {
             if (lock == null) {
                 localLock.unlock();
@@ -126,31 +116,24 @@ public class StringToFile extends AbstractFunction {
             }
         }
         return true;
-
     }
 
     /** {@inheritDoc} */
     @Override
     public String execute(SampleResult previousResult, Sampler currentSampler) throws InvalidVariableException {
-
         JMeterVariables vars = getVariables();
-
         boolean resultExecute;
-            try {
-                resultExecute = this.writeToFile();
-            }
-            catch (UnsupportedCharsetException ue) {
-                resultExecute = false;
-                log.error("The encoding of file is not supported");
-            }
-            catch (IllegalCharsetNameException ie) {
-                resultExecute = false;
-                log.error("The encoding of file contains illegal characters");
-            }
-            catch (IOException e) {
-                resultExecute = false;
-            }
-       
+        try {
+            resultExecute = this.writeToFile();
+        } catch (UnsupportedCharsetException ue) {
+            resultExecute = false;
+            log.error("The encoding of file is not supported");
+        } catch (IllegalCharsetNameException ie) {
+            resultExecute = false;
+            log.error("The encoding of file contains illegal characters");
+        } catch (IOException e) {
+            resultExecute = false;
+        }
         vars.put("result", String.valueOf(resultExecute));
         return String.valueOf(resultExecute);
     }

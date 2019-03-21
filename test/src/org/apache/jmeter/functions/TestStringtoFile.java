@@ -24,7 +24,6 @@ import java.nio.file.Files;
 import java.util.Collection;
 import java.util.LinkedList;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.jmeter.engine.util.CompoundVariable;
 import org.apache.jmeter.junit.JMeterTestCase;
 import org.apache.jmeter.samplers.SampleResult;
@@ -35,7 +34,9 @@ import org.apache.jmeter.util.JMeterUtils;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,7 +53,8 @@ public class TestStringtoFile extends JMeterTestCase {
     private static final String FILENAME = "test.txt";
     private static final String STRING_TO_WRITE = "test";
     private static final String ENCODING = StandardCharsets.UTF_8.toString();
-
+    @Rule
+    public TemporaryFolder tempFolder = new TemporaryFolder();
     @Before
     public void setUp() {
         function = new StringToFile();
@@ -87,6 +89,7 @@ public class TestStringtoFile extends JMeterTestCase {
 
     @Test
     public void testWriteToFile() {
+
         params.add(new CompoundVariable(FILENAME));
         params.add(new CompoundVariable(STRING_TO_WRITE));
         params.add(new CompoundVariable("true"));
@@ -99,32 +102,8 @@ public class TestStringtoFile extends JMeterTestCase {
         } catch (InvalidVariableException e) {
             log.error("This method 'Stringtofile' should have successfully run");
         }
-       
     }
 
-//    @Test
-//    public void testWriteToFileWhenDirectoryExist() {
-//        String pathDirectory = File.separator + DIR_NAME;
-//        File dir = new File(pathDirectory);
-//        deleteDir(dir);
-//        Assert.assertFalse("File test.txt should not exist", dir.exists());
-//        dir.mkdir();
-//        String pathname = pathDirectory + File.separator + FILENAME;
-//        params.add(new CompoundVariable(pathname));
-//        params.add(new CompoundVariable(STRING_TO_WRITE));
-//        params.add(new CompoundVariable("true"));
-//        params.add(new CompoundVariable(ENCODING));
-//        try {
-//            function.setParameters(params);
-//            String returnValue = function.execute(result, null);
-//            Assert.assertTrue("This method 'Stringtofile' should have successfully run",
-//                    Boolean.parseBoolean(returnValue));
-//        } catch (InvalidVariableException e) {
-//            log.error("This method 'Stringtofile' should have successfully run");
-//        }
-//        Assert.assertTrue("File test.txt should exist", new File(pathname).exists());
-//        Assert.assertTrue("File test.txt should be deleted", deleteDir(dir));
-//    }
 
     @Test
     public void testWriteToFileWhenDirectoryDoesntExist() {
@@ -147,6 +126,29 @@ public class TestStringtoFile extends JMeterTestCase {
         }
         Assert.assertFalse("File test.txt should not exist", new File(pathname).exists());
     }
+    
+    @Test
+    public void testWriteToFileWhenDirectoryExist() {
+        File dir=null;
+        try {
+        dir = tempFolder.newFolder(DIR_NAME);
+        } catch (IOException e1) {
+            log.error("can't create the directory");
+        }
+        String pathname = dir.getAbsolutePath() + File.separator + FILENAME;
+        params.add(new CompoundVariable(pathname));
+        params.add(new CompoundVariable(STRING_TO_WRITE));
+        params.add(new CompoundVariable("true"));
+        params.add(new CompoundVariable(ENCODING));
+        try {
+            function.setParameters(params);
+            String returnValue = function.execute(result, null);
+            Assert.assertTrue( "This method 'Stringtofile' should have successfully run",Boolean.parseBoolean(returnValue));
+        } catch (InvalidVariableException e) {
+            log.error("This method 'Stringtofile' should have successfully run");
+        }
+    }
+
 
     @Test
     public void testWriteToFileOptParamWayToWriteIsNull() {
@@ -183,7 +185,6 @@ public class TestStringtoFile extends JMeterTestCase {
 
     @Test
     public void testWriteToFileOptParamEncodingIsNull() {
-        File file = new File(FILENAME);
         params.add(new CompoundVariable(FILENAME));
         params.add(new CompoundVariable(STRING_TO_WRITE));
         params.add(new CompoundVariable("true"));
@@ -196,12 +197,18 @@ public class TestStringtoFile extends JMeterTestCase {
         } catch (InvalidVariableException e) {
             log.error("This method 'Stringtofile' should have successfully run");
         }
-        Assert.assertTrue("File test.txt should exist", file.exists());
     }
 
     @Test
     public void testWriteToFileEncodingNotSupported() {
-        params.add(new CompoundVariable(FILENAME));
+        File file=null;
+        try {
+            file = tempFolder.newFile(FILENAME);
+        } catch (IOException e1) {
+            log.error("cant create the file successfully");
+        }
+
+        params.add(new CompoundVariable(file.getAbsolutePath()));
         params.add(new CompoundVariable(STRING_TO_WRITE));
         params.add(new CompoundVariable("true"));
         params.add(new CompoundVariable("UTF-20"));
@@ -217,7 +224,14 @@ public class TestStringtoFile extends JMeterTestCase {
 
     @Test
     public void testWriteToFileEncodingNotLegal() {
-        params.add(new CompoundVariable(FILENAME));
+        File file=null;
+        try {
+            file = tempFolder.newFile(FILENAME);
+        } catch (IOException e1) {
+            log.error("cant create the file successfully");
+        }
+
+        params.add(new CompoundVariable(file.getAbsolutePath()));
         params.add(new CompoundVariable(STRING_TO_WRITE));
         params.add(new CompoundVariable("true"));
         params.add(new CompoundVariable("UTFéé"));
@@ -233,19 +247,19 @@ public class TestStringtoFile extends JMeterTestCase {
 
     @Test
     public void testWriteToFileIOException() {
-        params.add(new CompoundVariable(FILENAME));
+        File file=null;
+        try {
+            file = tempFolder.newFile(FILENAME);
+        } catch (IOException e1) {
+            log.error("cant create the file successfully");
+        }
+
+        file.setWritable(false);
+        params.add(new CompoundVariable(file.getAbsolutePath()));
         params.add(new CompoundVariable(STRING_TO_WRITE));
         params.add(new CompoundVariable("true"));
         params.add(new CompoundVariable("UTF-8"));
-        File file = new File(FILENAME);
-        if (!file.exists()) {
-            try {
-                file.createNewFile();
-            } catch (IOException e) {
-                log.error("Dosen't create the file successfully");
-            }
-        }
-        file.setWritable(false);
+
         try {
             function.setParameters(params);
             function.execute(result, null);
@@ -273,8 +287,13 @@ public class TestStringtoFile extends JMeterTestCase {
 
     @Test
     public void testWriteToFileRequiredStringIsNull() {
-        File file = new File(FILENAME);
-        params.add(new CompoundVariable(FILENAME));
+        File file=null;
+        try {
+            file = tempFolder.newFile(FILENAME);
+        } catch (IOException e1) {
+            log.error("cant create the file successfully");
+        }
+        params.add(new CompoundVariable(file.getAbsolutePath()));
         params.add(new CompoundVariable(""));
         params.add(new CompoundVariable("true"));
         params.add(new CompoundVariable(ENCODING));
@@ -282,62 +301,32 @@ public class TestStringtoFile extends JMeterTestCase {
             function.setParameters(params);
             String returnValue = function.execute(result, null);
             Assert.assertFalse("This method 'Stringtofile' should fail to run", Boolean.parseBoolean(returnValue));
-            Assert.assertFalse("File test.txt should not exist", file.exists());
         } catch (InvalidVariableException e) {
             log.error("This method 'Stringtofile' should fail to run");
         }
     }
 
     @Test
-    public void testOverWrite() {
-        File file = new File(FILENAME);
+    public void testOverwrite() {
         params.add(new CompoundVariable(FILENAME));
         params.add(new CompoundVariable(STRING_TO_WRITE));
         params.add(new CompoundVariable("false"));
         params.add(new CompoundVariable(ENCODING));
         try {
             function.setParameters(params);
-            function.execute(result, null);
+            String returnValue = function.execute(result, null);
+            Assert.assertTrue("This method 'Stringtofile' should have successfully run",
+                    Boolean.parseBoolean(returnValue));
         } catch (InvalidVariableException e) {
-            log.error("This method 'Stringtofile' should fail to run");
-        }
-        Assert.assertTrue("File test.txt should exist", file.exists());
-        try {
-            String res = FileUtils.readFileToString(file, ENCODING);
-            Assert.assertEquals("The string written to the file should be 'test'", "test", res.trim());
-        } catch (IOException e) {
-            log.error("Failed to read the string from file");
-        }
-    }
-
-    @Test
-    public void testAppend() {
-        File file = new File(FILENAME);
-        params.add(new CompoundVariable(FILENAME));
-        params.add(new CompoundVariable(STRING_TO_WRITE));
-        params.add(new CompoundVariable("true"));
-        params.add(new CompoundVariable(ENCODING));
-        try {
-            function.setParameters(params);
-            function.execute(result, null);
-            function.execute(result, null);
-        } catch (InvalidVariableException e) {
-            log.error("This method 'Stringtofile' should fail to run");
-        }
-        Assert.assertTrue("File test.txt should exist", file.exists());
-        String res;
-        try {
-            res = FileUtils.readFileToString(file, ENCODING);
-            Assert.assertEquals("The string written to the file should be 'testtest'", "testtest", res.trim());
-        } catch (IOException e) {
-            log.error("This method 'Stringtofile' should fail to run");
+            log.error("This method 'Stringtofile' should have successfully run");
         }
     }
 
     @Test
     public void testDesc() {
         String des = "Function 'stringtofile' should have successfully read the configuration file 'messages.properties'";
-        Assert.assertEquals(des, JMeterUtils.getResString("string_to_file_pathname"),function.getArgumentDesc().get(0));
+        Assert.assertEquals(des, JMeterUtils.getResString("string_to_file_pathname"),
+                function.getArgumentDesc().get(0));
     }
 
     private static boolean deleteDir(File dir) {

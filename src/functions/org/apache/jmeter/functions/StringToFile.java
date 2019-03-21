@@ -79,11 +79,10 @@ public class StringToFile extends AbstractFunction {
         String charcode = ((CompoundVariable) values[3]).execute();
         Charset cst = Charset.defaultCharset();
         Boolean isAppended = true;
-        if (fileName.equals("") || fileName.isEmpty() || content.equals("") || content.isEmpty()) {
+        if (fileName.equals("") || content.equals("")) {
             return false;
         }
-        if (!optionalWriter.equals("true") && !optionalWriter.equals("false") && !optionalWriter.equals("")
-                && !optionalWriter.isEmpty()) {
+        if (!optionalWriter.equals("true") && !optionalWriter.equals("false") && !optionalWriter.equals("")) {
             log.error("True is to add a string at the end of the file, false is to overwrite the file");
             return false;
         } else if (optionalWriter.equals("false")) {

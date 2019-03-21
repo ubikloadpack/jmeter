@@ -21,10 +21,14 @@ package org.apache.jmeter.functions;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.charset.IllegalCharsetNameException;
+import java.nio.charset.UnsupportedCharsetException;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
-
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import org.apache.commons.io.FileUtils;
 import org.apache.jmeter.engine.util.CompoundVariable;
 import org.apache.jmeter.samplers.SampleResult;
@@ -51,75 +55,109 @@ public class StringToFile extends AbstractFunction {
 
     private static final String KEY = "__StringToFile";//$NON-NLS-1$
 
-    static final String ERR_IND = "**ERR**";//$NON-NLS-1$
 
-    static String myValue = ERR_IND;
-
+    
+    private static final ConcurrentHashMap<String, Lock> lockMap = new ConcurrentHashMap<>();
     static {
-        desc.add(JMeterUtils.getResString("string_from_file_file_name"));
-        desc.add("Charset (optional)");//$NON-NLS-1$
-        desc.add("The value of String");//$NON-NLS-1$
-        desc.add("Append or overwrite (append or overwrite,default append, optional)");//$NON-NLS-1$
+        desc.add(JMeterUtils.getResString("string_to_file_pathname"));
+        desc.add(JMeterUtils.getResString("string_to_file_content"));//$NON-NLS-1$
+        desc.add(JMeterUtils.getResString("string_to_file_way_to_write"));//$NON-NLS-1$     
+        desc.add(JMeterUtils.getResString("string_to_file_encoding"));//$NON-NLS-1$
     }
     private Object[] values;
 
     public StringToFile() {
+        super();
     }
 
     /**
-     * 
+     * @return
      */
-    private synchronized void openFile() {
+    /**
+     * @return
+     * @throws IOException
+     */
+    private boolean writeToFile() throws IOException {
 
-        String tn = Thread.currentThread().getName();
         String fileName = ((CompoundVariable) values[0]).execute();
-        String charcode = ((CompoundVariable) values[1]).execute();
-        String content = ((CompoundVariable) values[2]).execute() + System.lineSeparator();
-        String myName = "res";
-        String optionalWriter = ((CompoundVariable) values[3]).execute().toLowerCase().trim();
-        Boolean optionalWriterBool = true;
-        if (optionalWriter.equals("overwrite")) {
-            optionalWriterBool = false;
-        }
-        JMeterVariables vars = getVariables();
+        String content = ((CompoundVariable) values[1]).execute();
+        String optionalWriter = ((CompoundVariable) values[2]).execute().toLowerCase().trim();
+        String charcode = ((CompoundVariable) values[3]).execute();
         Charset cst = Charset.defaultCharset();
+        Boolean isAppended = true;
+        if (fileName.equals("") || fileName.isEmpty()||content.equals("") || content.isEmpty()) {
+            return false;
+        }
+        if (!optionalWriter.equals("true")&&!optionalWriter.equals("false")&&!optionalWriter.equals("")&&!optionalWriter.isEmpty()) {
+            log.error("True is to add a string at the end of the file, false is to overwrite the file");
+             return false;
+        }
+        else if (optionalWriter.equals("false")) {
+            isAppended = false;
+        }
         if (charcode.trim().length() > 0) {
             cst = Charset.forName(charcode);
         }
-        log.info("the encoding is {}", cst.toString());
+        Lock localLock = new ReentrantLock();
+        Lock lock = lockMap.putIfAbsent(fileName, localLock);
         try {
-            File file = new File(fileName);
-            FileUtils.writeStringToFile(file, content, cst, optionalWriterBool);
-            myValue = "<StringToFile> true";
-        } catch (IOException e) {
-          log.warn("Could not read file: " + fileName + " " + e.getMessage(), e);
-        }
+            if (lock == null) {
+                localLock.lock();
+            } else {
+                lock.lock();
+            }
 
-        if (myName.length() > 0) {
-            if (vars != null) {
-             vars.put(myName, myValue);
+            File file = new File(fileName);
+            File fileParent = file.getParentFile();
+            if (fileParent == null || (fileParent.exists() && fileParent.isDirectory() && fileParent.canWrite())) {
+
+                FileUtils.writeStringToFile(file, content, cst, isAppended);
+
+            } else {
+                log.error("The parent file doesn't exist or is not writable");
+                return false;
+            }
+
+        } finally {
+            if (lock == null) {
+                localLock.unlock();
+            } else {
+                lock.unlock();
             }
         }
+        return true;
 
-        if (log.isDebugEnabled()) {
-            tn = Thread.currentThread().getName();
-            log.debug(tn + " name:" //$NON-NLS-1$
-                 + myName + " value:" + myValue);//$NON-NLS-1$
-        }
-    
     }
 
     /** {@inheritDoc} */
     @Override
-     public synchronized String execute(SampleResult previousResult, Sampler currentSampler)
-            throws InvalidVariableException {
-            this.openFile();
-            return myValue;
+    public String execute(SampleResult previousResult, Sampler currentSampler) throws InvalidVariableException {
+
+        JMeterVariables vars = getVariables();
+
+        boolean resultExecute;
+            try {
+                resultExecute = this.writeToFile();
+            }
+            catch (UnsupportedCharsetException ue) {
+                resultExecute = false;
+                log.error("The encoding of file is not supported");
+            }
+            catch (IllegalCharsetNameException ie) {
+                resultExecute = false;
+                log.error("The encoding of file contains illegal characters");
+            }
+            catch (IOException e) {
+                resultExecute = false;
+            }
+       
+        vars.put("result", String.valueOf(resultExecute));
+        return String.valueOf(resultExecute);
     }
 
     /** {@inheritDoc} */
     @Override
-    public synchronized void setParameters(Collection<CompoundVariable> parameters) throws InvalidVariableException {
+    public void setParameters(Collection<CompoundVariable> parameters) throws InvalidVariableException {
         checkParameterCount(parameters, 2, 4);
         values = parameters.toArray();
     }

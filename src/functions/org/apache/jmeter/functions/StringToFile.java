@@ -21,6 +21,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.IllegalCharsetNameException;
+import java.nio.charset.StandardCharsets;
 import java.nio.charset.UnsupportedCharsetException;
 import java.util.Collection;
 import java.util.LinkedList;
@@ -75,18 +76,11 @@ public class StringToFile extends AbstractFunction {
     private boolean writeToFile() throws IOException {
         String fileName = ((CompoundVariable) values[0]).execute();
         String content = ((CompoundVariable) values[1]).execute();
-        String optionalWriter = ((CompoundVariable) values[2]).execute().toLowerCase().trim();
         String charcode = ((CompoundVariable) values[3]).execute();
-        Charset cst = Charset.defaultCharset();
-        Boolean isAppended = true;
+        Charset cst = StandardCharsets.UTF_8;
+        Boolean append = Boolean.parseBoolean(((CompoundVariable) values[2]).execute().toLowerCase().trim());
         if (fileName.equals("") || content.equals("")) {
             return false;
-        }
-        if (!optionalWriter.equals("true") && !optionalWriter.equals("false") && !optionalWriter.equals("")) {
-            log.error("True is to add a string at the end of the file, false is to overwrite the file");
-            return false;
-        } else if (optionalWriter.equals("false")) {
-            isAppended = false;
         }
         if (charcode.trim().length() > 0) {
             cst = Charset.forName(charcode);
@@ -102,7 +96,7 @@ public class StringToFile extends AbstractFunction {
             File file = new File(fileName);
             File fileParent = file.getParentFile();
             if (fileParent == null || (fileParent.exists() && fileParent.isDirectory() && fileParent.canWrite())) {
-                FileUtils.writeStringToFile(file, content, cst, isAppended);
+                FileUtils.writeStringToFile(file, content, cst, append);
             } else {
                 log.error("The parent file doesn't exist or is not writable");
                 return false;
@@ -120,21 +114,19 @@ public class StringToFile extends AbstractFunction {
     /** {@inheritDoc} */
     @Override
     public String execute(SampleResult previousResult, Sampler currentSampler) throws InvalidVariableException {
-        JMeterVariables vars = getVariables();
-        boolean resultExecute;
+        boolean executionResult;
         try {
-            resultExecute = this.writeToFile();
+            executionResult = this.writeToFile();
         } catch (UnsupportedCharsetException ue) {
-            resultExecute = false;
+            executionResult = false;
             log.error("The encoding of file is not supported");
         } catch (IllegalCharsetNameException ie) {
-            resultExecute = false;
+            executionResult = false;
             log.error("The encoding of file contains illegal characters");
         } catch (IOException e) {
-            resultExecute = false;
+            executionResult = false;
         }
-        vars.put("result", String.valueOf(resultExecute));
-        return String.valueOf(resultExecute);
+        return String.valueOf(executionResult);
     }
 
     /** {@inheritDoc} */

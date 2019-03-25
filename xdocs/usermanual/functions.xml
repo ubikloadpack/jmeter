@@ -1492,22 +1492,23 @@ A reference name - <code>refName</code> - for reusing the value created by this 
     The FileToString function can be used to write a string to file.
     Each time it is called it writes a string to file.
     </p>
-    <p>If an error occurs writing a string to file, then the function returns the string "<code>**ERR**</code>"</p>
+    <p>The default return value from the function is the empty string</p>
 </description>
 
 <properties>
-        <property name="File Name" required="Yes">Path to the file name.
-            (The path can be relative to the JMeter launch directory)
-        </property>
-        <property name="File encoding if not the platform default" required="No">
-        The encoding to be used to read the file. If not specified, the platform default is used.
-        </property>
-        <property name="Append or overwrite" required="No">
-        the way to write the string,append the string to the end of file or overwrite the file.
+        <property name="File Name" required="Yes">
+        Path to the file name.(The path can be absoulted to the JMeter launch directory)
         </property>
         <property name="Value" required="Yes">
-        the value to write to the file
+        The string to write to the file
         </property>
+        <property name="File encoding if not UTF-8" required="No">
+        The encoding to be used to read the file. If not specified, the default encoding is UTF-8.
+        </property>
+        <property name="Append or overwrite" required="No">
+        The way to write the string,append the string to the end of file or overwrite the file.If not specified, default is to append.
+        </property>
+
 </properties>
 </component>
 <component index="&sect-num;.5.30" name="__samplerName">

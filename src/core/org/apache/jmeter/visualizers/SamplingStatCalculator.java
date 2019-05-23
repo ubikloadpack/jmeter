@@ -266,6 +266,7 @@ public class SamplingStatCalculator {
         mySB.append("Max: " + this.getMax() + "  ");
         mySB.append("Error Rate: " + this.getErrorPercentage() + "  ");
         mySB.append("Sample Rate: " + this.getRate());
+        mySB.append("elapse: " + this.getElapsed());
         return mySB.toString();
     }
 

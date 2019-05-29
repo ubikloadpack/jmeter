@@ -157,6 +157,7 @@ import org.apache.jmeter.testelement.property.CollectionProperty;
 import org.apache.jmeter.testelement.property.JMeterProperty;
 import org.apache.jmeter.testelement.property.PropertyIterator;
 import org.apache.jmeter.threads.JMeterContextService;
+import org.apache.jmeter.threads.JMeterThread;
 import org.apache.jmeter.threads.JMeterVariables;
 import org.apache.jmeter.util.JMeterUtils;
 import org.apache.jmeter.util.JsseSSLManager;
@@ -165,7 +166,6 @@ import org.apache.jorphan.util.JOrphanUtils;
 import org.brotli.dec.BrotliInputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 /**
  * HTTP Sampler using Apache HttpClient 4.x.
  *
@@ -1111,6 +1111,9 @@ public class HTTPHC4Impl extends HTTPHCAbstractImpl {
             HttpClientContext clientContext,
             Map<HttpClientKey, Pair<CloseableHttpClient, PoolingHttpClientConnectionManager>> mapHttpClientPerHttpClientKey) {
         if (resetStateOnThreadGroupIteration.get()) {
+            //TODO
+            System.out.println("threadlocal"+JMeterThread.tl.get());
+            //TODO
             closeCurrentConnections(mapHttpClientPerHttpClientKey);
             clientContext.removeAttribute(HttpClientContext.USER_TOKEN);
             ((JsseSSLManager) SSLManager.getInstance()).resetContext();
@@ -1186,9 +1189,13 @@ public class HTTPHC4Impl extends HTTPHCAbstractImpl {
         }
     
         setConnectionHeaders(httpRequest, url, getHeaderManager(), getCacheManager());
-    
+        //TODO gere cookie 
+        if(!JMeterThread.tl.get()&& getCookieManager().getControlledByThread()) {
+            getCookieManager().setClearEachIteration(true);
+        }
         String cookies = setConnectionCookie(httpRequest, url, getCookieManager());
-    
+        System.out.println(cookies);
+        //TODO gere cookie 
         if (res != null) {
             if(cookies != null && !cookies.isEmpty()) {
                 res.setCookies(cookies);
@@ -1259,12 +1266,18 @@ public class HTTPHC4Impl extends HTTPHCAbstractImpl {
      */
     protected String setConnectionCookie(HttpRequest request, URL url, CookieManager cookieManager) {
         String cookieHeader = null;
+        //TODO gerer l'etat de cookie
         if (cookieManager != null) {
+//            if(){}else{cookieManager.setClearEachIteration(true)};
             cookieHeader = cookieManager.getCookieHeaderForURL(url);
             if (cookieHeader != null) {
                 request.setHeader(HTTPConstants.HEADER_COOKIE, cookieHeader);
             }
         }
+        
+
+        
+        
         return cookieHeader;
     }
     
@@ -1727,6 +1740,8 @@ public class HTTPHC4Impl extends HTTPHCAbstractImpl {
             Header[] hdrs = method.getHeaders(HTTPConstants.HEADER_SET_COOKIE);
             for (Header hdr : hdrs) {
                 cookieManager.addCookieFromHeader(hdr.getValue(),u);
+                System.out.println("saveConnectionCookies "+hdr.getValue());
+                //
             }
         }
     }

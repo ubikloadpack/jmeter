@@ -122,6 +122,7 @@ public class JMeterThread implements Runnable, Interruptible {
     private long startTime = 0;
 
     private long endTime = 0;
+    private boolean isSameUser=false;
 
     private boolean scheduler = false;
     // based on this scheduler is enabled or disabled
@@ -148,7 +149,7 @@ public class JMeterThread implements Runnable, Interruptible {
 
     private final ReentrantLock interruptLock = new ReentrantLock(); // ensure that interrupt cannot overlap with shutdown
 
-    public JMeterThread(HashTree test, JMeterThreadMonitor monitor, ListenerNotifier note) {
+    public JMeterThread(HashTree test, JMeterThreadMonitor monitor, ListenerNotifier note,Boolean isSameUser) {
         this.monitor = monitor;
         threadVars = new JMeterVariables();
         testTree = test;
@@ -162,6 +163,15 @@ public class JMeterThread implements Runnable, Interruptible {
         sampleMonitors = sampleMonitorSearcher.getSearchResults();
         notifier = note;
         running = true;
+        this.isSameUser=isSameUser;
+    }
+
+    public boolean isSameUser() {
+        return isSameUser;
+    }
+
+    public void setSameUser(boolean isSameUser) {
+        this.isSameUser = isSameUser;
     }
 
     public void setInitialContext(JMeterContext context) {
@@ -238,9 +248,10 @@ public class JMeterThread implements Runnable, Interruptible {
     public void setThreadName(String threadName) {
         this.threadName = threadName;
     }
-
+    public static final ThreadLocal <Boolean>tl = new ThreadLocal<Boolean>() ;
     @Override
     public void run() {
+        tl.set(isSameUser);
         // threadContext is not thread-safe, so keep within thread
         JMeterContext threadContext = JMeterContextService.getContext();
         LoopIterationListener iterationListener = null;

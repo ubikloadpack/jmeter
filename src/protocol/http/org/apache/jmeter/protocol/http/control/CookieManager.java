@@ -61,7 +61,7 @@ public class CookieManager extends ConfigTestElement implements TestStateListene
     private static final String COOKIES = "CookieManager.cookies";// $NON-NLS-1$
     private static final String POLICY = "CookieManager.policy"; //$NON-NLS-1$
     private static final String IMPLEMENTATION = "CookieManager.implementation"; //$NON-NLS-1$
-    private static final String CONTROLLEDBYTHREAD = "CookieManager.controlledByThread";// $NON-NLS-1$
+    private static final String CONTROLLED_BY_THREADGROUP = "CookieManager.controlledByThreadGroup";// $NON-NLS-1$
     //-- JMX tag values
 
     private static final String TAB = "\t"; //$NON-NLS-1$
@@ -151,11 +151,11 @@ public class CookieManager extends ConfigTestElement implements TestStateListene
         setProperty(new BooleanProperty(CLEAR, clear));
     }
     public boolean getControlledByThread() {
-        return getPropertyAsBoolean(CONTROLLEDBYTHREAD);
+        return getPropertyAsBoolean(CONTROLLED_BY_THREADGROUP);
     }
 
     public void setControlledByThread(boolean control) {
-        setProperty(new BooleanProperty(CONTROLLEDBYTHREAD, control));
+        setProperty(new BooleanProperty(CONTROLLED_BY_THREADGROUP, control));
     }
 
     public String getImplementation() {

@@ -69,7 +69,7 @@ public class CookiePanel extends AbstractConfigGui implements ActionListener {
     private static final String DELETE_COMMAND = "Delete"; //$NON-NLS-1$
     private static final String LOAD_COMMAND = "Load"; //$NON-NLS-1$
     private static final String SAVE_COMMAND = "Save"; //$NON-NLS-1$
-    private static final String CONTROLLED_BY_THREADGROUP = "controlledByThreadGroup"; //$NON-NLS-1$
+    private static final String CONTROLLED_BY_THREADGROUP = "Controlled_By_ThreadGroup"; //$NON-NLS-1$
     //--
 
     private static final String DEFAULT_POLICY = HC4CookieHandler.DEFAULT_POLICY_NAME;

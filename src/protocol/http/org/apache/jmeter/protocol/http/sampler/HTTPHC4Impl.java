@@ -1184,20 +1184,19 @@ public class HTTPHC4Impl extends HTTPHCAbstractImpl {
         } else {
             httpRequest.setHeader(HTTPConstants.HEADER_CONNECTION, HTTPConstants.CONNECTION_CLOSE);
         }
-    
+        if(JMeterThread.threadLocal4SameUser.get()!=null&&getCacheManager()!=null&&
+                !JMeterThread.threadLocal4SameUser.get()&&getCacheManager().getControlledByThread()) {
+            getCacheManager().setClearEachIteration(true);
+            
+        }
         setConnectionHeaders(httpRequest, url, getHeaderManager(), getCacheManager());
-        
-        
-        //TODO gere cookie 
-        System.out.println("threadlocal"+JMeterThread.threadLocal4SameUser.get());
+        log.info("Is the same User on each Iteration? {}",JMeterThread.threadLocal4SameUser.get());
         if(JMeterThread.threadLocal4SameUser.get()!=null&&getCookieManager()!=null&&
                 !JMeterThread.threadLocal4SameUser.get()&& getCookieManager().getControlledByThread()) {
             getCookieManager().setClearEachIteration(true);
         }
         String cookies = setConnectionCookie(httpRequest, url, getCookieManager());
-        System.out.println(cookies);
-        //TODO gere cookie 
-        
+        log.info("The value of cookies are {}",cookies);
         
         if (res != null) {
             if(cookies != null && !cookies.isEmpty()) {
@@ -1737,8 +1736,7 @@ public class HTTPHC4Impl extends HTTPHCAbstractImpl {
             Header[] hdrs = method.getHeaders(HTTPConstants.HEADER_SET_COOKIE);
             for (Header hdr : hdrs) {
                 cookieManager.addCookieFromHeader(hdr.getValue(),u);
-                System.out.println("saveConnectionCookies "+hdr.getValue());
-                //
+                log.info("The value of saveConnectionCookies are {}",hdr.getValue());
             }
         }
     }

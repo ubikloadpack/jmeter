@@ -280,9 +280,6 @@ public class ThreadGroup extends AbstractThreadGroup {
      * @param delay int delay in milliseconds
      * @return {@link JMeterThread} newly created
      */
-  
-    
-
     private JMeterThread startNewThread(ListenerNotifier notifier, ListedHashTree threadGroupTree, StandardJMeterEngine engine,
             int threadNum, final JMeterContext context, long now, int delay,Boolean isSameUser) {
         JMeterThread jmThread = makeThread(notifier, threadGroupTree, engine, threadNum, context,isSameUser);

@@ -1190,7 +1190,8 @@ public class HTTPHC4Impl extends HTTPHCAbstractImpl {
         
         //TODO gere cookie 
         System.out.println("threadlocal"+JMeterThread.threadLocal4SameUser.get());
-        if(!JMeterThread.threadLocal4SameUser.get()&& getCookieManager().getControlledByThread()) {
+        if(JMeterThread.threadLocal4SameUser.get()!=null&&getCookieManager()!=null&&
+                !JMeterThread.threadLocal4SameUser.get()&& getCookieManager().getControlledByThread()) {
             getCookieManager().setClearEachIteration(true);
         }
         String cookies = setConnectionCookie(httpRequest, url, getCookieManager());
@@ -1268,18 +1269,12 @@ public class HTTPHC4Impl extends HTTPHCAbstractImpl {
      */
     protected String setConnectionCookie(HttpRequest request, URL url, CookieManager cookieManager) {
         String cookieHeader = null;
-        //TODO gerer l'etat de cookie
         if (cookieManager != null) {
-//            if(){}else{cookieManager.setClearEachIteration(true)};
             cookieHeader = cookieManager.getCookieHeaderForURL(url);
             if (cookieHeader != null) {
                 request.setHeader(HTTPConstants.HEADER_COOKIE, cookieHeader);
             }
         }
-        
-
-        
-        
         return cookieHeader;
     }
     

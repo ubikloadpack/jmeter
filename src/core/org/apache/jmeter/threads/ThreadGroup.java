@@ -633,7 +633,7 @@ public class ThreadGroup extends AbstractThreadGroup {
                     if (usingScheduler && System.currentTimeMillis() > endtime) {
                         break; // no point continuing beyond the end time
                     }
-                    JMeterThread jmThread = makeThread(notifier, threadGroupTree, engine, threadNumber, context,isSameUser);
+                    JMeterThread jmThread = makeThread(notifier, threadGroupTree, engine, threadNumber, context, isSameUser);
                     jmThread.setInitialDelay(0);   // Already waited
                     if (usingScheduler) {
                         jmThread.setScheduled(true);

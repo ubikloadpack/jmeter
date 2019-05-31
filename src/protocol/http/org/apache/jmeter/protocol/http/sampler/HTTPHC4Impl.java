@@ -1111,9 +1111,6 @@ public class HTTPHC4Impl extends HTTPHCAbstractImpl {
             HttpClientContext clientContext,
             Map<HttpClientKey, Pair<CloseableHttpClient, PoolingHttpClientConnectionManager>> mapHttpClientPerHttpClientKey) {
         if (resetStateOnThreadGroupIteration.get()) {
-            //TODO
-            System.out.println("threadlocal"+JMeterThread.tl.get());
-            //TODO
             closeCurrentConnections(mapHttpClientPerHttpClientKey);
             clientContext.removeAttribute(HttpClientContext.USER_TOKEN);
             ((JsseSSLManager) SSLManager.getInstance()).resetContext();
@@ -1189,13 +1186,18 @@ public class HTTPHC4Impl extends HTTPHCAbstractImpl {
         }
     
         setConnectionHeaders(httpRequest, url, getHeaderManager(), getCacheManager());
+        
+        
         //TODO gere cookie 
-        if(!JMeterThread.tl.get()&& getCookieManager().getControlledByThread()) {
+        System.out.println("threadlocal"+JMeterThread.threadLocal4SameUser.get());
+        if(!JMeterThread.threadLocal4SameUser.get()&& getCookieManager().getControlledByThread()) {
             getCookieManager().setClearEachIteration(true);
         }
         String cookies = setConnectionCookie(httpRequest, url, getCookieManager());
         System.out.println(cookies);
         //TODO gere cookie 
+        
+        
         if (res != null) {
             if(cookies != null && !cookies.isEmpty()) {
                 res.setCookies(cookies);

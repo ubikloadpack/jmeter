@@ -184,7 +184,7 @@ public class ThreadGroup extends AbstractThreadGroup {
      *            true is the same user
      *            false is the different users          
      */
-    public void setKindOfUser(boolean isSameUser) {
+    public void setIsSameUser(boolean isSameUser) {
         setProperty(new BooleanProperty(ISSAMEUSER, isSameUser));
     }
 
@@ -193,7 +193,7 @@ public class ThreadGroup extends AbstractThreadGroup {
      *
      * @return the kind of user.
      */
-    public boolean getKindOfUser() {
+    public boolean IsSameUser() {
         return getPropertyAsBoolean(ThreadGroup.ISSAMEUSER);
     }
     
@@ -238,7 +238,7 @@ public class ThreadGroup extends AbstractThreadGroup {
         this.threadGroupTree = threadGroupTree;
         int numThreads = getNumThreads();
         int rampUpPeriodInSeconds = getRampUp();
-        boolean isSameUser=getKindOfUser();
+        boolean isSameUser=IsSameUser();
         delayedStartup = isDelayedStartup(); // Fetch once; needs to stay constant
         log.info("Starting thread group... number={} threads={} ramp-up={} delayedStart={}", groupNumber,
                 numThreads, rampUpPeriodInSeconds, delayedStartup);
@@ -355,7 +355,7 @@ public class ThreadGroup extends AbstractThreadGroup {
             numThreads = getNumThreads();
             setNumThreads(numThreads + 1);
         }
-        newJmThread = startNewThread(notifier, threadGroupTree, engine, numThreads, context, now, delay,getKindOfUser());
+        newJmThread = startNewThread(notifier, threadGroupTree, engine, numThreads, context, now, delay,IsSameUser());
         JMeterContextService.addTotalThreads( 1 );
         log.info("Started new thread in group {}", groupNumber);
         return newJmThread;
@@ -622,7 +622,7 @@ public class ThreadGroup extends AbstractThreadGroup {
                 final int numThreads = getNumThreads();
                 final float rampUpOriginInMillis = (float) getRampUp() * 1000;
                 final long startTimeInMillis = System.currentTimeMillis();
-                final boolean isSameUser=getKindOfUser();
+                final boolean isSameUser=IsSameUser();
                 for (int threadNumber = 0; running && threadNumber < numThreads; threadNumber++) {
                     if (threadNumber > 0) {
                         long elapsedInMillis = System.currentTimeMillis() - startTimeInMillis; 

@@ -248,10 +248,10 @@ public class JMeterThread implements Runnable, Interruptible {
     public void setThreadName(String threadName) {
         this.threadName = threadName;
     }
-    public static final ThreadLocal <Boolean>tl = new ThreadLocal<Boolean>() ;
+    public static final ThreadLocal <Boolean>threadLocal4SameUser = new ThreadLocal<Boolean>() ;
     @Override
     public void run() {
-        tl.set(isSameUser);
+        threadLocal4SameUser.set(isSameUser);
         // threadContext is not thread-safe, so keep within thread
         JMeterContext threadContext = JMeterContextService.getContext();
         LoopIterationListener iterationListener = null;

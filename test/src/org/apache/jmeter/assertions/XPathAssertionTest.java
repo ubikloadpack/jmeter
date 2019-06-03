@@ -458,7 +458,7 @@ public class XPathAssertionTest extends JMeterTestCase {
                 res.getFailureMessage().contains("TransformerException"));
     }
     @Test
-    public void testWithoutRightNamespaces() {        
+    public void testWithoutSuitableNamespaces() {
         setAlternateResponseData();
         assertion.setXPathString("//b:row/value[@field = 'alias']");
         AssertionResult res = assertion.getResult(jmctx.getPreviousResult());
@@ -467,4 +467,5 @@ public class XPathAssertionTest extends JMeterTestCase {
         assertTrue("When the user give namspaces, un transformerException should be throw",
                 res.getFailureMessage().contains("TransformerException"));
     }
+   
 }

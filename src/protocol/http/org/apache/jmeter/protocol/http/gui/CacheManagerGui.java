@@ -112,7 +112,7 @@ public class CacheManagerGui extends AbstractConfigGui implements ActionListener
         clearEachIteration = new JCheckBox(JMeterUtils.getResString("clear_cache_per_iter"), false); // $NON-NLS-1$
         
         controlledByThreadGroup = 
-                new JCheckBox("Use Thread Group configuration to control cache clearing", false); //$NON-NLS-1$
+                new JCheckBox(JMeterUtils.getResString("cache_clear_controlled_by_threadgroup"), false); //$NON-NLS-1$
         controlledByThreadGroup.setActionCommand(CONTROLLED_BY_THREADGROUP);
         controlledByThreadGroup.addActionListener(this);
         

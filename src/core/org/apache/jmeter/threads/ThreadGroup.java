@@ -71,7 +71,7 @@ public class ThreadGroup extends AbstractThreadGroup {
     public static final String DELAY = "ThreadGroup.delay";
     
     /** The same user or different users */
-    public static final String ISSAMEUSER = "ThreadGroup.sameuser";
+    public static final String IS_SAME_USER = "ThreadGroup.sameuser";
     //- JMX entries
 
     private transient Thread threadStarter;
@@ -185,7 +185,7 @@ public class ThreadGroup extends AbstractThreadGroup {
      *            false is the different users          
      */
     public void setIsSameUser(boolean isSameUser) {
-        setProperty(new BooleanProperty(ISSAMEUSER, isSameUser));
+        setProperty(new BooleanProperty(IS_SAME_USER, isSameUser));
     }
 
     /**
@@ -193,8 +193,8 @@ public class ThreadGroup extends AbstractThreadGroup {
      *
      * @return the kind of user.
      */
-    public boolean IsSameUser() {
-        return getPropertyAsBoolean(ThreadGroup.ISSAMEUSER);
+    public boolean isSameUser() {
+        return getPropertyAsBoolean(ThreadGroup.IS_SAME_USER);
     }
     
 
@@ -238,7 +238,7 @@ public class ThreadGroup extends AbstractThreadGroup {
         this.threadGroupTree = threadGroupTree;
         int numThreads = getNumThreads();
         int rampUpPeriodInSeconds = getRampUp();
-        boolean isSameUser=IsSameUser();
+        boolean isSameUser=isSameUser();
         delayedStartup = isDelayedStartup(); // Fetch once; needs to stay constant
         log.info("Starting thread group... number={} threads={} ramp-up={} delayedStart={}", groupNumber,
                 numThreads, rampUpPeriodInSeconds, delayedStartup);
@@ -352,7 +352,7 @@ public class ThreadGroup extends AbstractThreadGroup {
             numThreads = getNumThreads();
             setNumThreads(numThreads + 1);
         }
-        newJmThread = startNewThread(notifier, threadGroupTree, engine, numThreads, context, now, delay,IsSameUser());
+        newJmThread = startNewThread(notifier, threadGroupTree, engine, numThreads, context, now, delay,isSameUser());
         JMeterContextService.addTotalThreads( 1 );
         log.info("Started new thread in group {}", groupNumber);
         return newJmThread;
@@ -619,7 +619,7 @@ public class ThreadGroup extends AbstractThreadGroup {
                 final int numThreads = getNumThreads();
                 final float rampUpOriginInMillis = (float) getRampUp() * 1000;
                 final long startTimeInMillis = System.currentTimeMillis();
-                final boolean isSameUser=IsSameUser();
+                final boolean isSameUser=isSameUser();
                 for (int threadNumber = 0; running && threadNumber < numThreads; threadNumber++) {
                     if (threadNumber > 0) {
                         long elapsedInMillis = System.currentTimeMillis() - startTimeInMillis; 

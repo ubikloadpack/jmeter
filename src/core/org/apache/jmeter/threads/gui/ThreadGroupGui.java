@@ -107,7 +107,7 @@ public class ThreadGroupGui extends AbstractThreadGroupGui implements ItemListen
         tg.setProperty(new BooleanProperty(ThreadGroup.SCHEDULER, scheduler.isSelected()));
         tg.setProperty(ThreadGroup.DURATION, duration.getText());
         tg.setProperty(ThreadGroup.DELAY, delay.getText());
-        tg.setProperty(ThreadGroup.ISSAMEUSER,sameUserBox.isSelected());
+        tg.setProperty(ThreadGroup.IS_SAME_USER,sameUserBox.isSelected());
     }
 
     @Override
@@ -125,7 +125,7 @@ public class ThreadGroupGui extends AbstractThreadGroupGui implements ItemListen
 
         duration.setText(tg.getPropertyAsString(ThreadGroup.DURATION));
         delay.setText(tg.getPropertyAsString(ThreadGroup.DELAY));
-        final boolean isSameUser = tg.getPropertyAsBoolean(ThreadGroup.ISSAMEUSER,false);
+        final boolean isSameUser = tg.getPropertyAsBoolean(ThreadGroup.IS_SAME_USER,false);
         if (isSameUser){
             sameUserBox.setSelected(true);
         } else {
@@ -272,10 +272,10 @@ public class ThreadGroupGui extends AbstractThreadGroupGui implements ItemListen
    
    private JPanel createUserOptionsPanel(){
        ButtonGroup group = new ButtonGroup();
-       sameUserBox = new JRadioButton("Same user on each iteration"); //$NON-NLS-1$
+       sameUserBox = new JRadioButton(JMeterUtils.getResString("threadgroup_same_user")); //$NON-NLS-1$
        group.add(sameUserBox);
        sameUserBox.setSelected(true);
-       differentUserBox = new JRadioButton("Different User on Each Iteration"); //$NON-NLS-1$
+       differentUserBox = new JRadioButton(JMeterUtils.getResString("threadgroup_different_user")); //$NON-NLS-1$
        group.add(differentUserBox);
        JPanel optionsPanel = new HorizontalPanel();
        optionsPanel.add(sameUserBox);

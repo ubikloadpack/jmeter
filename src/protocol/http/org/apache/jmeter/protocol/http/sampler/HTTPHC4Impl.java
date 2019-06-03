@@ -1184,19 +1184,18 @@ public class HTTPHC4Impl extends HTTPHCAbstractImpl {
         } else {
             httpRequest.setHeader(HTTPConstants.HEADER_CONNECTION, HTTPConstants.CONNECTION_CLOSE);
         }
-        if(JMeterThread.threadLocal4SameUser.get()!=null&&getCacheManager()!=null&&
-                !JMeterThread.threadLocal4SameUser.get()&&getCacheManager().getControlledByThread()) {
+        JMeterVariables variables = JMeterContextService.getContext().getVariables();       
+        if(variables.getObject(JMeterThread.IS_SAME_USER)!=null&&getCacheManager()!=null&&
+                !(boolean)variables.getObject(JMeterThread.IS_SAME_USER)&&getCacheManager().getControlledByThread()) {
             getCacheManager().setClearEachIteration(true);
             
         }
-        setConnectionHeaders(httpRequest, url, getHeaderManager(), getCacheManager());
-        log.info("Is the same User on each Iteration? {}",JMeterThread.threadLocal4SameUser.get());
-        if(JMeterThread.threadLocal4SameUser.get()!=null&&getCookieManager()!=null&&
-                !JMeterThread.threadLocal4SameUser.get()&& getCookieManager().getControlledByThread()) {
+        setConnectionHeaders(httpRequest, url, getHeaderManager(), getCacheManager());      
+        if(variables.getObject(JMeterThread.IS_SAME_USER)!=null&&getCookieManager()!=null&&
+                !(boolean)variables.getObject(JMeterThread.IS_SAME_USER)&& getCookieManager().getControlledByThread()) {
             getCookieManager().setClearEachIteration(true);
         }
         String cookies = setConnectionCookie(httpRequest, url, getCookieManager());
-        log.info("The value of cookies are {}",cookies);
         
         if (res != null) {
             if(cookies != null && !cookies.isEmpty()) {
@@ -1736,7 +1735,6 @@ public class HTTPHC4Impl extends HTTPHCAbstractImpl {
             Header[] hdrs = method.getHeaders(HTTPConstants.HEADER_SET_COOKIE);
             for (Header hdr : hdrs) {
                 cookieManager.addCookieFromHeader(hdr.getValue(),u);
-                log.info("The value of saveConnectionCookies are {}",hdr.getValue());
             }
         }
     }

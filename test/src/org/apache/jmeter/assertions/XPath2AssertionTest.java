@@ -111,7 +111,7 @@ public class XPath2AssertionTest {
         assertion.setNegated(true);
         response.setResponseData(xmlDoc, "UTF-8");
         AssertionResult res = assertion.getResult(response);
-        assertTrue("When xpath2 conforms to xml, the result of assertion should be false ",res.isFailure());
+        assertTrue("When xpath2 conforms to xml, the result of assertion should be true ",res.isFailure());
         assertFalse("When the format of xpath2 is right, assertion will run correctly ",res.isError());
     }
     @Test

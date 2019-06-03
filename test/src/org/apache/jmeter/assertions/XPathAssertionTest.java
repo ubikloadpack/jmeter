@@ -425,8 +425,7 @@ public class XPathAssertionTest extends JMeterTestCase {
         log.debug("failureMessage: {}", res.getFailureMessage());
         assertFalse("When xpath conforms to xml, the result of assertion "
                 + "should be true ",res.isFailure());
-        assertFalse(res.isError());
-             
+        assertFalse(res.isError());            
     }
     @Test
     public void testScopeFailure(){
@@ -447,7 +446,6 @@ public class XPathAssertionTest extends JMeterTestCase {
         assertFalse(res.isError());
              
     }
-
     @Test
     public void testWrongXpathMethod() {
         assertion.setXPathString("cou(//error)=1"); // wrong
@@ -459,7 +457,14 @@ public class XPathAssertionTest extends JMeterTestCase {
         assertTrue("Un transformerException should be throw",
                 res.getFailureMessage().contains("TransformerException"));
     }
-
-    
-
+    @Test
+    public void testWithoutRightNamespaces() {        
+        setAlternateResponseData();
+        assertion.setXPathString("//b:row/value[@field = 'alias']");
+        AssertionResult res = assertion.getResult(jmctx.getPreviousResult());
+        log.debug(" res {}", res.isError());
+        log.debug(" failure {}", res.getFailureMessage());
+        assertTrue("When the user give namspaces, un transformerException should be throw",
+                res.getFailureMessage().contains("TransformerException"));
+    }
 }

@@ -221,7 +221,4 @@ public class TestXPath2Extractor {
         assertEquals(1, result.getAssertionResults().length);
         assertEquals(extractor.getName(), result.getAssertionResults()[0].getName());
     }
-        
-
-        
 }

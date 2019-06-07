@@ -110,6 +110,36 @@ public class TestXPath2Extractor {
             assertNull(vars.get(VAL_NAME+"_2"));
             assertNull(vars.get(VAL_NAME+"_3"));
             
+            // Test match 1 in String
+            extractor.setXPathQuery("/book/page");
+            extractor.setMatchNumber("1");
+            extractor.process();
+            assertEquals("one", vars.get(VAL_NAME));
+            assertEquals("1", vars.get(VAL_NAME_NR));
+            assertEquals("one", vars.get(VAL_NAME+"_1"));
+            assertNull(vars.get(VAL_NAME+"_2"));
+            assertNull(vars.get(VAL_NAME+"_3"));
+            
+            // Test match 2
+            extractor.setXPathQuery("/book/page");
+            extractor.setMatchNumber(2);
+            extractor.process();
+            assertEquals("two", vars.get(VAL_NAME));
+            assertEquals("1", vars.get(VAL_NAME_NR));
+            assertEquals("two", vars.get(VAL_NAME+"_1"));
+            assertNull(vars.get(VAL_NAME+"_2"));
+            assertNull(vars.get(VAL_NAME+"_3"));
+            
+            
+            // Test more than one match
+            extractor.setMatchNumber(-1);
+            extractor.setXPathQuery("/book/page");
+            extractor.process();
+            assertEquals("2", vars.get(VAL_NAME_NR));
+            assertEquals("one", vars.get(VAL_NAME+"_1"));
+            assertEquals("one", vars.get(VAL_NAME));
+            assertEquals("two", vars.get(VAL_NAME+"_2"));
+            assertNull(vars.get(VAL_NAME+"_3"));
             
             // Put back default value
             extractor.setMatchNumber(-1);
@@ -211,14 +241,51 @@ public class TestXPath2Extractor {
         }
 
     @Test
-    public void testInvalidDocument1() throws Exception {        
-        result.setResponseData("<age:ag xmlns:age=\"http://www.w3.org/wgs84_pos#\"><head><title>testtitle</title></head></age:ag>", null);
-        String namespaces = "age=http://www.w3.org/2003/01/geo/wgs84#";
+    public void testWithNamespace() throws Exception {        
+        result.setResponseData("<age:ag xmlns:age=\"http://www.w3.org/wgs84_pos#\"><head><title>test</title></head></age:ag>", null);
+        String namespaces = "age=http://www.w3.org/wgs84_pos#";
         String xPathQuery = "/age:ag/head/title";
         extractor.setXPathQuery(xPathQuery);
         extractor.setNamespaces(namespaces);
         extractor.process();
-        assertEquals(1, result.getAssertionResults().length);
-        assertEquals(extractor.getName(), result.getAssertionResults()[0].getName());
+        assertEquals("test", vars.get(VAL_NAME));
+        assertEquals("1", vars.get(VAL_NAME_NR));
+        assertEquals("test", vars.get(VAL_NAME+"_1"));
+        assertNull(vars.get(VAL_NAME+"_2"));
+    }
+    @Test
+    public void testWithNamespaces() throws Exception {        
+        result.setResponseData("<age:ag xmlns:age=\"http://www.w3.org/wgs84_pos#\">"
+                + "<hd:head xmlns:hd=\"http://www.w3.org/wgs85_pos#\"><title>test</title></hd:head></age:ag>", null);
+        String namespaces = "age=http://www.w3.org/wgs84_pos#"+"\n"+"hd=http://www.w3.org/wgs85_pos#";
+        String xPathQuery = "/age:ag/hd:head/title";
+        extractor.setXPathQuery(xPathQuery);
+        extractor.setNamespaces(namespaces);
+        extractor.process();
+        assertEquals("test", vars.get(VAL_NAME));
+        assertEquals("1", vars.get(VAL_NAME_NR));
+        assertEquals("test", vars.get(VAL_NAME+"_1"));
+        assertNull(vars.get(VAL_NAME+"_2"));
+    }
+    @Test
+    public void testWithoutNamespace() throws Exception {        
+        result.setResponseData("<age:ag xmlns:age=\"http://www.w3.org/wgs84_pos#\"><head><title>test</title></head></age:ag>", null);
+        String xPathQuery = "/age:ag/head/title";
+        extractor.setXPathQuery(xPathQuery);
+        extractor.process();
+        assertEquals("Default", vars.get(VAL_NAME));
+        assertEquals("0", vars.get(VAL_NAME_NR));            
+    }
+    @Test
+    public void testPreviousResultIsEmpty() throws Exception {    
+        JMeterContext jmc = JMeterContextService.getContext();
+        extractor = new XPath2Extractor();
+        extractor.setThreadContext(jmctx);// This would be done by the run command
+        extractor.setRefName(VAL_NAME);
+        extractor.setDefaultValue("Default");
+        jmc.setPreviousResult(null);
+        extractor.setXPathQuery("/book/preface");
+        extractor.process();
+        assertEquals(null, vars.get(VAL_NAME));
     }
 }

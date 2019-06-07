@@ -73,6 +73,8 @@ public class JMeterThread implements Runnable, Interruptible {
     public static final String PACKAGE_OBJECT = "JMeterThread.pack"; // $NON-NLS-1$
 
     public static final String LAST_SAMPLE_OK = "JMeterThread.last_sample_ok"; // $NON-NLS-1$
+    
+    public static final String IS_SAME_USER = "JMeterThread.Is_Same_User"; // $NON-NLS-1$
 
     private static final String TRUE = Boolean.toString(true); // i.e. "true"
 
@@ -95,7 +97,7 @@ public class JMeterThread implements Runnable, Interruptible {
     private final TestCompiler compiler;
 
     private final JMeterThreadMonitor monitor;
-
+    
     private final JMeterVariables threadVars;
 
     // Note: this is only used to implement TestIterationListener#testIterationStart
@@ -122,6 +124,7 @@ public class JMeterThread implements Runnable, Interruptible {
     private long startTime = 0;
 
     private long endTime = 0;
+    private boolean isSameUser=false;
 
     private boolean scheduler = false;
     // based on this scheduler is enabled or disabled
@@ -148,7 +151,7 @@ public class JMeterThread implements Runnable, Interruptible {
 
     private final ReentrantLock interruptLock = new ReentrantLock(); // ensure that interrupt cannot overlap with shutdown
 
-    public JMeterThread(HashTree test, JMeterThreadMonitor monitor, ListenerNotifier note) {
+    public JMeterThread(HashTree test, JMeterThreadMonitor monitor, ListenerNotifier note,Boolean isSameUser) {
         this.monitor = monitor;
         threadVars = new JMeterVariables();
         testTree = test;
@@ -162,6 +165,15 @@ public class JMeterThread implements Runnable, Interruptible {
         sampleMonitors = sampleMonitorSearcher.getSearchResults();
         notifier = note;
         running = true;
+        this.isSameUser=isSameUser;
+    }
+
+    public boolean isSameUser() {
+        return isSameUser;
+    }
+
+    public void setSameUser(boolean isSameUser) {
+        this.isSameUser = isSameUser;
     }
 
     public void setInitialContext(JMeterContext context) {
@@ -237,15 +249,14 @@ public class JMeterThread implements Runnable, Interruptible {
     public void setThreadName(String threadName) {
         this.threadName = threadName;
     }
-
     @Override
     public void run() {
         // threadContext is not thread-safe, so keep within thread
         JMeterContext threadContext = JMeterContextService.getContext();
         LoopIterationListener iterationListener = null;
-
         try {
             iterationListener = initRun(threadContext);
+            threadContext.getVariables().putObject(IS_SAME_USER, isSameUser);
             while (running) {
                 Sampler sam = threadGroupLoopController.next();
                 while (running && sam != null) {

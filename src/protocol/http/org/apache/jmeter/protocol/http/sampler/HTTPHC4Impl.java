@@ -159,6 +159,7 @@ import org.apache.jmeter.testelement.property.CollectionProperty;
 import org.apache.jmeter.testelement.property.JMeterProperty;
 import org.apache.jmeter.testelement.property.PropertyIterator;
 import org.apache.jmeter.threads.JMeterContextService;
+import org.apache.jmeter.threads.JMeterThread;
 import org.apache.jmeter.threads.JMeterVariables;
 import org.apache.jmeter.util.JMeterUtils;
 import org.apache.jmeter.util.JsseSSLManager;
@@ -167,7 +168,6 @@ import org.apache.jorphan.util.JOrphanUtils;
 import org.brotli.dec.BrotliInputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 /**
  * HTTP Sampler using Apache HttpClient 4.x.
  *
@@ -1238,11 +1238,19 @@ public class HTTPHC4Impl extends HTTPHCAbstractImpl {
         } else {
             httpRequest.setHeader(HTTPConstants.HEADER_CONNECTION, HTTPConstants.CONNECTION_CLOSE);
         }
-    
-        setConnectionHeaders(httpRequest, url, getHeaderManager(), getCacheManager());
-    
+        JMeterVariables variables = JMeterContextService.getContext().getVariables();       
+        if(variables.getObject(JMeterThread.IS_SAME_USER)!=null&&getCacheManager()!=null&&
+                !(boolean)variables.getObject(JMeterThread.IS_SAME_USER)&&getCacheManager().getControlledByThread()) {
+            getCacheManager().setClearEachIteration(true);
+            
+        }
+        setConnectionHeaders(httpRequest, url, getHeaderManager(), getCacheManager());      
+        if(variables.getObject(JMeterThread.IS_SAME_USER)!=null&&getCookieManager()!=null&&
+                !(boolean)variables.getObject(JMeterThread.IS_SAME_USER)&& getCookieManager().getControlledByThread()) {
+            getCookieManager().setClearEachIteration(true);
+        }
         String cookies = setConnectionCookie(httpRequest, url, getCookieManager());
-    
+        
         if (res != null) {
             if(cookies != null && !cookies.isEmpty()) {
                 res.setCookies(cookies);

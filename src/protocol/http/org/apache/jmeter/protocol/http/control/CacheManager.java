@@ -66,7 +66,7 @@ public class CacheManager extends ConfigTestElement implements TestStateListener
     private static final int DEFAULT_MAX_SIZE = 5000;
     private static final long ONE_YEAR_MS = 365*24*60*60*1000L;
     private static final String[] CACHEABLE_METHODS = JMeterUtils.getPropDefault("cacheable_methods", "GET").split("[ ,]");
-
+    private static final String CONTROLLED_BY_THREAD = "CacheManager.controlledByThread";// $NON-NLS-1$
     static {
         if (log.isInfoEnabled()) {
             log.info("Will only cache the following methods: {}", Arrays.toString(CACHEABLE_METHODS));
@@ -98,6 +98,13 @@ public class CacheManager extends ConfigTestElement implements TestStateListener
     CacheManager(Map<String, CacheEntry> localCache, boolean useExpires) {
         this.localCache = localCache;
         this.useExpires = useExpires;
+    }
+    public boolean getControlledByThread() {
+        return getPropertyAsBoolean(CONTROLLED_BY_THREAD);
+    }
+
+    public void setControlledByThread(boolean control) {
+        setProperty(new BooleanProperty(CONTROLLED_BY_THREAD, control));
     }
 
     /*

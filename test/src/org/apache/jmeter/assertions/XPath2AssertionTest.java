@@ -210,4 +210,18 @@ public class XPath2AssertionTest {
         assertTrue("When format of xpath is wrong, the test should failed",res.isError());
         assertTrue(res.getFailureMessage().contains("Exception occured computing assertion with XPath"));
     }
+    
+    @Test
+    public void testXPath2AssertionPathWithoutNamespace() throws FactoryConfigurationError {
+        String data = "<html><head><title>testtitle</title></head></html>";
+        vars = new JMeterVariables();
+        jmctx.setVariables(vars);
+        jmctx.setPreviousResult(response);
+        String xPathQuery = "/html/head";
+        assertion.setXPathString(xPathQuery);
+        response.setResponseData(data, "UTF-8");
+        AssertionResult res = assertion.getResult(response);
+        assertFalse("When xpath2 conforms to xml, the result of assertion should be true ",res.isFailure());
+        assertFalse("When the format of xpath2 is right, assertion will run correctly ",res.isError());
+    }
 }

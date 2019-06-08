@@ -189,8 +189,11 @@ public class ThreadGroup extends AbstractThreadGroup {
     }
 
     /**
-     * Get kind of user.
-     *
+     * Get kind of user:
+     * <ul>
+     *  <li>true means same user running multiple iterations</li>
+     *  <li>false means a different user for each iteration</li>
+     * </ul>
      * @return the kind of user.
      */
     public boolean isSameUser() {
@@ -238,7 +241,7 @@ public class ThreadGroup extends AbstractThreadGroup {
         this.threadGroupTree = threadGroupTree;
         int numThreads = getNumThreads();
         int rampUpPeriodInSeconds = getRampUp();
-        boolean isSameUser=isSameUser();
+        boolean isSameUser = isSameUser();
         delayedStartup = isDelayedStartup(); // Fetch once; needs to stay constant
         log.info("Starting thread group... number={} threads={} ramp-up={} delayedStart={}", groupNumber,
                 numThreads, rampUpPeriodInSeconds, delayedStartup);
@@ -263,7 +266,7 @@ public class ThreadGroup extends AbstractThreadGroup {
                 }
                 lastThreadStartInMillis = nowInMillis;
                 startNewThread(notifier, threadGroupTree, engine, threadNum, context, nowInMillis,
-                        Math.max(0, delayForNextThreadInMillis),isSameUser);
+                        Math.max(0, delayForNextThreadInMillis), isSameUser);
             }
         }
         log.info("Started thread group number {}", groupNumber);
@@ -352,7 +355,7 @@ public class ThreadGroup extends AbstractThreadGroup {
             numThreads = getNumThreads();
             setNumThreads(numThreads + 1);
         }
-        newJmThread = startNewThread(notifier, threadGroupTree, engine, numThreads, context, now, delay,isSameUser());
+        newJmThread = startNewThread(notifier, threadGroupTree, engine, numThreads, context, now, delay, isSameUser());
         JMeterContextService.addTotalThreads( 1 );
         log.info("Started new thread in group {}", groupNumber);
         return newJmThread;

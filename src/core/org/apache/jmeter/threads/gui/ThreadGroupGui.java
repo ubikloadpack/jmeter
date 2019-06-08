@@ -125,7 +125,7 @@ public class ThreadGroupGui extends AbstractThreadGroupGui implements ItemListen
 
         duration.setText(tg.getPropertyAsString(ThreadGroup.DURATION));
         delay.setText(tg.getPropertyAsString(ThreadGroup.DELAY));
-        final boolean isSameUser = tg.getPropertyAsBoolean(ThreadGroup.IS_SAME_USER,false);
+        final boolean isSameUser = tg.getPropertyAsBoolean(ThreadGroup.IS_SAME_USER, false);
         if (isSameUser){
             sameUserBox.setSelected(true);
         } else {

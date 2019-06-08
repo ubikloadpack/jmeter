@@ -49,6 +49,8 @@ import org.apache.jmeter.protocol.http.util.HTTPConstants;
 import org.apache.jmeter.testelement.TestIterationListener;
 import org.apache.jmeter.testelement.TestStateListener;
 import org.apache.jmeter.testelement.property.BooleanProperty;
+import org.apache.jmeter.threads.JMeterContextService;
+import org.apache.jmeter.threads.JMeterVariables;
 import org.apache.jmeter.util.JMeterUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -629,7 +631,9 @@ public class CacheManager extends ConfigTestElement implements TestStateListener
 
     @Override
     public void testIterationStart(LoopIterationEvent event) {
-        if (getClearEachIteration()) {
+        JMeterVariables jMeterVariables = JMeterContextService.getContext().getVariables();
+        if ((getControlledByThread() && !jMeterVariables.isSameUser()) 
+                || getClearEachIteration()) {
             clearCache();
         }
         useExpires = getUseExpires(); // cache the value

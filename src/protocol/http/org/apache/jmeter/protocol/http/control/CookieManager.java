@@ -40,6 +40,8 @@ import org.apache.jmeter.testelement.property.CollectionProperty;
 import org.apache.jmeter.testelement.property.JMeterProperty;
 import org.apache.jmeter.testelement.property.PropertyIterator;
 import org.apache.jmeter.threads.JMeterContext;
+import org.apache.jmeter.threads.JMeterContextService;
+import org.apache.jmeter.threads.JMeterVariables;
 import org.apache.jmeter.util.JMeterUtils;
 import org.apache.jorphan.reflect.ClassTools;
 import org.apache.jorphan.util.JMeterException;
@@ -436,7 +438,9 @@ public class CookieManager extends ConfigTestElement implements TestStateListene
     /** {@inheritDoc} */
     @Override
     public void testIterationStart(LoopIterationEvent event) {
-        if (getClearEachIteration()) {
+        JMeterVariables jMeterVariables = JMeterContextService.getContext().getVariables();
+        if ((getControlledByThread() && !jMeterVariables.isSameUser()) 
+                || getClearEachIteration()) {
             log.debug("Initialise cookies from pre-defined list");
             // No need to call clear
             setProperty(initialCookies.clone());

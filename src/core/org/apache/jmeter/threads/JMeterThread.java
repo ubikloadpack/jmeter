@@ -74,7 +74,7 @@ public class JMeterThread implements Runnable, Interruptible {
 
     public static final String LAST_SAMPLE_OK = "JMeterThread.last_sample_ok"; // $NON-NLS-1$
     
-    public static final String IS_SAME_USER = "JMeterThread.Is_Same_User"; // $NON-NLS-1$
+    public static final String IS_SAME_USER = "JMeterThread.is_same_user"; // $NON-NLS-1$
 
     private static final String TRUE = Boolean.toString(true); // i.e. "true"
 
@@ -124,10 +124,11 @@ public class JMeterThread implements Runnable, Interruptible {
     private long startTime = 0;
 
     private long endTime = 0;
-    private boolean isSameUser=false;
 
-    private boolean scheduler = false;
+    private boolean isSameUser = false;
+
     // based on this scheduler is enabled or disabled
+    private boolean scheduler = false;
 
     // Gives access to parent thread threadGroup
     private AbstractThreadGroup threadGroup;
@@ -165,14 +166,6 @@ public class JMeterThread implements Runnable, Interruptible {
         sampleMonitors = sampleMonitorSearcher.getSearchResults();
         notifier = note;
         running = true;
-        this.isSameUser=isSameUser;
-    }
-
-    public boolean isSameUser() {
-        return isSameUser;
-    }
-
-    public void setSameUser(boolean isSameUser) {
         this.isSameUser = isSameUser;
     }
 
@@ -256,7 +249,6 @@ public class JMeterThread implements Runnable, Interruptible {
         LoopIterationListener iterationListener = null;
         try {
             iterationListener = initRun(threadContext);
-            threadContext.getVariables().putObject(IS_SAME_USER, isSameUser);
             while (running) {
                 Sampler sam = threadGroupLoopController.next();
                 while (running && sam != null) {
@@ -698,6 +690,7 @@ public class JMeterThread implements Runnable, Interruptible {
      * @return the iteration listener
      */
     private IterationListener initRun(JMeterContext threadContext) {
+        threadVars.putObject(JMeterVariables.VAR_IS_SAME_USER_KEY, isSameUser);
         threadContext.setVariables(threadVars);
         threadContext.setThreadNum(getThreadNum());
         threadContext.getVariables().put(LAST_SAMPLE_OK, TRUE);

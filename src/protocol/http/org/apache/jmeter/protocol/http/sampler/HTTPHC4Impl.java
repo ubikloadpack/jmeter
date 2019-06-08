@@ -159,7 +159,6 @@ import org.apache.jmeter.testelement.property.CollectionProperty;
 import org.apache.jmeter.testelement.property.JMeterProperty;
 import org.apache.jmeter.testelement.property.PropertyIterator;
 import org.apache.jmeter.threads.JMeterContextService;
-import org.apache.jmeter.threads.JMeterThread;
 import org.apache.jmeter.threads.JMeterVariables;
 import org.apache.jmeter.util.JMeterUtils;
 import org.apache.jmeter.util.JsseSSLManager;
@@ -1238,17 +1237,7 @@ public class HTTPHC4Impl extends HTTPHCAbstractImpl {
         } else {
             httpRequest.setHeader(HTTPConstants.HEADER_CONNECTION, HTTPConstants.CONNECTION_CLOSE);
         }
-        JMeterVariables variables = JMeterContextService.getContext().getVariables();       
-        if(variables.getObject(JMeterThread.IS_SAME_USER)!=null&&getCacheManager()!=null&&
-                !(boolean)variables.getObject(JMeterThread.IS_SAME_USER)&&getCacheManager().getControlledByThread()) {
-            getCacheManager().setClearEachIteration(true);
-            
-        }
-        setConnectionHeaders(httpRequest, url, getHeaderManager(), getCacheManager());      
-        if(variables.getObject(JMeterThread.IS_SAME_USER)!=null&&getCookieManager()!=null&&
-                !(boolean)variables.getObject(JMeterThread.IS_SAME_USER)&& getCookieManager().getControlledByThread()) {
-            getCookieManager().setClearEachIteration(true);
-        }
+        setConnectionHeaders(httpRequest, url, getHeaderManager(), getCacheManager());
         String cookies = setConnectionCookie(httpRequest, url, getCookieManager());
         
         if (res != null) {
@@ -1798,7 +1787,17 @@ public class HTTPHC4Impl extends HTTPHCAbstractImpl {
         log.debug("notifyFirstSampleAfterLoopRestart called "
                 + "with config(httpclient.reset_state_on_thread_group_iteration={})",
                 Boolean.valueOf(RESET_STATE_ON_THREAD_GROUP_ITERATION));
-        resetStateOnThreadGroupIteration.set(Boolean.valueOf(RESET_STATE_ON_THREAD_GROUP_ITERATION));
+        JMeterVariables jMeterVariables = JMeterContextService.getContext().getVariables();
+        if (jMeterVariables.isSameUser()) {
+            log.debug("Thread Group is configured to simulate a returning visitor on each iteration, ignoring property value {}", 
+                    RESET_STATE_ON_THREAD_GROUP_ITERATION);
+            resetStateOnThreadGroupIteration.set(false);
+        } else {
+            log.debug("Thread Group is configured to simulate a new visitor on each iteration, using property value {}", 
+                    RESET_STATE_ON_THREAD_GROUP_ITERATION);
+            resetStateOnThreadGroupIteration.set(Boolean.valueOf(RESET_STATE_ON_THREAD_GROUP_ITERATION));
+        }
+        log.debug("Thread state will be reset ?: {}", RESET_STATE_ON_THREAD_GROUP_ITERATION);
     }
 
     @Override

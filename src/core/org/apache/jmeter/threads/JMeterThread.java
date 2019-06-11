@@ -74,8 +74,6 @@ public class JMeterThread implements Runnable, Interruptible {
 
     public static final String LAST_SAMPLE_OK = "JMeterThread.last_sample_ok"; // $NON-NLS-1$
     
-    public static final String IS_SAME_USER = "JMeterThread.is_same_user"; // $NON-NLS-1$
-
     private static final String TRUE = Boolean.toString(true); // i.e. "true"
 
     /** How often to check for shutdown during ramp-up, default 1000ms */

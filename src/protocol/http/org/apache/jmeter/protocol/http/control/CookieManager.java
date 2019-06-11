@@ -52,7 +52,6 @@ import org.slf4j.LoggerFactory;
  * along with a request.
  */
 public class CookieManager extends ConfigTestElement implements TestStateListener, TestIterationListener, Serializable {
-    
     private static final long serialVersionUID = 234L;
 
     private static final Logger log = LoggerFactory.getLogger(CookieManager.class);

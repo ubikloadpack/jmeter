@@ -20,79 +20,76 @@ package org.apache.jmeter.protocol.http.sampler;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import java.net.MalformedURLException;
-import java.net.URL;
-
 import org.apache.jmeter.protocol.http.control.CacheManager;
 import org.apache.jmeter.protocol.http.control.CookieManager;
 import org.apache.jmeter.protocol.http.control.gui.HttpTestSampleGui;
 import org.apache.jmeter.threads.JMeterContext;
 import org.apache.jmeter.threads.JMeterContextService;
-import org.apache.jmeter.threads.JMeterThread;
 import org.apache.jmeter.threads.JMeterVariables;
 import org.junit.Before;
 import org.junit.Test;
 
-public class TestHTTPHC4Impl {
-    public static String url="https://www.google.com";
+public class TestJmeterVariableSameUser {
     private JMeterContext jmctx;
     private JMeterVariables jmvars;
-    
     @Before
     public void setUp() {
-        jmctx = JMeterContextService.getContext();
-        jmctx.setVariables(new JMeterVariables());
-        jmvars = jmctx.getVariables();
+        jmctx = JMeterContextService.getContext();     
+        jmvars = new JMeterVariables();
     }
     @Test
-    public void testCookieManagerForDifferentUserOnSameIternation() throws MalformedURLException {
+    public void testCookieManagerForDifferentUserOnSameIternation() {
+        jmvars.putObject("__jmv_SAME_USER", true);
+        jmctx.setVariables(jmvars);        
         HTTPSamplerBase sampler = (HTTPSamplerBase) new HttpTestSampleGui().createTestElement();
-        jmvars.putObject(JMeterThread.IS_SAME_USER, false);
         CookieManager cookieManager = new CookieManager();
         cookieManager.setControlledByThread(true);
         sampler.setCookieManager(cookieManager);
-        HTTPHC4Impl hc = new HTTPHC4Impl(sampler);
-        hc.sample(new URL(url), "GET", true, 0);
+        sampler.setThreadContext(jmctx);
+        boolean res=(boolean) cookieManager.getThreadContext().getVariables().getObject("__jmv_SAME_USER");
         assertTrue("When test different user on the different iternation, the cookie should be cleared",
-                hc.getCookieManager().getClearEachIteration());
+                res);
     }
 
     @Test
-    public void testCookieManagerForSameUserOnIternation() throws MalformedURLException {
+    public void testCookieManagerForSameUserOnIternation() {
+        jmvars.putObject("__jmv_SAME_USER", false);
+        jmctx.setVariables(jmvars);        
         HTTPSamplerBase sampler = (HTTPSamplerBase) new HttpTestSampleGui().createTestElement();
         CookieManager cookieManager = new CookieManager();
         cookieManager.setControlledByThread(true);
         sampler.setCookieManager(cookieManager);
-        HTTPHC4Impl hc = new HTTPHC4Impl(sampler);
-        jmvars.putObject(JMeterThread.IS_SAME_USER, true);
-        hc.sample(new URL(url), "GET", true, 0);
+        sampler.setThreadContext(jmctx);
+        boolean res=(boolean) cookieManager.getThreadContext().getVariables().getObject("__jmv_SAME_USER");
         assertFalse("When test different user on the same iternation, the cookie shouldn't be cleared",
-                hc.getCookieManager().getClearEachIteration());
+                res);
     }
 
     @Test
-    public void testCacheManagerForDifferentUserOnSameIternation() throws MalformedURLException {
+    public void testCacheManagerForDifferentUserOnSameIternation() {
+        jmvars.putObject("__jmv_SAME_USER", false);
+        jmctx.setVariables(jmvars);        
         HTTPSamplerBase sampler = (HTTPSamplerBase) new HttpTestSampleGui().createTestElement();
         CacheManager cacheManager = new CacheManager();
         cacheManager.setControlledByThread(true);
         sampler.setCacheManager(cacheManager);
-        HTTPHC4Impl hc = new HTTPHC4Impl(sampler);
-        jmvars.putObject(JMeterThread.IS_SAME_USER, false);
-        hc.sample(new URL(url), "GET", true, 0);
-        assertTrue("When test different user on the different iternation, the cache should be cleared",
-                hc.getCacheManager().getClearEachIteration());
+        sampler.setThreadContext(jmctx);
+        boolean res=(boolean) cacheManager.getThreadContext().getVariables().getObject("__jmv_SAME_USER");
+        assertFalse("When test different user on the different iternation, the cache should be cleared",
+                res);
     }
 
     @Test
-    public void testCacheManagerForSameUserOnSameIternation() throws MalformedURLException {
+    public void testCacheManagerForSameUserOnSameIternation() {
+        jmvars.putObject("__jmv_SAME_USER", true);
+        jmctx.setVariables(jmvars);        
         HTTPSamplerBase sampler = (HTTPSamplerBase) new HttpTestSampleGui().createTestElement();
         CacheManager cacheManager = new CacheManager();
         cacheManager.setControlledByThread(true);
         sampler.setCacheManager(cacheManager);
-        HTTPHC4Impl hc = new HTTPHC4Impl(sampler);
-        jmvars.putObject(JMeterThread.IS_SAME_USER, true);
-        hc.sample(new URL(url), "GET", true, 0);
-        assertFalse("When test different user on the same iternation, the cache shouldn't be cleared",
-                hc.getCacheManager().getClearEachIteration());
+        sampler.setThreadContext(jmctx);
+        boolean res=(boolean) cacheManager.getThreadContext().getVariables().getObject("__jmv_SAME_USER");
+        assertTrue("When test different user on the same iternation, the cache shouldn't be cleared",
+                res);
     }
 }

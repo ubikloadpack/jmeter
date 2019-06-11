@@ -916,6 +916,8 @@ public abstract class HTTPSamplerBase extends AbstractSampler
             }
         }
         setCookieManagerProperty(value);
+
+         
     }
 
     public CookieManager getCookieManager() {
@@ -2059,7 +2061,7 @@ public abstract class HTTPSamplerBase extends AbstractSampler
             if (cookieManager != null) {
                 CookieManager clonedCookieManager = (CookieManager) cookieManager.clone();
                 this.sampler.setCookieManagerProperty(clonedCookieManager);
-            }
+                }
             this.sampler.setMD5(this.sampler.useMD5() || IGNORE_EMBEDDED_RESOURCES_DATA);
             this.jmeterContextOfParentThread = JMeterContextService.getContext();
         }

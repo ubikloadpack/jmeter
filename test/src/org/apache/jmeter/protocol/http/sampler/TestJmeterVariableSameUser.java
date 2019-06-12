@@ -119,7 +119,7 @@ public class TestJmeterVariableSameUser {
         assertEquals("Before the iteration, the value of cookie should be what user have set","test",
                 cookieManager.getCookies().get(0).getName());
         cookieManager.testIterationStart(null);
-        assertEquals("After the iteration, the value of cookie hould be what user have set", "test",
+        assertEquals("After the iteration, the value of cookie should be what user have set", "test",
                 cookieManager.getCookies().get(0).getName());
     }
     
@@ -133,7 +133,7 @@ public class TestJmeterVariableSameUser {
         sampler.setCacheManager(cacheManager);
         sampler.setThreadContext(jmctx);
         boolean res = (boolean) cacheManager.getThreadContext().getVariables().getObject("__jmv_SAME_USER");
-        assertFalse("When test different user on the different iternation, the cache should be cleared", res);
+        assertFalse("When test different users on the different iternation, the cache should be cleared", res);
     }
 
     @Test
@@ -146,7 +146,7 @@ public class TestJmeterVariableSameUser {
         sampler.setCacheManager(cacheManager);
         sampler.setThreadContext(jmctx);
         boolean res=(boolean) cacheManager.getThreadContext().getVariables().getObject("__jmv_SAME_USER");
-        assertTrue("When test different user on the same iternation, the cache shouldn't be cleared",
+        assertTrue("When test different users on the same iternation, the cache shouldn't be cleared",
                 res);
     }
 

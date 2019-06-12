@@ -210,8 +210,8 @@
   <ul>
      <li><a href="curl.html#enter_command">24.1 How to enter (a) command(s)</a></li>
      <li><a href="curl.html#curl_options">24.2 Curl options supported</a></li>
-     <li><a href="curl.html#warning">24.3 Warning</a></li>
-     <li><a href="curl.html#example">24.4 Example</a></li>
+     <li><a href="curl.html#warning">24.3 Warning </a></li>
+     <li><a href="curl.html#example">24.4 Some Examples</a></li>
    </ul>
  </li>
  <li><a name="history_future"/><a href="history_future.html">25. History / Future</a></li>

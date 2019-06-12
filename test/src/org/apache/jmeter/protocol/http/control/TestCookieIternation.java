@@ -122,4 +122,51 @@ public class TestCookieIternation {
         assertEquals("After the iteration, the value of cookie should be what user have set", "test",
                 cookieManager.getCookies().get(0).getName());
     }
+    @Test
+    public void testCookieManagerClear() throws NoSuchFieldException, IllegalAccessException {
+        CookieManager cookieManager = new CookieManager();
+        cookieManager.getCookies().clear();
+        cookieManager.testStarted();
+        Cookie cookie = new Cookie();
+        cookie.setName("test");
+        cookieManager.getCookies().addItem(cookie);
+        cookieManager.setClearEachIteration(true);
+        Field privateStringField = CookieManager.class.getDeclaredField("initialCookies");
+        privateStringField.setAccessible(true);
+        CookieManager cookieManager1 = new CookieManager();
+        Cookie cookie1 = new Cookie();
+        cookie1.setName("test1");
+        cookieManager1.getCookies().addItem(cookie1);
+        CollectionProperty initialCookies = cookieManager1.getCookies();
+        privateStringField.set(cookieManager, initialCookies);
+        assertEquals("Before the iteration, the value of cookie should be what user have set", "test",
+                cookieManager.getCookies().get(0).getName());
+        cookieManager.testIterationStart(null);
+        assertEquals("After the iteration, the value of cookie should be the initial cookies", "test1",
+                cookieManager.getCookies().get(0).getName());
+    }
+    
+    @Test
+    public void testCookieManagerNotClear() throws NoSuchFieldException, IllegalAccessException {
+        CookieManager cookieManager = new CookieManager();
+        cookieManager.getCookies().clear();
+        cookieManager.testStarted();
+        Cookie cookie = new Cookie();
+        cookie.setName("test");
+        cookieManager.getCookies().addItem(cookie);
+        cookieManager.setClearEachIteration(false);
+        Field privateStringField = CookieManager.class.getDeclaredField("initialCookies");
+        privateStringField.setAccessible(true);
+        CookieManager cookieManager1 = new CookieManager();
+        Cookie cookie1 = new Cookie();
+        cookie1.setName("test1");
+        cookieManager1.getCookies().addItem(cookie1);
+        CollectionProperty initialCookies = cookieManager1.getCookies();
+        privateStringField.set(cookieManager, initialCookies);
+        assertEquals("Before the iteration, the value of cookie should be what user have set", "test",
+                cookieManager.getCookies().get(0).getName());
+        cookieManager.testIterationStart(null);
+        assertEquals("After the iteration, the value of cookie should be what user have set", "test",
+                cookieManager.getCookies().get(0).getName());
+    }
 }

@@ -17,12 +17,17 @@
  */
 package org.apache.jmeter.protocol.http.sampler;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import java.lang.reflect.Field;
+
 import org.apache.jmeter.protocol.http.control.CacheManager;
+import org.apache.jmeter.protocol.http.control.Cookie;
 import org.apache.jmeter.protocol.http.control.CookieManager;
 import org.apache.jmeter.protocol.http.control.gui.HttpTestSampleGui;
+import org.apache.jmeter.testelement.property.CollectionProperty;
 import org.apache.jmeter.threads.JMeterContext;
 import org.apache.jmeter.threads.JMeterContextService;
 import org.apache.jmeter.threads.JMeterVariables;
@@ -32,13 +37,14 @@ import org.junit.Test;
 public class TestJmeterVariableSameUser {
     private JMeterContext jmctx;
     private JMeterVariables jmvars;
+    public static String url="http://example.com";
     @Before
     public void setUp() {
         jmctx = JMeterContextService.getContext();     
         jmvars = new JMeterVariables();
     }
     @Test
-    public void testCookieManagerForDifferentUserOnSameIternation() {
+    public void testJmeterVariableCookieForDifferentUser() {
         jmvars.putObject("__jmv_SAME_USER", true);
         jmctx.setVariables(jmvars);        
         HTTPSamplerBase sampler = (HTTPSamplerBase) new HttpTestSampleGui().createTestElement();
@@ -52,7 +58,7 @@ public class TestJmeterVariableSameUser {
     }
 
     @Test
-    public void testCookieManagerForSameUserOnIternation() {
+    public void testJmeterVariableCookieForSameUser() {
         jmvars.putObject("__jmv_SAME_USER", false);
         jmctx.setVariables(jmvars);        
         HTTPSamplerBase sampler = (HTTPSamplerBase) new HttpTestSampleGui().createTestElement();
@@ -64,23 +70,74 @@ public class TestJmeterVariableSameUser {
         assertFalse("When test different user on the same iternation, the cookie shouldn't be cleared",
                 res);
     }
-
     @Test
-    public void testCacheManagerForDifferentUserOnSameIternation() {
+    public void testCookieManagerForDifferentUser()throws NoSuchFieldException,IllegalAccessException  {
         jmvars.putObject("__jmv_SAME_USER", false);
-        jmctx.setVariables(jmvars);        
+        jmctx.setVariables(jmvars);
+        CookieManager cookieManager = new CookieManager();
+        cookieManager.setThreadContext(jmctx);
+        cookieManager.getCookies().clear();
+        cookieManager.testStarted();
+        Cookie cookie = new Cookie();
+        cookie.setName("test");
+        cookieManager.getCookies().addItem(cookie);
+        cookieManager.setControlledByThread(true);
+        Field privateStringField = CookieManager.class.getDeclaredField("initialCookies");
+        privateStringField.setAccessible(true);
+        CookieManager cookieManager1 = new CookieManager();
+        Cookie cookie1 = new Cookie();
+        cookie1.setName("test1");
+        cookieManager1.getCookies().addItem(cookie1);
+        CollectionProperty initialCookies = cookieManager1.getCookies();
+        privateStringField.set(cookieManager, initialCookies);
+        assertEquals("Before the iteration, the value of cookie should be what user have set","test",
+                cookieManager.getCookies().get(0).getName());
+        cookieManager.testIterationStart(null);
+        assertEquals("After the iteration, the value of cookie should be the initial cookies", "test1",
+                cookieManager.getCookies().get(0).getName());
+    }
+    @Test
+    public void testCookieManagerForSameUser()throws NoSuchFieldException,IllegalAccessException  {
+        jmvars.putObject("__jmv_SAME_USER", true);
+        jmctx.setVariables(jmvars);
+        CookieManager cookieManager = new CookieManager();
+        cookieManager.setThreadContext(jmctx);
+        cookieManager.getCookies().clear();
+        cookieManager.testStarted();
+        Cookie cookie = new Cookie();
+        cookie.setName("test");
+        cookieManager.getCookies().addItem(cookie);
+        cookieManager.setControlledByThread(true);
+        Field privateStringField = CookieManager.class.getDeclaredField("initialCookies");
+        privateStringField.setAccessible(true);
+        CookieManager cookieManager1 = new CookieManager();
+        Cookie cookie1 = new Cookie();
+        cookie1.setName("test1");
+        cookieManager1.getCookies().addItem(cookie1);
+        CollectionProperty initialCookies = cookieManager1.getCookies();
+        privateStringField.set(cookieManager, initialCookies);
+        assertEquals("Before the iteration, the value of cookie should be what user have set","test",
+                cookieManager.getCookies().get(0).getName());
+        cookieManager.testIterationStart(null);
+        assertEquals("After the iteration, the value of cookie hould be what user have set", "test",
+                cookieManager.getCookies().get(0).getName());
+    }
+    
+    @Test
+    public void testJmeterVariableCacheManagerForDifferentUser() {
+        jmvars.putObject("__jmv_SAME_USER", false);
+        jmctx.setVariables(jmvars);
         HTTPSamplerBase sampler = (HTTPSamplerBase) new HttpTestSampleGui().createTestElement();
         CacheManager cacheManager = new CacheManager();
         cacheManager.setControlledByThread(true);
         sampler.setCacheManager(cacheManager);
         sampler.setThreadContext(jmctx);
-        boolean res=(boolean) cacheManager.getThreadContext().getVariables().getObject("__jmv_SAME_USER");
-        assertFalse("When test different user on the different iternation, the cache should be cleared",
-                res);
+        boolean res = (boolean) cacheManager.getThreadContext().getVariables().getObject("__jmv_SAME_USER");
+        assertFalse("When test different user on the different iternation, the cache should be cleared", res);
     }
 
     @Test
-    public void testCacheManagerForSameUserOnSameIternation() {
+    public void testJmeterVariableCacheManagerForSameUser() {
         jmvars.putObject("__jmv_SAME_USER", true);
         jmctx.setVariables(jmvars);        
         HTTPSamplerBase sampler = (HTTPSamplerBase) new HttpTestSampleGui().createTestElement();
@@ -92,4 +149,6 @@ public class TestJmeterVariableSameUser {
         assertTrue("When test different user on the same iternation, the cache shouldn't be cleared",
                 res);
     }
+
+
 }

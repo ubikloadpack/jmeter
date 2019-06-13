@@ -29,11 +29,6 @@
 <body>
 
 <section name="&sect-num;. Curl" anchor="hints">
-<p>
-This section is a collection of various hints and tips that have been suggested by various questions on the JMeter User list.
-If you don't find what you are looking for here, please check the <a href="http://wiki.apache.org/jmeter">JMeter Wiki</a>.
-Also, try search the JMeter User list; someone may well have already provided a solution.
-</p>
 <p>This method is to create http requests from curl command. If you want to know more about curl, please click the <a href="https://curl.haxx.se/">
 Curl document</a>. 
 </p>

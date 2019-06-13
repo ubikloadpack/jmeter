@@ -58,6 +58,7 @@ import org.junit.Test;
 public class TestCacheManagerIternation extends TestCacheManagerBase {
     private JMeterContext jmctx;
     private JMeterVariables jmvars;
+    private static String SAMEUSER_VAR="__jmv_SAME_USER";
     private class HttpResponseStub extends AbstractHttpMessage implements HttpResponse {
         private org.apache.http.Header lastModifiedHeader;
         private org.apache.http.Header etagHeader;
@@ -277,32 +278,32 @@ public class TestCacheManagerIternation extends TestCacheManagerBase {
 
     @Test
     public void testJmeterVariableCacheForDifferentUser() {
-        jmvars.putObject("__jmv_SAME_USER", true);
+        jmvars.putObject(SAMEUSER_VAR, true);
         jmctx.setVariables(jmvars);
         HTTPSamplerBase sampler = (HTTPSamplerBase) new HttpTestSampleGui().createTestElement();
         CacheManager cacheManager = new CacheManager();
         cacheManager.setControlledByThread(true);
         sampler.setCacheManager(cacheManager);
         sampler.setThreadContext(jmctx);
-        boolean res = (boolean) cacheManager.getThreadContext().getVariables().getObject("__jmv_SAME_USER");
+        boolean res = (boolean) cacheManager.getThreadContext().getVariables().getObject(SAMEUSER_VAR);
         assertTrue("When test different user on the different iternation, the cache should be cleared", res);
     }
     @Test
     public void testJmeterVariableCacheForSameUser() {
-        jmvars.putObject("__jmv_SAME_USER", false);
+        jmvars.putObject(SAMEUSER_VAR, false);
         jmctx.setVariables(jmvars);
         HTTPSamplerBase sampler = (HTTPSamplerBase) new HttpTestSampleGui().createTestElement();
         CacheManager cacheManager = new CacheManager();
         cacheManager.setControlledByThread(true);
         sampler.setCacheManager(cacheManager);
         sampler.setThreadContext(jmctx);
-        boolean res = (boolean) cacheManager.getThreadContext().getVariables().getObject("__jmv_SAME_USER");
+        boolean res = (boolean) cacheManager.getThreadContext().getVariables().getObject(SAMEUSER_VAR);
         assertFalse("When test different user on the different iternation, the cache shouldn't be cleared", res);
     }
 
     @Test
     public void testCacheControlDifferentUser() throws Exception {
-        jmvars.putObject("__jmv_SAME_USER", false);
+        jmvars.putObject(SAMEUSER_VAR, false);
         jmctx.setVariables(jmvars);        
         this.cacheManager.setUseExpires(true);
         this.cacheManager.testIterationStart(null);
@@ -323,7 +324,7 @@ public class TestCacheManagerIternation extends TestCacheManagerBase {
     }
     @Test
     public void testCacheControlSameUser() throws Exception {
-        jmvars.putObject("__jmv_SAME_USER", true);
+        jmvars.putObject(SAMEUSER_VAR, true);
         jmctx.setVariables(jmvars);        
         this.cacheManager.setUseExpires(true);
         this.cacheManager.testIterationStart(null);

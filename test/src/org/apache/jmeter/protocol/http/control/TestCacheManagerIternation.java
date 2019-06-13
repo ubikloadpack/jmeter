@@ -18,19 +18,21 @@
 
 package org.apache.jmeter.protocol.http.control;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import java.lang.reflect.Field;
 import java.net.URISyntaxException;
-import java.text.ParseException;
+import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.TimeZone;
 
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
@@ -45,27 +47,35 @@ import org.apache.jmeter.protocol.http.control.gui.HttpTestSampleGui;
 import org.apache.jmeter.protocol.http.sampler.HTTPSampleResult;
 import org.apache.jmeter.protocol.http.sampler.HTTPSamplerBase;
 import org.apache.jmeter.protocol.http.util.HTTPConstants;
-import org.apache.jmeter.protocol.http.util.HTTPConstantsInterface;
 import org.apache.jmeter.threads.JMeterContext;
 import org.apache.jmeter.threads.JMeterContextService;
 import org.apache.jmeter.threads.JMeterVariables;
-import org.junit.Assert;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 /**
  * Test {@link CacheManager} that uses HTTPHC4Impl
  */
-public class TestCacheManagerIternation extends TestCacheManagerBase {
+public class TestCacheManagerIternation {
     private JMeterContext jmctx;
     private JMeterVariables jmvars;
-    private static String SAMEUSER_VAR="__jmv_SAME_USER";
+    private static String sameuser = "__jmv_SAME_USER";
+    protected static final String LOCAL_HOST = "http://localhost/";
+    protected static final String EXPECTED_ETAG = "0xCAFEBABEDEADBEEF";
+    protected static final TimeZone GMT = TimeZone.getTimeZone("GMT");
+    protected CacheManager cacheManager;
+    protected String currentTimeInGMT;
+    protected String vary = null;
+    protected URL url;
+    protected HTTPSampleResult sampleResultOK;
+
     private class HttpResponseStub extends AbstractHttpMessage implements HttpResponse {
         private org.apache.http.Header lastModifiedHeader;
         private org.apache.http.Header etagHeader;
         private String expires;
         private String cacheControl;
         private org.apache.http.Header dateHeader;
-
         private List<org.apache.http.Header> headers;
 
         public HttpResponseStub() {
@@ -75,7 +85,9 @@ public class TestCacheManagerIternation extends TestCacheManagerBase {
             this.etagHeader = new BasicHeader(HTTPConstants.ETAG, EXPECTED_ETAG);
         }
 
-        /* (non-Javadoc)
+        /*
+         * (non-Javadoc)
+         * 
          * @see org.apache.http.message.AbstractHttpMessage#getAllHeaders()
          */
         @Override
@@ -83,16 +95,22 @@ public class TestCacheManagerIternation extends TestCacheManagerBase {
             return headers.toArray(new org.apache.http.Header[headers.size()]);
         }
 
-        /* (non-Javadoc)
-         * @see org.apache.http.message.AbstractHttpMessage#addHeader(org.apache.http.Header)
+        /*
+         * (non-Javadoc)
+         * 
+         * @see
+         * org.apache.http.message.AbstractHttpMessage#addHeader(org.apache.http.Header)
          */
         @Override
         public void addHeader(org.apache.http.Header header) {
             headers.add(header);
         }
 
-        /* (non-Javadoc)
-         * @see org.apache.http.message.AbstractHttpMessage#getFirstHeader(java.lang.String)
+        /*
+         * (non-Javadoc)
+         * 
+         * @see
+         * org.apache.http.message.AbstractHttpMessage#getFirstHeader(java.lang.String)
          */
         @Override
         public Header getFirstHeader(String headerName) {
@@ -103,8 +121,11 @@ public class TestCacheManagerIternation extends TestCacheManagerBase {
             return null;
         }
 
-        /* (non-Javadoc)
-         * @see org.apache.http.message.AbstractHttpMessage#getLastHeader(java.lang.String)
+        /*
+         * (non-Javadoc)
+         * 
+         * @see
+         * org.apache.http.message.AbstractHttpMessage#getLastHeader(java.lang.String)
          */
         @Override
         public Header getLastHeader(String headerName) {
@@ -115,7 +136,9 @@ public class TestCacheManagerIternation extends TestCacheManagerBase {
             return null;
         }
 
-        /* (non-Javadoc)
+        /*
+         * (non-Javadoc)
+         * 
          * @see org.apache.http.message.AbstractHttpMessage#getHeaders(java.lang.String)
          */
         @Override
@@ -135,7 +158,7 @@ public class TestCacheManagerIternation extends TestCacheManagerBase {
                 header = vary == null ? null : new BasicHeader(HTTPConstants.VARY, vary);
             }
             if (header != null) {
-                return new org.apache.http.Header[]{header};
+                return new org.apache.http.Header[] { header };
             } else {
                 return super.getHeaders(headerName);
             }
@@ -191,7 +214,6 @@ public class TestCacheManagerIternation extends TestCacheManagerBase {
     }
 
     private class HttpPostStub extends HttpPost {
-
         HttpPostStub() {
         }
 
@@ -205,12 +227,29 @@ public class TestCacheManagerIternation extends TestCacheManagerBase {
         }
     }
 
+    protected String makeDate(Date d) {
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.US);
+        simpleDateFormat.setTimeZone(GMT);
+        return simpleDateFormat.format(d);
+    }
+
+    protected HTTPSampleResult getSampleResultWithSpecifiedResponseCode(String code) {
+        HTTPSampleResult sampleResult = new HTTPSampleResult();
+        sampleResult.setResponseCode(code);
+        sampleResult.setHTTPMethod("GET");
+        sampleResult.setURL(url);
+        return sampleResult;
+    }
+
     private HttpRequestBase httpMethod;
     private HttpResponse httpResponse;
 
-    @Override
+    @Before
     public void setUp() throws Exception {
-        super.setUp();
+        this.cacheManager = new CacheManager();
+        this.currentTimeInGMT = makeDate(new Date());
+        this.url = new URL(LOCAL_HOST);
+        this.sampleResultOK = getSampleResultWithSpecifiedResponseCode("200");
         this.httpMethod = new HttpPostStub();
         this.httpResponse = new HttpResponseStub();
         this.httpMethod.setURI(this.url.toURI());
@@ -218,98 +257,87 @@ public class TestCacheManagerIternation extends TestCacheManagerBase {
         jmvars = new JMeterVariables();
     }
 
-    @Override
+    @After
     public void tearDown() throws Exception {
+        this.url = null;
         this.httpMethod = null;
         this.httpResponse = null;
-        super.tearDown();
+        this.cacheManager =  new CacheManager();
+        this.currentTimeInGMT = null;
+        this.sampleResultOK = null;
     }
 
-    @Override
     protected void setExpires(String expires) {
         ((HttpResponseStub) httpResponse).expires = expires;
     }
 
-    @Override
     protected void setCacheControl(String cacheControl) {
         ((HttpResponseStub) httpResponse).cacheControl = cacheControl;
     }
 
-    @Override
     protected void setLastModified(String lastModified) {
-        ((HttpResponseStub) httpResponse).lastModifiedHeader =
-                new BasicHeader(HTTPConstants.LAST_MODIFIED, lastModified);
+        ((HttpResponseStub) httpResponse).lastModifiedHeader = new BasicHeader(HTTPConstants.LAST_MODIFIED,
+                lastModified);
     }
 
-    @Override
     protected void cacheResult(HTTPSampleResult result) {
         this.cacheManager.saveDetails(httpResponse, result);
     }
 
-    @Override
     protected void addRequestHeader(String requestHeader, String value) {
         this.httpMethod.addHeader(new BasicHeader(requestHeader, value));
     }
 
-    @Override
     protected void setRequestHeaders() {
         this.cacheManager.setHeaders(this.url, this.httpMethod);
     }
 
-    @Override
-    protected void checkRequestHeader(String requestHeader, String expectedValue) {
-        org.apache.http.Header header = this.httpMethod.getLastHeader(requestHeader);
-        assertEquals("Wrong name in header for " + requestHeader, requestHeader, header.getName());
-        assertEquals("Wrong value for header " + header, expectedValue, header.getValue());
+    private Map<String, CacheManager.CacheEntry> getThreadCache() throws Exception {
+        Field threadLocalfield = CacheManager.class.getDeclaredField("threadCache");
+        threadLocalfield.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        ThreadLocal<Map<String, CacheManager.CacheEntry>> threadLocal = (ThreadLocal<Map<String, CacheManager.CacheEntry>>) threadLocalfield
+                .get(this.cacheManager);
+        return threadLocal.get();
     }
 
-    protected void checkIfModifiedSinceHeader(HttpRequestBase httpMethod) {
-        SimpleDateFormat dateFormat = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.US);
-        try {
-            assertEquals("Should have found 1 header "+HTTPConstantsInterface.IF_MODIFIED_SINCE, 
-                    1, 
-                    httpMethod.getHeaders(HTTPConstantsInterface.IF_MODIFIED_SINCE).length);
-            Date date = dateFormat.parse(httpMethod.getHeaders(HTTPConstantsInterface.IF_MODIFIED_SINCE)[0].getValue());
-            assertNotNull("Should have found a valid entry", date);
-        } catch(ParseException e) {
-            Assert.fail("Invalid header format for:"+ HTTPConstantsInterface.IF_MODIFIED_SINCE);
-        }
+    protected CacheManager.CacheEntry getThreadCacheEntry(String url) throws Exception {
+        return getThreadCache().get(url);
     }
 
     @Test
     public void testJmeterVariableCacheForDifferentUser() {
-        jmvars.putObject(SAMEUSER_VAR, true);
+        jmvars.putObject(sameuser, true);
         jmctx.setVariables(jmvars);
         HTTPSamplerBase sampler = (HTTPSamplerBase) new HttpTestSampleGui().createTestElement();
-        CacheManager cacheManager = new CacheManager();
         cacheManager.setControlledByThread(true);
         sampler.setCacheManager(cacheManager);
         sampler.setThreadContext(jmctx);
-        boolean res = (boolean) cacheManager.getThreadContext().getVariables().getObject(SAMEUSER_VAR);
+        boolean res = (boolean) cacheManager.getThreadContext().getVariables().getObject(sameuser);
         assertTrue("When test different user on the different iternation, the cache should be cleared", res);
     }
+
     @Test
     public void testJmeterVariableCacheForSameUser() {
-        jmvars.putObject(SAMEUSER_VAR, false);
+        jmvars.putObject(sameuser, false);
         jmctx.setVariables(jmvars);
         HTTPSamplerBase sampler = (HTTPSamplerBase) new HttpTestSampleGui().createTestElement();
-        CacheManager cacheManager = new CacheManager();
         cacheManager.setControlledByThread(true);
         sampler.setCacheManager(cacheManager);
         sampler.setThreadContext(jmctx);
-        boolean res = (boolean) cacheManager.getThreadContext().getVariables().getObject(SAMEUSER_VAR);
+        boolean res = (boolean) cacheManager.getThreadContext().getVariables().getObject(sameuser);
         assertFalse("When test different user on the different iternation, the cache shouldn't be cleared", res);
     }
 
     @Test
     public void testCacheControlDifferentUser() throws Exception {
-        jmvars.putObject(SAMEUSER_VAR, false);
-        jmctx.setVariables(jmvars);        
+        jmvars.putObject(sameuser, false);
+        jmctx.setVariables(jmvars);
         this.cacheManager.setUseExpires(true);
         this.cacheManager.testIterationStart(null);
         assertNull("Should not find entry", getThreadCacheEntry(LOCAL_HOST));
-        Header[] headers=new Header[1];
-        assertFalse("Should not find valid entry", this.cacheManager.inCache(url,headers));
+        Header[] headers = new Header[1];
+        assertFalse("Should not find valid entry", this.cacheManager.inCache(url, headers));
         long start = System.currentTimeMillis();
         setExpires(makeDate(new Date(start)));
         setCacheControl("public, max-age=1");
@@ -317,20 +345,21 @@ public class TestCacheManagerIternation extends TestCacheManagerBase {
         this.cacheManager.setThreadContext(jmctx);
         this.cacheManager.setControlledByThread(true);
         assertNotNull("Before iternation, should find entry", getThreadCacheEntry(LOCAL_HOST));
-        assertTrue("Before iternation, should find valid entry", this.cacheManager.inCache(url,headers));
+        assertTrue("Before iternation, should find valid entry", this.cacheManager.inCache(url, headers));
         this.cacheManager.testIterationStart(null);
         assertNull("After iterantion, should not find entry", getThreadCacheEntry(LOCAL_HOST));
-        assertFalse("After iterantion, should not find valid entry", this.cacheManager.inCache(url,headers));
+        assertFalse("After iterantion, should not find valid entry", this.cacheManager.inCache(url, headers));
     }
+
     @Test
     public void testCacheControlSameUser() throws Exception {
-        jmvars.putObject(SAMEUSER_VAR, true);
-        jmctx.setVariables(jmvars);        
+        jmvars.putObject(sameuser, true);
+        jmctx.setVariables(jmvars);
         this.cacheManager.setUseExpires(true);
         this.cacheManager.testIterationStart(null);
         assertNull("Should not find entry", getThreadCacheEntry(LOCAL_HOST));
-        Header[] headers=new Header[1];
-        assertFalse("Should not find valid entry", this.cacheManager.inCache(url,headers));
+        Header[] headers = new Header[1];
+        assertFalse("Should not find valid entry", this.cacheManager.inCache(url, headers));
         long start = System.currentTimeMillis();
         setExpires(makeDate(new Date(start)));
         setCacheControl("public, max-age=1");
@@ -338,10 +367,10 @@ public class TestCacheManagerIternation extends TestCacheManagerBase {
         this.cacheManager.setThreadContext(jmctx);
         this.cacheManager.setControlledByThread(true);
         assertNotNull("Before iternation, should find entry", getThreadCacheEntry(LOCAL_HOST));
-        assertTrue("Before iternation, should find valid entry", this.cacheManager.inCache(url,headers));
+        assertTrue("Before iternation, should find valid entry", this.cacheManager.inCache(url, headers));
         this.cacheManager.testIterationStart(null);
         assertNotNull("After iterantion, should find entry", getThreadCacheEntry(LOCAL_HOST));
-        assertTrue("After iterantion, should find valid entry", this.cacheManager.inCache(url,headers));
+        assertTrue("After iterantion, should find valid entry", this.cacheManager.inCache(url, headers));
     }
 
     @Test
@@ -362,24 +391,23 @@ public class TestCacheManagerIternation extends TestCacheManagerBase {
         assertNull("After iterantion, should not find entry", getThreadCacheEntry(LOCAL_HOST));
         assertFalse("After iterantion, should not find valid entry", this.cacheManager.inCache(url, headers));
     }
-    
+
     @Test
     public void testCacheControlNotClear() throws Exception {
         this.cacheManager.setUseExpires(true);
         this.cacheManager.testIterationStart(null);
         assertNull("Should not find entry", getThreadCacheEntry(LOCAL_HOST));
-        Header[] headers=new Header[1];
-        assertFalse("Should not find valid entry", this.cacheManager.inCache(url,headers));
+        Header[] headers = new Header[1];
+        assertFalse("Should not find valid entry", this.cacheManager.inCache(url, headers));
         long start = System.currentTimeMillis();
         setExpires(makeDate(new Date(start)));
         setCacheControl("public, max-age=1");
         cacheResult(sampleResultOK);
         assertNotNull("Before iternation, should find entry", getThreadCacheEntry(LOCAL_HOST));
-        assertTrue("Before iternation, should find valid entry", this.cacheManager.inCache(url,headers));
+        assertTrue("Before iternation, should find valid entry", this.cacheManager.inCache(url, headers));
         this.cacheManager.testIterationStart(null);
         this.cacheManager.setClearEachIteration(true);
         assertNotNull("After iterantion, should find entry", getThreadCacheEntry(LOCAL_HOST));
-        assertTrue("After iterantion, should find valid entry", this.cacheManager.inCache(url,headers));
+        assertTrue("After iterantion, should find valid entry", this.cacheManager.inCache(url, headers));
     }
-
 }

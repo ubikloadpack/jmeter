@@ -35,7 +35,7 @@ import org.junit.Test;
 public class TestCookieIternation {
     private JMeterContext jmctx;
     private JMeterVariables jmvars;
-    private static String SAMEUSER_VAR="__jmv_SAME_USER";
+    private static String sameuser="__jmv_SAME_USER";
 
     @Before
     public void setUp() {
@@ -45,33 +45,33 @@ public class TestCookieIternation {
 
     @Test
     public void testJmeterVariableCookieForDifferentUser() {
-        jmvars.putObject(SAMEUSER_VAR, true);
+        jmvars.putObject(sameuser, true);
         jmctx.setVariables(jmvars);
         HTTPSamplerBase sampler = (HTTPSamplerBase) new HttpTestSampleGui().createTestElement();
         CookieManager cookieManager = new CookieManager();
         cookieManager.setControlledByThread(true);
         sampler.setCookieManager(cookieManager);
         sampler.setThreadContext(jmctx);
-        boolean res = (boolean) cookieManager.getThreadContext().getVariables().getObject(SAMEUSER_VAR);
+        boolean res = (boolean) cookieManager.getThreadContext().getVariables().getObject(sameuser);
         assertTrue("When test different user on the different iternation, the cookie should be cleared", res);
     }
 
     @Test
     public void testJmeterVariableCookieForSameUser() {
-        jmvars.putObject(SAMEUSER_VAR, false);
+        jmvars.putObject(sameuser, false);
         jmctx.setVariables(jmvars);
         HTTPSamplerBase sampler = (HTTPSamplerBase) new HttpTestSampleGui().createTestElement();
         CookieManager cookieManager = new CookieManager();
         cookieManager.setControlledByThread(true);
         sampler.setCookieManager(cookieManager);
         sampler.setThreadContext(jmctx);
-        boolean res = (boolean) cookieManager.getThreadContext().getVariables().getObject(SAMEUSER_VAR);
+        boolean res = (boolean) cookieManager.getThreadContext().getVariables().getObject(sameuser);
         assertFalse("When test different user on the same iternation, the cookie shouldn't be cleared", res);
     }
 
     @Test
     public void testCookieManagerForDifferentUser() throws NoSuchFieldException, IllegalAccessException {
-        jmvars.putObject(SAMEUSER_VAR, false);
+        jmvars.putObject(sameuser, false);
         jmctx.setVariables(jmvars);
         CookieManager cookieManager = new CookieManager();
         cookieManager.setThreadContext(jmctx);
@@ -98,7 +98,7 @@ public class TestCookieIternation {
 
     @Test
     public void testCookieManagerForSameUser() throws NoSuchFieldException, IllegalAccessException {
-        jmvars.putObject(SAMEUSER_VAR, true);
+        jmvars.putObject(sameuser, true);
         jmctx.setVariables(jmvars);
         CookieManager cookieManager = new CookieManager();
         cookieManager.setThreadContext(jmctx);

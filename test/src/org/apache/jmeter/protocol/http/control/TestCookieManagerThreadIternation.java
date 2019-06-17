@@ -32,10 +32,12 @@ import org.apache.jmeter.threads.JMeterVariables;
 import org.junit.Before;
 import org.junit.Test;
 
-public class TestCookieIternation {
+public class TestCookieManagerThreadIternation {
     private JMeterContext jmctx;
     private JMeterVariables jmvars;
-    private static String sameuser="__jmv_SAME_USER";
+    private static final String SAME_USER="__jmv_SAME_USER";
+    private static final String DYNAMIC_COOKIE="dynamic_cookie_added_by_user";
+    private static final String STATIC_COOKIE="static_cookie";
 
     @Before
     public void setUp() {
@@ -44,129 +46,130 @@ public class TestCookieIternation {
     }
 
     @Test
-    public void testJmeterVariableCookieForDifferentUser() {
-        jmvars.putObject(sameuser, true);
+    public void testJmeterVariableCookieWhenThreadIterationIsANewUser() {
+        jmvars.putObject(SAME_USER, true);
         jmctx.setVariables(jmvars);
         HTTPSamplerBase sampler = (HTTPSamplerBase) new HttpTestSampleGui().createTestElement();
         CookieManager cookieManager = new CookieManager();
         cookieManager.setControlledByThread(true);
         sampler.setCookieManager(cookieManager);
         sampler.setThreadContext(jmctx);
-        boolean res = (boolean) cookieManager.getThreadContext().getVariables().getObject(sameuser);
-        assertTrue("When test different user on the different iternation, the cookie should be cleared", res);
+        boolean res = (boolean) cookieManager.getThreadContext().getVariables().getObject(SAME_USER);
+        assertTrue("When test different users on the different iternations, the cookie should be cleared", res);
     }
 
     @Test
-    public void testJmeterVariableCookieForSameUser() {
-        jmvars.putObject(sameuser, false);
+    public void testJmeterVariableCookieWhenThreadIterationIsSameUser() {
+        jmvars.putObject(SAME_USER, false);
         jmctx.setVariables(jmvars);
         HTTPSamplerBase sampler = (HTTPSamplerBase) new HttpTestSampleGui().createTestElement();
         CookieManager cookieManager = new CookieManager();
         cookieManager.setControlledByThread(true);
         sampler.setCookieManager(cookieManager);
         sampler.setThreadContext(jmctx);
-        boolean res = (boolean) cookieManager.getThreadContext().getVariables().getObject(sameuser);
-        assertFalse("When test different user on the same iternation, the cookie shouldn't be cleared", res);
-    }
-
-    @Test
-    public void testCookieManagerForDifferentUser() throws NoSuchFieldException, IllegalAccessException {
-        jmvars.putObject(sameuser, false);
-        jmctx.setVariables(jmvars);
-        CookieManager cookieManager = new CookieManager();
-        cookieManager.setThreadContext(jmctx);
-        cookieManager.getCookies().clear();
-        cookieManager.testStarted();
-        Cookie cookie = new Cookie();
-        cookie.setName("test");
-        cookieManager.getCookies().addItem(cookie);
-        cookieManager.setControlledByThread(true);
-        Field privateStringField = CookieManager.class.getDeclaredField("initialCookies");
-        privateStringField.setAccessible(true);
-        CookieManager cookieManager1 = new CookieManager();
-        Cookie cookie1 = new Cookie();
-        cookie1.setName("test1");
-        cookieManager1.getCookies().addItem(cookie1);
-        CollectionProperty initialCookies = cookieManager1.getCookies();
-        privateStringField.set(cookieManager, initialCookies);
-        assertEquals("Before the iteration, the value of cookie should be what user have set", "test",
-                cookieManager.getCookies().get(0).getName());
-        cookieManager.testIterationStart(null);
-        assertEquals("After the iteration, the value of cookie should be the initial cookies", "test1",
-                cookieManager.getCookies().get(0).getName());
-    }
-
-    @Test
-    public void testCookieManagerForSameUser() throws NoSuchFieldException, IllegalAccessException {
-        jmvars.putObject(sameuser, true);
-        jmctx.setVariables(jmvars);
-        CookieManager cookieManager = new CookieManager();
-        cookieManager.setThreadContext(jmctx);
-        cookieManager.getCookies().clear();
-        cookieManager.testStarted();
-        Cookie cookie = new Cookie();
-        cookie.setName("test");
-        cookieManager.getCookies().addItem(cookie);
-        cookieManager.setControlledByThread(true);
-        Field privateStringField = CookieManager.class.getDeclaredField("initialCookies");
-        privateStringField.setAccessible(true);
-        CookieManager cookieManager1 = new CookieManager();
-        Cookie cookie1 = new Cookie();
-        cookie1.setName("test1");
-        cookieManager1.getCookies().addItem(cookie1);
-        CollectionProperty initialCookies = cookieManager1.getCookies();
-        privateStringField.set(cookieManager, initialCookies);
-        assertEquals("Before the iteration, the value of cookie should be what user have set", "test",
-                cookieManager.getCookies().get(0).getName());
-        cookieManager.testIterationStart(null);
-        assertEquals("After the iteration, the value of cookie should be what user have set", "test",
-                cookieManager.getCookies().get(0).getName());
+        boolean res = (boolean) cookieManager.getThreadContext().getVariables().getObject(SAME_USER);
+        assertFalse("When test same user on the different iternations, the cookie shouldn't be cleared", res);
     }
     @Test
-    public void testCookieManagerClear() throws NoSuchFieldException, IllegalAccessException {
+    public void testCookieManagerCleared() throws NoSuchFieldException, IllegalAccessException {
         CookieManager cookieManager = new CookieManager();
         cookieManager.getCookies().clear();
         cookieManager.testStarted();
         Cookie cookie = new Cookie();
-        cookie.setName("test");
+        cookie.setName(DYNAMIC_COOKIE);
         cookieManager.getCookies().addItem(cookie);
         cookieManager.setClearEachIteration(true);
         Field privateStringField = CookieManager.class.getDeclaredField("initialCookies");
         privateStringField.setAccessible(true);
         CookieManager cookieManager1 = new CookieManager();
         Cookie cookie1 = new Cookie();
-        cookie1.setName("test1");
+        cookie1.setName(STATIC_COOKIE);
         cookieManager1.getCookies().addItem(cookie1);
         CollectionProperty initialCookies = cookieManager1.getCookies();
         privateStringField.set(cookieManager, initialCookies);
-        assertEquals("Before the iteration, the value of cookie should be what user have set", "test",
+        assertEquals("Before the iteration, the value of cookie should be what user have set", DYNAMIC_COOKIE,
                 cookieManager.getCookies().get(0).getName());
         cookieManager.testIterationStart(null);
-        assertEquals("After the iteration, the value of cookie should be the initial cookies", "test1",
+        assertEquals("After the iteration, the value of cookie should be the initial cookies", STATIC_COOKIE,
                 cookieManager.getCookies().get(0).getName());
     }
     
     @Test
-    public void testCookieManagerNotClear() throws NoSuchFieldException, IllegalAccessException {
+    public void testCookieManagerNotCleared() throws NoSuchFieldException, IllegalAccessException {
         CookieManager cookieManager = new CookieManager();
         cookieManager.getCookies().clear();
         cookieManager.testStarted();
         Cookie cookie = new Cookie();
-        cookie.setName("test");
+        cookie.setName(DYNAMIC_COOKIE);
         cookieManager.getCookies().addItem(cookie);
         cookieManager.setClearEachIteration(false);
         Field privateStringField = CookieManager.class.getDeclaredField("initialCookies");
         privateStringField.setAccessible(true);
         CookieManager cookieManager1 = new CookieManager();
         Cookie cookie1 = new Cookie();
-        cookie1.setName("test1");
+        cookie1.setName(STATIC_COOKIE);
         cookieManager1.getCookies().addItem(cookie1);
         CollectionProperty initialCookies = cookieManager1.getCookies();
         privateStringField.set(cookieManager, initialCookies);
-        assertEquals("Before the iteration, the value of cookie should be what user have set", "test",
+        assertEquals("Before the iteration, the value of cookie should be what user have set", DYNAMIC_COOKIE,
                 cookieManager.getCookies().get(0).getName());
         cookieManager.testIterationStart(null);
-        assertEquals("After the iteration, the value of cookie should be what user have set", "test",
+        assertEquals("After the iteration, the value of cookie should be what user have set", DYNAMIC_COOKIE,
                 cookieManager.getCookies().get(0).getName());
     }
+
+    @Test
+    public void testCookieManagerWhenThreadIterationIsNewUser() throws NoSuchFieldException, IllegalAccessException {
+        jmvars.putObject(SAME_USER, false);
+        jmctx.setVariables(jmvars);
+        CookieManager cookieManager = new CookieManager();
+        cookieManager.setThreadContext(jmctx);
+        cookieManager.getCookies().clear();
+        cookieManager.testStarted();
+        Cookie cookie = new Cookie();
+        cookie.setName(DYNAMIC_COOKIE);
+        cookieManager.getCookies().addItem(cookie);
+        cookieManager.setControlledByThread(true);
+        Field privateStringField = CookieManager.class.getDeclaredField("initialCookies");
+        privateStringField.setAccessible(true);
+        CookieManager cookieManager1 = new CookieManager();
+        Cookie cookie1 = new Cookie();
+        cookie1.setName(STATIC_COOKIE);
+        cookieManager1.getCookies().addItem(cookie1);
+        CollectionProperty initialCookies = cookieManager1.getCookies();
+        privateStringField.set(cookieManager, initialCookies);
+        assertEquals("Before the iteration, the value of cookie should be what user have set", DYNAMIC_COOKIE,
+                cookieManager.getCookies().get(0).getName());
+        cookieManager.testIterationStart(null);
+        assertEquals("After the iteration, the value of cookie should be the initial cookies", STATIC_COOKIE,
+                cookieManager.getCookies().get(0).getName());
+    }
+
+    @Test
+    public void testCookieManagerWhenThreadIterationIsSameUser() throws NoSuchFieldException, IllegalAccessException {
+        jmvars.putObject(SAME_USER, true);
+        jmctx.setVariables(jmvars);
+        CookieManager cookieManager = new CookieManager();
+        cookieManager.setThreadContext(jmctx);
+        cookieManager.getCookies().clear();
+        cookieManager.testStarted();
+        Cookie cookie = new Cookie();
+        cookie.setName(DYNAMIC_COOKIE);
+        cookieManager.getCookies().addItem(cookie);
+        cookieManager.setControlledByThread(true);
+        Field privateStringField = CookieManager.class.getDeclaredField("initialCookies");
+        privateStringField.setAccessible(true);
+        CookieManager cookieManager1 = new CookieManager();
+        Cookie cookie1 = new Cookie();
+        cookie1.setName(STATIC_COOKIE);
+        cookieManager1.getCookies().addItem(cookie1);
+        CollectionProperty initialCookies = cookieManager1.getCookies();
+        privateStringField.set(cookieManager, initialCookies);
+        assertEquals("Before the iteration, the value of cookie should be what user have set", DYNAMIC_COOKIE,
+                cookieManager.getCookies().get(0).getName());
+        cookieManager.testIterationStart(null);
+        assertEquals("After the iteration, the value of cookie should be what user have set", DYNAMIC_COOKIE,
+                cookieManager.getCookies().get(0).getName());
+    }
+
 }

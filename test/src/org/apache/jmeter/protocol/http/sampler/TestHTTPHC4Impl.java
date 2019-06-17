@@ -29,7 +29,7 @@ import org.junit.Test;
 public class TestHTTPHC4Impl {
     private JMeterContext jmctx;
     private JMeterVariables jmvars;
-    private static String sameuser = "__jmv_SAME_USER";
+    private static final String SAME_USER = "__jmv_SAME_USER";
 
     @Before
     public void setUp() {
@@ -39,7 +39,7 @@ public class TestHTTPHC4Impl {
 
     @Test
     public void testIterationStartSameUser() {
-        jmvars.putObject(sameuser, true);
+        jmvars.putObject(SAME_USER, true);
         jmctx.setVariables(jmvars);
         HTTPSamplerBase sampler = (HTTPSamplerBase) new HttpTestSampleGui().createTestElement();
         sampler.setThreadContext(jmctx);
@@ -49,13 +49,13 @@ public class TestHTTPHC4Impl {
     }
 
     @Test
-    public void testIterationStartDifferentUser() {
-        jmvars.putObject(sameuser, false);
+    public void testIterationStartDifferentUsers() {
+        jmvars.putObject(SAME_USER, false);
         jmctx.setVariables(jmvars);
         HTTPSamplerBase sampler = (HTTPSamplerBase) new HttpTestSampleGui().createTestElement();
         sampler.setThreadContext(jmctx);
         HTTPHC4Impl hc = new HTTPHC4Impl(sampler);
         hc.notifyFirstSampleAfterLoopRestart();
-        assertTrue(hc.resetStateOnThreadGroupIteration.get());
+        assertTrue("users are different, the state should be reset",hc.resetStateOnThreadGroupIteration.get());
     }
 }

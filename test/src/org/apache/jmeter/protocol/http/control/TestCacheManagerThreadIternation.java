@@ -57,10 +57,10 @@ import org.junit.Test;
 /**
  * Test {@link CacheManager} that uses HTTPHC4Impl
  */
-public class TestCacheManagerIternation {
+public class TestCacheManagerThreadIternation {
     private JMeterContext jmctx;
     private JMeterVariables jmvars;
-    private static String sameuser = "__jmv_SAME_USER";
+    private static final String SAME_USER="__jmv_SAME_USER";
     protected static final String LOCAL_HOST = "http://localhost/";
     protected static final String EXPECTED_ETAG = "0xCAFEBABEDEADBEEF";
     protected static final TimeZone GMT = TimeZone.getTimeZone("GMT");
@@ -304,34 +304,70 @@ public class TestCacheManagerIternation {
     protected CacheManager.CacheEntry getThreadCacheEntry(String url) throws Exception {
         return getThreadCache().get(url);
     }
+    @Test
+    public void testCacheControlCleared() throws Exception {
+        this.cacheManager.setUseExpires(true);
+        this.cacheManager.testIterationStart(null);
+        assertNull("Should not find entry", getThreadCacheEntry(LOCAL_HOST));
+        Header[] headers = new Header[1];
+        assertFalse("Should not find valid entry", this.cacheManager.inCache(url, headers));
+        long start = System.currentTimeMillis();
+        setExpires(makeDate(new Date(start)));
+        setCacheControl("public, max-age=1");
+        cacheResult(sampleResultOK);
+        assertNotNull("Before iternation, should find entry", getThreadCacheEntry(LOCAL_HOST));
+        assertTrue("Before iternation, should find valid entry", this.cacheManager.inCache(url, headers));
+        this.cacheManager.setClearEachIteration(true);
+        this.cacheManager.testIterationStart(null);
+        assertNull("After iterantion, should not find entry", getThreadCacheEntry(LOCAL_HOST));
+        assertFalse("After iterantion, should not find valid entry", this.cacheManager.inCache(url, headers));
+    }
 
     @Test
-    public void testJmeterVariableCacheForDifferentUser() {
-        jmvars.putObject(sameuser, true);
+    public void testCacheControlNotCleared() throws Exception {
+        this.cacheManager.setUseExpires(true);
+        this.cacheManager.testIterationStart(null);
+        assertNull("Should not find entry", getThreadCacheEntry(LOCAL_HOST));
+        Header[] headers = new Header[1];
+        assertFalse("Should not find valid entry", this.cacheManager.inCache(url, headers));
+        long start = System.currentTimeMillis();
+        setExpires(makeDate(new Date(start)));
+        setCacheControl("public, max-age=1");
+        cacheResult(sampleResultOK);
+        assertNotNull("Before iternation, should find entry", getThreadCacheEntry(LOCAL_HOST));
+        assertTrue("Before iternation, should find valid entry", this.cacheManager.inCache(url, headers));
+        this.cacheManager.testIterationStart(null);
+        this.cacheManager.setClearEachIteration(true);
+        assertNotNull("After iterantion, should find entry", getThreadCacheEntry(LOCAL_HOST));
+        assertTrue("After iterantion, should find valid entry", this.cacheManager.inCache(url, headers));
+    }
+    @Test
+    public void testJmeterVariableCacheWhenThreadIterationIsANewUser() {
+        jmvars.putObject(SAME_USER, true);
         jmctx.setVariables(jmvars);
         HTTPSamplerBase sampler = (HTTPSamplerBase) new HttpTestSampleGui().createTestElement();
         cacheManager.setControlledByThread(true);
         sampler.setCacheManager(cacheManager);
         sampler.setThreadContext(jmctx);
-        boolean res = (boolean) cacheManager.getThreadContext().getVariables().getObject(sameuser);
+        boolean res = (boolean) cacheManager.getThreadContext().getVariables().getObject(SAME_USER);
         assertTrue("When test different user on the different iternation, the cache should be cleared", res);
     }
 
     @Test
-    public void testJmeterVariableCacheForSameUser() {
-        jmvars.putObject(sameuser, false);
+    public void testJmeterVariableWhenThreadIterationIsSameUser() {
+        jmvars.putObject(SAME_USER, false);
         jmctx.setVariables(jmvars);
         HTTPSamplerBase sampler = (HTTPSamplerBase) new HttpTestSampleGui().createTestElement();
         cacheManager.setControlledByThread(true);
         sampler.setCacheManager(cacheManager);
         sampler.setThreadContext(jmctx);
-        boolean res = (boolean) cacheManager.getThreadContext().getVariables().getObject(sameuser);
+        boolean res = (boolean) cacheManager.getThreadContext().getVariables().getObject(SAME_USER);
         assertFalse("When test different user on the different iternation, the cache shouldn't be cleared", res);
     }
 
     @Test
-    public void testCacheControlDifferentUser() throws Exception {
-        jmvars.putObject(sameuser, false);
+    public void testCacheManagerWhenThreadIterationIsANewUser() throws Exception {
+        jmvars.putObject(SAME_USER, false);
         jmctx.setVariables(jmvars);
         this.cacheManager.setUseExpires(true);
         this.cacheManager.testIterationStart(null);
@@ -352,8 +388,8 @@ public class TestCacheManagerIternation {
     }
 
     @Test
-    public void testCacheControlSameUser() throws Exception {
-        jmvars.putObject(sameuser, true);
+    public void testCacheManagerWhenThreadIterationIsSameUser() throws Exception {
+        jmvars.putObject(SAME_USER, true);
         jmctx.setVariables(jmvars);
         this.cacheManager.setUseExpires(true);
         this.cacheManager.testIterationStart(null);
@@ -373,41 +409,4 @@ public class TestCacheManagerIternation {
         assertTrue("After iterantion, should find valid entry", this.cacheManager.inCache(url, headers));
     }
 
-    @Test
-    public void testCacheControlClear() throws Exception {
-        this.cacheManager.setUseExpires(true);
-        this.cacheManager.testIterationStart(null);
-        assertNull("Should not find entry", getThreadCacheEntry(LOCAL_HOST));
-        Header[] headers = new Header[1];
-        assertFalse("Should not find valid entry", this.cacheManager.inCache(url, headers));
-        long start = System.currentTimeMillis();
-        setExpires(makeDate(new Date(start)));
-        setCacheControl("public, max-age=1");
-        cacheResult(sampleResultOK);
-        assertNotNull("Before iternation, should find entry", getThreadCacheEntry(LOCAL_HOST));
-        assertTrue("Before iternation, should find valid entry", this.cacheManager.inCache(url, headers));
-        this.cacheManager.setClearEachIteration(true);
-        this.cacheManager.testIterationStart(null);
-        assertNull("After iterantion, should not find entry", getThreadCacheEntry(LOCAL_HOST));
-        assertFalse("After iterantion, should not find valid entry", this.cacheManager.inCache(url, headers));
-    }
-
-    @Test
-    public void testCacheControlNotClear() throws Exception {
-        this.cacheManager.setUseExpires(true);
-        this.cacheManager.testIterationStart(null);
-        assertNull("Should not find entry", getThreadCacheEntry(LOCAL_HOST));
-        Header[] headers = new Header[1];
-        assertFalse("Should not find valid entry", this.cacheManager.inCache(url, headers));
-        long start = System.currentTimeMillis();
-        setExpires(makeDate(new Date(start)));
-        setCacheControl("public, max-age=1");
-        cacheResult(sampleResultOK);
-        assertNotNull("Before iternation, should find entry", getThreadCacheEntry(LOCAL_HOST));
-        assertTrue("Before iternation, should find valid entry", this.cacheManager.inCache(url, headers));
-        this.cacheManager.testIterationStart(null);
-        this.cacheManager.setClearEachIteration(true);
-        assertNotNull("After iterantion, should find entry", getThreadCacheEntry(LOCAL_HOST));
-        assertTrue("After iterantion, should find valid entry", this.cacheManager.inCache(url, headers));
-    }
 }

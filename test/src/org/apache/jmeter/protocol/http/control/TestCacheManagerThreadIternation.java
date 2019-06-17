@@ -384,6 +384,7 @@ public class TestCacheManagerThreadIternation {
 
     @Test
     public void testCacheManagerWhenThreadIterationIsSameUser() throws Exception {
+        // Controlled by ThreadGroup
         jmvars.putObject(SAME_USER, true);
         jmctx.setVariables(jmvars);
         this.cacheManager.setUseExpires(true);
@@ -402,8 +403,7 @@ public class TestCacheManagerThreadIternation {
         this.cacheManager.testIterationStart(null);
         assertNotNull("After iterantion, should find entry", getThreadCacheEntry(LOCAL_HOST));
         assertTrue("After iterantion, should find valid entry", this.cacheManager.inCache(url, headers));
-        
-        //Controlled by cacheManager
+        // Controlled by cacheManager
         start = System.currentTimeMillis();
         setExpires(makeDate(new Date(start)));
         setCacheControl("public, max-age=1");

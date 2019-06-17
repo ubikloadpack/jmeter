@@ -277,7 +277,8 @@ public class ParseCurlCommandAction extends AbstractAction implements MenuCreato
                     "Created from cURL on " + LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME));
         } // NOSONAR
         httpSampler.setProtocol(new URL(request.getUrl()).getProtocol());
-        httpSampler.setPath(request.getUrl());
+        httpSampler.setPath(new URL(request.getUrl()).getPath());
+        httpSampler.setDomain(new URL(request.getUrl()).getHost());
         httpSampler.setUseKeepAlive(request.isKeepAlive());
         httpSampler.setFollowRedirects(true);
         httpSampler.setMethod(request.getMethod());

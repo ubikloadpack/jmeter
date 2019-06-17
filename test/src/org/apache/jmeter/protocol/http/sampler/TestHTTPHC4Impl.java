@@ -38,24 +38,24 @@ public class TestHTTPHC4Impl {
     }
 
     @Test
-    public void testIterationStartSameUser() {
+    public void testNotifyFirstSampleAfterLoopRestartWhenThreadIterationIsSameUser() {
         jmvars.putObject(SAME_USER, true);
         jmctx.setVariables(jmvars);
         HTTPSamplerBase sampler = (HTTPSamplerBase) new HttpTestSampleGui().createTestElement();
         sampler.setThreadContext(jmctx);
         HTTPHC4Impl hc = new HTTPHC4Impl(sampler);
         hc.notifyFirstSampleAfterLoopRestart();
-        assertFalse("user is the same, the state shouldn't be reset", hc.resetStateOnThreadGroupIteration.get());
+        assertFalse("User is the same, the state shouldn't be reset", hc.resetStateOnThreadGroupIteration.get());
     }
 
     @Test
-    public void testIterationStartDifferentUsers() {
+    public void testNotifyFirstSampleAfterLoopRestartWhenThreadIterationIsANewUser() {
         jmvars.putObject(SAME_USER, false);
         jmctx.setVariables(jmvars);
         HTTPSamplerBase sampler = (HTTPSamplerBase) new HttpTestSampleGui().createTestElement();
         sampler.setThreadContext(jmctx);
         HTTPHC4Impl hc = new HTTPHC4Impl(sampler);
         hc.notifyFirstSampleAfterLoopRestart();
-        assertTrue("users are different, the state should be reset",hc.resetStateOnThreadGroupIteration.get());
+        assertTrue("Users are different, the state should be reset", hc.resetStateOnThreadGroupIteration.get());
     }
 }

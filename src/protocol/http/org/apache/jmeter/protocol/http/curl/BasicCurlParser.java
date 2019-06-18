@@ -334,9 +334,6 @@ public class BasicCurlParser {
         public void addOptionsNoSupport(String option) {
             this.optionsNoSupport.add(option);
         }
-        
-
-
         /**
          *
          * @return the map of proxy server

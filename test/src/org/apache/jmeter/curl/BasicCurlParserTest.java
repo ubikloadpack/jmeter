@@ -59,8 +59,9 @@ public class BasicCurlParserTest {
         Assert.assertEquals(5, request.getHeaders().size());
         Assert.assertTrue(request.isCompressed());
         Assert.assertEquals("GET", request.getMethod());
-        String resParser = "Request [compressed=true, url=http://jmeter.apache.org/, method=GET, headers={User-Agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10.11;"
-                + " rv:63.0) Gecko/20100101 Firefox/63.0, Accept=text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8, Accept-Language=en-US,en;q=0.5, DNT=1, "
+        String resParser = "Request [compressed=true, url=http://jmeter.apache.org/, method=GET, headers={User-Agent=Mozilla/5.0 "
+                + "(Macintosh; Intel Mac OS X 10.11; rv:63.0) Gecko/20100101 Firefox/63.0, Accept=text/html,application/xhtml+xml,"
+                + "application/xml;q=0.9,*/*;q=0.8, Accept-Language=en-US,en;q=0.5, DNT=1, "
                 + "Upgrade-Insecure-Requests=1}]";
         Assert.assertEquals("The method 'toString' should get all parameters correctly", resParser, request.toString());
     }

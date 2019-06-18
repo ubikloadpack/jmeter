@@ -737,7 +737,8 @@ public class BasicCurlParser {
                 } else if (NOSUPPORT_OPTIONS_OPT.contains(option.getDescriptor().getId())) {
                     request.addOptionsNoSupport(option.getDescriptor().getName());
                 } else if (PROPERTIES_OPT.contains(option.getDescriptor().getId())) {
-                    request.addOptionsInProperties(option.getDescriptor().getName());
+                    request.addOptionsInProperties(
+                            "--" + option.getDescriptor().getName() + " is in 'httpsampler.max_redirects(1062 line)'");
                 }
             }
             if (isPostToGet) {
@@ -860,16 +861,16 @@ public class BasicCurlParser {
     * Set the parameters of proxy server in http request advanced
     *
     * @param request         http request
-    * @param proxyServerPara the parameters of proxy server
+    * @param proxyServerParameters the parameters of proxy server
     *
     */
-   private void setProxyServer(Request request, String proxyServerPara) {
-       if (!proxyServerPara.contains("://")) {
-           proxyServerPara = "http://" + proxyServerPara;
+   private void setProxyServer(Request request, String proxyServerParameters) {
+       if (!proxyServerParameters.contains("://")) {
+           proxyServerParameters = "http://" + proxyServerParameters;
        }
        URI uriProxy = null;
        try {
-           uriProxy = new URI(proxyServerPara);
+           uriProxy = new URI(proxyServerParameters);
            request.setProxyServer("scheme", uriProxy.getScheme());
            Optional<String> userInfoOptional = Optional.ofNullable(uriProxy.getUserInfo());
            if (userInfoOptional.isPresent()) {
@@ -890,8 +891,8 @@ public class BasicCurlParser {
                request.setProxyServer("port", "1080");
            }
        } catch (URISyntaxException e) {
-           LOGGER.error("string '{}' cannot be converted to a URL", proxyServerPara);
-           throw new IllegalArgumentException(proxyServerPara + " cannot be converted to a URL");
+           LOGGER.error("string '{}' cannot be converted to a URL", proxyServerParameters);
+           throw new IllegalArgumentException(proxyServerParameters + " cannot be converted to a URL");
        }
    }
 
@@ -1036,12 +1037,13 @@ public class BasicCurlParser {
                     newCookie.setValue(cookieParameters[1]);
                     URL newUrl;
                     try {
-                        newUrl = new URL(url);
+                        newUrl = new URL(url.trim());
                         newCookie.setDomain(newUrl.getHost());
                         newCookie.setPath(newUrl.getPath());
                         cookies.add(newCookie);
                     } catch (MalformedURLException e) {
-                        throw new IllegalArgumentException("unqualified url" + url);
+                        throw new IllegalArgumentException(
+                                "unqualified url " + url.trim() + ", unable to create cookies.");
                     }
                 }
             }

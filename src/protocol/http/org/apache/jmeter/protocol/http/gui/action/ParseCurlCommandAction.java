@@ -654,7 +654,8 @@ public class ParseCurlCommandAction extends AbstractAction implements MenuCreato
                             }
                         }
                         statusText.setText(JMeterUtils.getResString("curl_create_success"));
-                    } catch (Exception ex) {
+                    } 
+                    catch (Exception ex) {
                         LOGGER.error("Error creating test plan from cURL command:{}, error:{}", commandsList.get(i),
                                 ex.getMessage(), ex);
                         statusText.setText(
@@ -801,18 +802,10 @@ public class ParseCurlCommandAction extends AbstractAction implements MenuCreato
         // NOOP
     }
 
-    public static List<String> readFromFile(String pathname) {
+    public static List<String> readFromFile(String pathname) throws IOException {
         String encoding = StandardCharsets.UTF_8.name();
         File file = new File(pathname);
-        List<String> res = new ArrayList<>();
-        if (file.exists() && file.isFile()) {
-            try {
-                res = FileUtils.readLines(file, encoding);
-            } catch (IOException e) {
-                LOGGER.error("can't find or open the file {}", pathname);
-            }
-        }
-        return res;
+        return FileUtils.readLines(file, encoding);
     }
 
     public static List<String> readFromTextPanel(String commands) {
@@ -830,29 +823,31 @@ public class ParseCurlCommandAction extends AbstractAction implements MenuCreato
             for (String s : request.getOptionsIgnored()) {
                 commentText.append("--"+s + " ");
             }
-            commentText.append("ignore; ");
+            commentText.append("ignoring; ");
         }
         if (!request.getOptionsInProperties().isEmpty()) {
             for (String s : request.getOptionsInProperties()) {
-                commentText.append("--"+s + " ");
+                commentText.append(s + " ");
             }
-            commentText.append("configure in jmeter.properties; ");
+            commentText.append("configure in jmeter.properties ");
         }
-        if (request.getLimitRate()!=0) {
-            commentText.append("Please configure the limit rate in 'jmeter.properties, the value is "+request.getLimitRate()+";");
+        if (request.getLimitRate() != 0) {
+            commentText.append(
+                    "Please configure the limit rate in 'httpclient.socket.http.cps' of 'jmeter.properties(374 line), the value is "
+                            + request.getLimitRate() + ";");
         }
         if (!request.getOptionsNoSupport().isEmpty()) {
             for (String s : request.getOptionsNoSupport()) {
                 commentText.append("--"+s + " ");
             }
-            commentText.append("not support; ");
+            commentText.append("not supported; ");
         }
         if (request.getNoproxy()!=null) {
-            commentText.append("Please configure noproxy list in terminal and restart Jmeter. ");
+            commentText.append("Please configure noproxy list in terminal and restart JMeter. ");
             commentText.append("Look: https://jmeter.apache.org/usermanual/get-started.html#proxy_server");
         }
         if (!request.getCacert().isEmpty()) {
-            commentText.append("Please configure the SSL file with CA certificates in 'system.properties. ");
+            commentText.append("Please configure the SSL file with CA certificates in 'SSL configuration' of 'system.properties(49 line)'. ");
             commentText.append("Look: https://jmeter.apache.org/usermanual/properties_reference.html#ssl_config");
         }
         return commentText.toString();

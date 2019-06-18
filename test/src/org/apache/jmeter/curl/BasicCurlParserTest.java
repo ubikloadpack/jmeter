@@ -592,7 +592,7 @@ public class BasicCurlParserTest {
         BasicCurlParser basicCurlParser = new BasicCurlParser();
         BasicCurlParser.Request request = basicCurlParser.parse(cmdLine);
         Assert.assertTrue("Option max-redirs should show warning",
-                request.getOptionsInProperties().contains("max-redirs"));
+                request.getOptionsInProperties().contains("--max-redirs is in 'httpsampler.max_redirects(1062 line)'"));
     }
 
     @Test

@@ -20,7 +20,7 @@ package org.apache.jmeter.protocol.http.gui.action;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Container;
-import java.awt.GridLayout;
+import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -144,21 +144,20 @@ public class ParseCurlCommandAction extends AbstractAction implements MenuCreato
         statusText = new JLabel("",JLabel.CENTER);
         statusText.setForeground(Color.RED);
         contentPane.add(statusText, BorderLayout.NORTH);
-        cURLCommandTA = JSyntaxTextArea.getInstance(10, 80, false);
+        cURLCommandTA = JSyntaxTextArea.getInstance(20, 80, false);
         cURLCommandTA.setCaretPosition(0);
         contentPane.add(JTextScrollPane.getInstance(cURLCommandTA), BorderLayout.CENTER);
-        JPanel buttonPanel = new JPanel(new GridLayout(2, 1));
-        JPanel optionPanel = new JPanel(new BorderLayout(1, 2));
-        filePanel = new FilePanel("Read curl commands from file"); // $NON-NLS-1$
+        JPanel optionPanel = new JPanel(new BorderLayout(3, 1));
+        filePanel = new FilePanel(JMeterUtils.getResString("curl_import_from_file")); // $NON-NLS-1$
         optionPanel.add(filePanel,BorderLayout.CENTER);
-        uploadCookiesCheckBox =  new JCheckBox("Add header's cookies to CookieManager?", false);
-        optionPanel.add(uploadCookiesCheckBox,BorderLayout.EAST);
-        buttonPanel.add(optionPanel);
+        uploadCookiesCheckBox =  new JCheckBox(JMeterUtils.getResString("curl_add_cookie_header_to_cookiemanager"), false);
+        optionPanel.add(uploadCookiesCheckBox,BorderLayout.NORTH);
         JButton button = new JButton(JMeterUtils.getResString("curl_create_request"));
         button.setActionCommand(CREATE_REQUEST);
         button.addActionListener(this);
-        buttonPanel.add(button);
-        contentPane.add(buttonPanel, BorderLayout.SOUTH);
+        button.setPreferredSize(new Dimension(50, 50));
+        optionPanel.add(button,BorderLayout.SOUTH);
+        contentPane.add(optionPanel, BorderLayout.SOUTH);
         messageDialog.pack();
         ComponentUtil.centerComponentInComponent(GuiPackage.getInstance().getMainFrame(), messageDialog);
         SwingUtilities.invokeLater(() -> messageDialog.setVisible(true));
@@ -229,12 +228,9 @@ public class ParseCurlCommandAction extends AbstractAction implements MenuCreato
             createDnsResolver(request, dnsCacheManager);
             threadGroupHT.add(dnsCacheManager);
         }
-        if (!request.getCookies(request.getUrl()).isEmpty() || !request.getFilepathCookie().isEmpty()
-                || (!request.getCookieInHeaders(request.getUrl()).isEmpty()&&uploadCookiesCheckBox.isSelected())) {
-            CookieManager cookieManager = new CookieManager();
-            createCookieManager(cookieManager, request);
-            threadGroupHT.add(cookieManager);
-        }
+        CookieManager cookieManager = new CookieManager();
+        createCookieManager(cookieManager, request);
+        threadGroupHT.add(cookieManager);
         ResultCollector resultCollector = new ResultCollector();
         resultCollector.setProperty(TestElement.NAME, "View Results Tree");
         resultCollector.setProperty(TestElement.GUI_CLASS, ViewResultsFullVisualizer.class.getName());

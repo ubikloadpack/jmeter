@@ -813,7 +813,7 @@ public class ParseCurlCommandAction extends AbstractAction implements MenuCreato
         return s;
     }
     
-    private String createCommentText(Request request) {
+    public String createCommentText(Request request) {
         StringBuilder commentText = new StringBuilder();
         if (!request.getOptionsIgnored().isEmpty()) {
             for (String s : request.getOptionsIgnored()) {

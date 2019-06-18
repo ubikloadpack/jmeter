@@ -57,7 +57,7 @@ import org.junit.Test;
 /**
  * Test {@link CacheManager} that uses HTTPHC4Impl
  */
-public class TestCacheManagerThreadIternation {
+public class TestCacheManagerThreadIteration {
     private JMeterContext jmctx;
     private JMeterVariables jmvars;
     private static final String SAME_USER="__jmv_SAME_USER";

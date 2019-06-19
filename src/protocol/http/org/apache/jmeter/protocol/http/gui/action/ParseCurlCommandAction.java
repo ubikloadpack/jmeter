@@ -423,9 +423,8 @@ public class ParseCurlCommandAction extends AbstractAction implements MenuCreato
     private boolean canAddAuthManagerInHttpRequest(Request request, AuthManager authManager) {
         Authorization auth = request.getAuthorization();
         for (int i = 0; i < authManager.getAuthObjects().size(); i++) {
-            if (auth.getURL().equals(authManager.getAuthObjectAt(i).getURL())
-                    && (!authManager.getAuthObjectAt(i).getUser().equals(auth.getUser())
-                            || !authManager.getAuthObjectAt(i).getPass().equals(auth.getPass()))
+            if (!authManager.getAuthObjectAt(i).getUser().equals(auth.getUser())
+                    || !authManager.getAuthObjectAt(i).getPass().equals(auth.getPass())
                     || !authManager.getAuthObjectAt(i).getMechanism().equals(auth.getMechanism())) {
                 return true;
             }
@@ -524,7 +523,7 @@ public class ParseCurlCommandAction extends AbstractAction implements MenuCreato
      */
     private void setFormData(Request request, HTTPSamplerProxy httpSampler) {
         if (request.getPostData() != null) {
-            throw new IllegalArgumentException("--form and --data cant appear in the same command");
+            throw new IllegalArgumentException("--form and --data can't appear in the same command");
         }
         List<HTTPFileArg> httpFileArgs = new ArrayList<>();
         for (Map.Entry<String, String> entry : request.getFormStringData().entrySet()) {
@@ -669,7 +668,7 @@ public class ParseCurlCommandAction extends AbstractAction implements MenuCreato
     }
 
 
-    private List<Request>  parseCommands(boolean isReadFromFile, List<String> commandsList) {
+    public List<Request>  parseCommands(boolean isReadFromFile, List<String> commandsList) {
         List<Request> requests = new ArrayList<>();
         BasicCurlParser basicCurlParser = new BasicCurlParser();
         for (int i = 0; i < commandsList.size(); i++) {
@@ -798,13 +797,13 @@ public class ParseCurlCommandAction extends AbstractAction implements MenuCreato
         // NOOP
     }
 
-    public static List<String> readFromFile(String pathname) throws IOException {
+    public List<String> readFromFile(String pathname) throws IOException {
         String encoding = StandardCharsets.UTF_8.name();
         File file = new File(pathname);
         return FileUtils.readLines(file, encoding);
     }
 
-    public static List<String> readFromTextPanel(String commands) {
+    public List<String> readFromTextPanel(String commands) {
         String[] cs = commands.split("curl");
         List<String> s = new ArrayList<>();
         for (int i = 1; i < cs.length; i++) {

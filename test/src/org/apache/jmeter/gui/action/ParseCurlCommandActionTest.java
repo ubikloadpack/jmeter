@@ -20,6 +20,7 @@ package org.apache.jmeter.gui.action;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.IOException;
@@ -266,6 +267,33 @@ public class ParseCurlCommandActionTest {
         assertEquals("form value should be set in httpsampler", "@test.txt;type=text/foo",
                 httpSampler.getArguments().getArgument(0).getValue());
     }
+
+    @Test
+    public void testDataFormException() throws NoSuchMethodException, SecurityException {
+        ParseCurlCommandAction p = new ParseCurlCommandAction();
+        HTTPSamplerProxy httpSampler = (HTTPSamplerProxy) HTTPSamplerFactory
+                .newInstance(HTTPSamplerFactory.DEFAULT_CLASSNAME);
+        httpSampler.setProperty(TestElement.GUI_CLASS, HttpTestSampleGui.class.getName());
+        httpSampler.setProperty(TestElement.NAME, "HTTP Request");
+        BasicCurlParser basicCurlParser = new BasicCurlParser();
+        Request request = basicCurlParser
+                .parse("curl 'http://jmeter.apache.org/' -F 'test=name' --data 'fname=a&lname=b'");
+        Class<ParseCurlCommandAction> parseCurlCommandAction = ParseCurlCommandAction.class;
+        Class[] classes = new Class[] { Request.class, HTTPSamplerProxy.class };
+        Object[] objs = new Object[] { request, httpSampler };
+        try {
+            Method method = parseCurlCommandAction.getDeclaredMethod("setFormData", classes);
+            method.setAccessible(true);
+            method.invoke(p, objs);
+            fail();
+        } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof IllegalArgumentException) {
+                assertTrue(cause.getMessage().contains("--form and --data can't appear in the same command"));
+            }
+        }
+    }
+
     @Test
     public void testCreateHttpRequest() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
         ParseCurlCommandAction p = new ParseCurlCommandAction();
@@ -416,6 +444,26 @@ public class ParseCurlCommandActionTest {
         assertEquals("the path of cookie should be set in cookieManager","/", cookieManager.get(0).getPath());
         assertEquals("the name of cookie should be set in cookieManager","name", cookieManager.get(0).getName());
         assertEquals("the password of cookie should be set in cookieManager","Tom", cookieManager.get(0).getValue());
+        cookieManager=new CookieManager();
+        File file = tempFolder.newFile("test.txt");
+        String filepath=file.getAbsolutePath();
+        request = basicCurlParser.parse("curl 'http://jmeter.apache.org/' -b '"+filepath+"'");
+        method = parseCurlCommandAction.getDeclaredMethod("createCookieManager", classes);
+        method.setAccessible(true);
+        objs = new Object[] { cookieManager,request};
+        method.invoke(p, objs);
+        request = basicCurlParser.parse("curl 'http://jmeter.apache.org/' -b 'test1.txt'");
+        method = parseCurlCommandAction.getDeclaredMethod("createCookieManager", classes);
+        method.setAccessible(true);
+        objs = new Object[] { cookieManager,request};
+        try {
+        method.invoke(p, objs);
+       } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+        Throwable cause = e.getCause();
+        if (cause instanceof IllegalArgumentException) {
+            assertTrue(cause.getMessage().contains("File test1.txt doesn't exist"));
+        }
+    }
     }
     @Test
     public void testCreateCookieManagerHeader()
@@ -465,6 +513,27 @@ public class ParseCurlCommandActionTest {
     }
 
     @Test
+    public void testCanAddDnsServerInHttpRequest()
+            throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, IOException {
+        ParseCurlCommandAction p = new ParseCurlCommandAction();
+        DNSCacheManager dnsCacheManager = new DNSCacheManager();
+        dnsCacheManager.addServer("0.0.0.0");
+        BasicCurlParser basicCurlParser = new BasicCurlParser();
+        Request request = basicCurlParser.parse("curl 'http://jmeter.apache.org/' --dns-servers '0.0.0.0'");
+        Class<ParseCurlCommandAction> parseCurlCommandAction = ParseCurlCommandAction.class;
+        Class[] classes = new Class[] { Request.class, DNSCacheManager.class };
+        Method method = parseCurlCommandAction.getDeclaredMethod("canAddDnsServerInHttpRequest", classes);
+        method.setAccessible(true);
+        Object[] objs = new Object[] { request, dnsCacheManager };
+        assertFalse("When the Dns servers are  the same, shouldn't add the DnsCacheManager in Http Request",
+                (boolean) method.invoke(p, objs));
+        request = basicCurlParser.parse("curl 'http://jmeter.apache.org/' --dns-servers '1.1.1.1'");
+        objs = new Object[] { request, dnsCacheManager };
+        assertTrue("When the Dns servers aren't the same, should add the DnsCacheManager in Http Request",
+                (boolean) method.invoke(p, objs));
+    }
+
+    @Test
     public void testCreateDnsResolver()
             throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, IOException {
         ParseCurlCommandAction p = new ParseCurlCommandAction();
@@ -489,6 +558,45 @@ public class ParseCurlCommandActionTest {
         assertTrue("the dns resolver should be set in DNSCacheManager",
                 dnsCacheManager.getComment().contains("Custom DNS resolver doesn't support port"));
     }
-
+    @Test
+    public void testCanAddDnsResolverInHttpRequest()
+            throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, IOException {
+        ParseCurlCommandAction p = new ParseCurlCommandAction();
+        BasicCurlParser basicCurlParser = new BasicCurlParser();
+        DNSCacheManager dnsCacheManager = new DNSCacheManager();
+        dnsCacheManager.addHost("moonagic.com", "127.0.0.2");
+        Request request = basicCurlParser
+                .parse("curl 'http://jmeter.apache.org/'  --resolve 'moonagic.com:443:127.0.0.2'");
+        Class<ParseCurlCommandAction> parseCurlCommandAction = ParseCurlCommandAction.class;
+        Class[] classes = new Class[] { Request.class, DNSCacheManager.class };
+        Method method = parseCurlCommandAction.getDeclaredMethod("canAddDnsResolverInHttpRequest", classes);
+        method.setAccessible(true);
+        dnsCacheManager = new DNSCacheManager();
+        dnsCacheManager.addHost("moonagic.com", "127.0.0.2");
+        Object[] objs = new Object[] { request, dnsCacheManager };
+        method.invoke(p, objs);
+        assertFalse("When the Dns servers are the same, shouldn't add the DnsCacheManager in Http Request",
+                (boolean) method.invoke(p, objs));
+        request=basicCurlParser.parse("curl 'http://jmeter.apache.org/'  --resolve 'moonagic.com:9090:127.0.0.1'");
+        method.setAccessible(true);
+        objs = new Object[] { request, dnsCacheManager };
+        method.invoke(p, objs);
+        assertTrue("When the Dns servers aren't the same, should add the DnsCacheManager in Http Request",
+                (boolean) method.invoke(p, objs));
+        dnsCacheManager = new DNSCacheManager();
+        dnsCacheManager.addHost("moonagic.com", "127.0.0.1");
+        dnsCacheManager.addHost("moonagic.com", "127.0.0.2");
+        objs = new Object[] { request, dnsCacheManager };
+        method.invoke(p, objs);
+        assertTrue("When the Dns servers aren't the same, should add the DnsCacheManager in Http Request",
+                (boolean) method.invoke(p, objs));
+        request=basicCurlParser.parse("curl 'http://jmeter.apache.org/'  --resolve 'moonagic.com:9090:127.0.0.1'");
+        method.setAccessible(true);
+        objs = new Object[] { request, dnsCacheManager };
+        method.invoke(p, objs);
+        assertTrue("When the Dns servers aren't the same, should add the DnsCacheManager in Http Request",
+                (boolean) method.invoke(p, objs));
+        }
+    
 
 }

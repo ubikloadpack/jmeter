@@ -493,6 +493,12 @@ public class BasicCurlParserTest {
                 "www.baidu.com", request.getHeaders().get("Referer"));
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void testStringtoCookie() {
+        String cookieStr = "name=Tom;password=123456";
+        String url = "api.imgur.com/3/upload";
+        BasicCurlParser.stringToCookie(cookieStr, url);
+    }
     @Test
     public void testCookie() {
         String cmdLine = "curl -X POST  \"https://api.imgur.com/3/upload\" -b 'name=Tom;password=123456'";
@@ -527,7 +533,20 @@ public class BasicCurlParserTest {
         BasicCurlParser.Request request = basicCurlParser.parse(cmdLine);
         Assert.assertEquals("With method 'parser', the file of cookie should be uploaded in CookieManager",
                 file.getAbsolutePath(), request.getFilepathCookie());}
-
+    @Test
+    public void testCookieInHeader() {
+        String cmdLine = "curl 'http://jmeter.apache.org/' -H 'cookie: PHPSESSID=testphpsessid;a=b' --compressed";
+        BasicCurlParser basicCurlParser = new BasicCurlParser();
+        BasicCurlParser.Request request = basicCurlParser.parse(cmdLine);
+        List<Cookie>cookies=request.getCookieInHeaders("http://jmeter.apache.org/");
+        Cookie c1=new Cookie();
+        c1.setDomain("jmeter.apache.org");
+        c1.setName("a");
+        c1.setValue("b");
+        c1.setPath("/");
+        Assert.assertEquals("Just static cookie in header can be added in CookieManager", c1, cookies.get(0));
+        Assert.assertTrue("Just static cookie in header can be added in CookieManager", cookies.size() == 1);
+    }
     @Test
     public void testIgnoreOptions() {
         String cmdLine = "curl 'http://jmeter.apache.org/' --include --keepalive-time '20'";

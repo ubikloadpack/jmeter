@@ -71,7 +71,6 @@ import org.apache.jmeter.visualizers.gui.AbstractVisualizer;
 import org.apache.jmeter.visualizers.utils.Colors;
 import org.apache.jorphan.gui.GuiUtils;
 import org.apache.jorphan.gui.JLabeledTextField;
-import org.apache.jorphan.math.StatCalculatorLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -269,7 +268,7 @@ public class RespTimeGraphVisualizer extends AbstractVisualizer implements Actio
     /**
      * We want to retain insertion order, so LinkedHashMap is necessary
      */
-    private final Map<String, Map<Long, StatCalculatorLong>> pList = new LinkedHashMap<>();
+    private final Map<String, Map<Long, HistogramStatCalculator>> pList = new LinkedHashMap<>();
 
     private long durationTest = 0;
     
@@ -326,20 +325,20 @@ public class RespTimeGraphVisualizer extends AbstractVisualizer implements Actio
                             }
                         }
                         // List of value by sampler
-                        Map<Long, StatCalculatorLong> subList = pList.get(sampleLabel);
+                        Map<Long, HistogramStatCalculator> subList = pList.get(sampleLabel);
                         final Long startTimeIntervalLong = Long.valueOf(startTimeInterval);
                         if (subList != null) {
                             long respTime = sampleResult.getTime();
-                            StatCalculatorLong value = subList.get(startTimeIntervalLong);
+                            HistogramStatCalculator value = subList.get(startTimeIntervalLong);
                             if (value==null) {
-                                value = new StatCalculatorLong();
+                                value = new HistogramStatCalculator();
                                 subList.put(startTimeIntervalLong, value);
                             }
                             value.addValue(respTime, 1);
                         } else {
                             // We want to retain insertion order, so LinkedHashMap is necessary
-                            Map<Long, StatCalculatorLong> newSubList = new LinkedHashMap<>(5);
-                            StatCalculatorLong helper = new StatCalculatorLong();
+                            Map<Long, HistogramStatCalculator> newSubList = new LinkedHashMap<>(5);
+                            HistogramStatCalculator helper = new HistogramStatCalculator();
                             helper.addValue(Long.valueOf(sampleResult.getTime()),1);
                             newSubList.put(startTimeIntervalLong,  helper);
                             pList.put(sampleLabel, newSubList);
@@ -412,11 +411,11 @@ public class RespTimeGraphVisualizer extends AbstractVisualizer implements Actio
         double nanBegin = 0;
         List<Double> nanList = new ArrayList<>();
         int s = 0;
-        for (Map<Long, StatCalculatorLong> subList : pList.values()) {
+        for (Map<Long, HistogramStatCalculator> subList : pList.values()) {
             int idx = 0;
             while (idx < durationTest) {
                 long keyShift = minStartTime + idx;
-                StatCalculatorLong value = subList.get(Long.valueOf(keyShift));
+                HistogramStatCalculator value = subList.get(Long.valueOf(keyShift));
                 if (value != null) {
                     nanLast = value.getMean();
                     data[s][idx] = nanLast;

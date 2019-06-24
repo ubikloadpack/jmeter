@@ -133,7 +133,7 @@ public class StatVisualizer extends AbstractVisualizer implements Clearable, Act
         synchronized(lock) {
             tot.addSample(res);
         }
-        System.out.println(res.getTime());
+//        System.out.println(res.getTime());
         System.out.println(tot);
         dataChanged = true;
     }

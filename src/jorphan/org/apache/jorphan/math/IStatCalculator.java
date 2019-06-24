@@ -3,7 +3,6 @@ package org.apache.jorphan.math;
 import java.util.Map;
 
 public interface IStatCalculator<T extends Number & Comparable<? super T>> {
-
     void clear();
 
     /**

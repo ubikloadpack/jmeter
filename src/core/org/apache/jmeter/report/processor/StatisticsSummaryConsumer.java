@@ -75,10 +75,7 @@ public class StatisticsSummaryConsumer extends
         }
 
         long elapsedTime = sample.getElapsedTime();
-        data.getPercentile1().addValue(elapsedTime);
-        data.getPercentile2().addValue(elapsedTime);
-        data.getPercentile3().addValue(elapsedTime);
-        data.getMean().addValue(elapsedTime);
+        data.addValue(elapsedTime);
         data.setMin(elapsedTime);
         data.setMax(elapsedTime);
 
@@ -100,15 +97,13 @@ public class StatisticsSummaryConsumer extends
         SummaryInfo overallInfo = getOverallInfo();
         StatisticsSummaryData overallData = overallInfo.getData();
         if (overallData == null) {
-            overallData = new StatisticsSummaryData(PERCENTILE_INDEX1,
-                            PERCENTILE_INDEX2, PERCENTILE_INDEX3);
+            overallData = new StatisticsSummaryData();
             overallInfo.setData(overallData);
         }
 
         StatisticsSummaryData data = info.getData();
         if (data == null) {
-            data = new StatisticsSummaryData(PERCENTILE_INDEX1,
-                        PERCENTILE_INDEX2, PERCENTILE_INDEX3);
+            data = new StatisticsSummaryData();
             info.setData(data);
         }
 
@@ -136,12 +131,12 @@ public class StatisticsSummaryConsumer extends
         result.addResult(new ValueResultData(Long.valueOf(total)));
         result.addResult(new ValueResultData(Long.valueOf(errors)));
         result.addResult(new ValueResultData(Double.valueOf((double) errors * 100 / total)));
-        result.addResult(new ValueResultData(Double.valueOf(data.getMean().getResult())));
+        result.addResult(new ValueResultData(data.getMean()));
         result.addResult(new ValueResultData(Long.valueOf(data.getMin())));
         result.addResult(new ValueResultData(Long.valueOf(data.getMax())));
-        result.addResult(new ValueResultData(Double.valueOf(data.getPercentile1().getResult())));
-        result.addResult(new ValueResultData(Double.valueOf(data.getPercentile2().getResult())));
-        result.addResult(new ValueResultData(Double.valueOf(data.getPercentile3().getResult())));
+        result.addResult(new ValueResultData(Double.valueOf(data.getPercentile(PERCENTILE_INDEX1))));
+        result.addResult(new ValueResultData(Double.valueOf(data.getPercentile(PERCENTILE_INDEX2))));
+        result.addResult(new ValueResultData(Double.valueOf(data.getPercentile(PERCENTILE_INDEX3))));
         result.addResult(new ValueResultData(Double.valueOf(data.getThroughput())));
         result.addResult(new ValueResultData(Double.valueOf(data.getKBytesPerSecond())));
         result.addResult(new ValueResultData(Double.valueOf(data.getSentKBytesPerSecond())));

@@ -25,19 +25,19 @@ import java.util.Map;
 
 import org.HdrHistogram.Histogram;
 import org.LatencyUtils.LatencyStats;
-import org.apache.jmeter.visualizers.HistogramStatCalculator;
+import org.apache.jmeter.visualizers.HistogramStatCalculatorLong;
 import org.junit.Before;
 import org.junit.Test;
 
 public class TestHisStatCalculator {
 
-    private HistogramStatCalculator calc;
-    private HistogramStatCalculator calc1;
+    private HistogramStatCalculatorLong calc;
+    private HistogramStatCalculatorLong calc1;
 
     @Before
     public void setUp() {
-        calc = new HistogramStatCalculator();
-        calc1 = new HistogramStatCalculator();
+        calc = new HistogramStatCalculatorLong();
+        calc1 = new HistogramStatCalculatorLong();
     }
 
     @Test
@@ -118,21 +118,6 @@ public class TestHisStatCalculator {
     }
     
     @Test
-    public void testInteger(){
-        StatCalculatorInteger calci = new StatCalculatorInteger();
-        assertEquals(Integer.MIN_VALUE, calci.getMax().intValue());
-        assertEquals(Integer.MAX_VALUE, calci.getMin().intValue());
-        calci.addValue(0);
-        calci.addValue(2);
-        calci.addValue(2);
-        assertEquals(Integer.valueOf(2),calci.getMax());
-        assertEquals(Integer.valueOf(0),calci.getMin());
-        Map<Number, Number[]> map = calci.getDistribution();
-        assertTrue(map.containsKey(Integer.valueOf(0)));
-        assertTrue(map.containsKey(Integer.valueOf(2)));
-    }
-    
-    @Test
     public void testStandardDeviation(){ 
         calc.addValue(1L);
         calc.addValue(2L);
@@ -150,7 +135,7 @@ public class TestHisStatCalculator {
         calc.addValue(1L);
         calc.addValue(2L);
         calc.addValue(3L);
-        HistogramStatCalculator calc2 = new  HistogramStatCalculator();
+        HistogramStatCalculatorLong calc2 = new  HistogramStatCalculatorLong();
         calc2.addValue(2L);
         calc2.addValue(2L);
         calc2.addValue(2L);

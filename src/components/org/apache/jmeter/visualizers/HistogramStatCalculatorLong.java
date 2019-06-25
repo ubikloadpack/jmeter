@@ -8,7 +8,7 @@ import org.LatencyUtils.LatencyStats;
 import org.apache.jorphan.math.IStatCalculator;
 import org.slf4j.LoggerFactory;
 
-public class HistogramStatCalculator implements IStatCalculator<Long> {
+public class HistogramStatCalculatorLong implements IStatCalculator<Long> {
     LatencyStats latencyStats = new LatencyStats(1,3600000000000L,2,1024,10000000000L,null);
     Histogram histogram = latencyStats.getIntervalHistogram();
     private long bytes = 0;
@@ -17,7 +17,7 @@ public class HistogramStatCalculator implements IStatCalculator<Long> {
     private long min = Long.MAX_VALUE;
     private long max = Long.MIN_VALUE;
 
-    public HistogramStatCalculator() {
+    public HistogramStatCalculatorLong() {
         LoggerFactory.getLogger(this.getClass()).info("HistogramStatCalculator used.");
     }
 
@@ -43,8 +43,8 @@ public class HistogramStatCalculator implements IStatCalculator<Long> {
 
     @Override
     public void addAll(IStatCalculator<Long> calc) {
-        if (calc instanceof HistogramStatCalculator) {
-            HistogramStatCalculator histoCalc = (HistogramStatCalculator) calc;
+        if (calc instanceof HistogramStatCalculatorLong) {
+            HistogramStatCalculatorLong histoCalc = (HistogramStatCalculatorLong) calc;
             sum += histoCalc.sum;
             bytes += histoCalc.bytes;
             sentBytes += histoCalc.sentBytes;

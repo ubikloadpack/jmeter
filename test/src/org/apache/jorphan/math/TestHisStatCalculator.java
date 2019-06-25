@@ -23,78 +23,95 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.Map;
 
-import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
+import org.HdrHistogram.Histogram;
+import org.LatencyUtils.LatencyStats;
 import org.apache.jmeter.visualizers.HistogramStatCalculator;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 public class TestHisStatCalculator {
 
     private HistogramStatCalculator calc;
-
+    private HistogramStatCalculator calc1;
 
     @Before
     public void setUp() {
         calc = new HistogramStatCalculator();
+        calc1 = new HistogramStatCalculator();
     }
 
     @Test
-    public void testPercentagePoint() throws Exception {
-        long[] values = new long[] {
-            10L,9L,5L,6L,1L,3L,8L,2L,7L,4L
-        };
+    public void testPercentage() {
+        long[] values = new long[] { 10L, 9L, 5L, 6L, 3L, 8L, 2L, 7L, 4L };
         for (long l : values) {
             calc.addValue(l);
         }
-        assertEquals(10, calc.getCount());
-        assertEquals(9, calc.getPercentPoint(0.8999999).intValue());
+        long[] values1 = new long[] { 11L, 23L, 2L };
+        for (long l : values1) {
+            calc1.addValue(l);
+        }
+        calc.addAll(calc1);
+        assertTrue(23 == calc.getMax());
+        assertTrue(2 == calc.getMin());
+        assertEquals(12, calc.getCount());
+        assertEquals(11, calc.getPercentPoint(0.8999999).intValue());
     }
     
     @Test
-    @Ignore
-    // Disabled due to in progress Bug 61071
-    public void testPercentagePointBug() throws Exception {
-        long[] values = new long[] {
-            10L,9L,5L,6L,1L,3L,8L,2L,7L,4L
-        };
-        DescriptiveStatistics statistics = new DescriptiveStatistics();
+    public void testPercentage1()  {
+        long[] values = new long[] { 10L, 9L, 5L, 6L, 1L, 3L, 8L, 2L, 7L, 4L };
+        LatencyStats latencyStats = new LatencyStats(1, 3600000000000L, 2, 1024, 10000000000L, null);
+        Histogram histogram = latencyStats.getIntervalHistogram();
         for (long l : values) {
             calc.addValue(l);
-            statistics.addValue(l);
+            histogram.recordValue(l);
         }
         assertEquals(9, calc.getPercentPoint(0.8999999).intValue());
-        // 
-        assertEquals(Math.round(statistics.getPercentile(90)), 
-                calc.getPercentPoint(0.9).intValue());
+        assertEquals(Math.round(histogram.getValueAtPercentile(90)), calc.getPercentPoint(0.9).intValue());
+        assertEquals(Math.round(histogram.getValueAtPercentile(90)), calc.getPercentPoint(0.9f).intValue());
     }
     
 
     @Test
-    @Ignore
-    // Disabled due to in progress Bug 61071 
-    public void testMedianBug61071() {
+    public void testPercentile2() {
         long[] values = new long[] {
             10L, 20L, 30L, 40L, 50L, 60L, 80L, 90L
         };
-        DescriptiveStatistics statistics = new DescriptiveStatistics();
-
+        LatencyStats latencyStats = new LatencyStats(1,3600000000000L,2,1024,10000000000L,null);
+        Histogram histogram = latencyStats.getIntervalHistogram();
         for (long l : values) {
             calc.addValue(l);
-            statistics.addValue(l);
+            histogram.recordValue(l);
         }
-        assertEquals((int) statistics.getPercentile(50), calc.getMedian().intValue());
+        assertEquals((int) histogram.getValueAtPercentile(50), calc.getMedian().intValue());
     }
-    
+
     @Test
-    public void testLong(){
+    public void testPercentile3() {
+        long[] values = new long[] { 5L,5L,5L, 1L, 7L };
+        LatencyStats latencyStats = new LatencyStats(1, 3600000000000L, 2, 1024, 10000000000L, null);
+        Histogram histogram = latencyStats.getIntervalHistogram();
+        for (long l : values) {
+            histogram.recordValue(l);
+        }
+        calc.addValue(5L, 3);
+        calc.addValue(1L);
+        calc.addValue(7L);
+        assertTrue(7 == calc.getMax());
+        assertTrue(1 == calc.getMin());
+        assertEquals(5, calc.getCount());
+        assertEquals((int) histogram.getValueAtPercentile(50), calc.getMedian().intValue());
+    }
+
+    @Test
+    public void testLong() {
         calc.addValue(0L);
         calc.addValue(2L);
         calc.addValue(2L);
         final Long long0 = Long.valueOf(0);
         final Long long2 = Long.valueOf(2);
-        assertEquals(long2,calc.getMax());
-        assertEquals(long0,calc.getMin());
+        assertEquals(long2, calc.getMax());
+        assertEquals(long0, calc.getMin());
         Map<Number, Number[]> map = calc.getDistribution();
         assertTrue(map.containsKey(long0));
         assertTrue(map.containsKey(long2));
@@ -116,7 +133,7 @@ public class TestHisStatCalculator {
     }
     
     @Test
-    public void testBug52125_1(){ // No duplicates when adding
+    public void testStandardDeviation(){ 
         calc.addValue(1L);
         calc.addValue(2L);
         calc.addValue(3L);
@@ -129,29 +146,7 @@ public class TestHisStatCalculator {
     }
 
     @Test
-    @SuppressWarnings("boxing")
-    public void testBug52125_2(){ // add duplicates
-        calc.addValue(1L);
-        calc.addValue(2L);
-        calc.addValue(3L);
-        assertEquals(3, calc.getCount());
-        assertEquals(6.0, calc.getSum(), 0.000000000001);
-        //assertEquals(0.5773502691896255, calc.getStandardDeviation(), 0.000000000000001);
-    }
-
-    @Test
-    public void testBug52125_2A(){ // as above, but with aggregate sample instead
-        calc.addValue(1L);
-        calc.addValue(2L);
-        calc.addValue(3L);
-        calc.addValue(6L, 3);
-        assertEquals(6, calc.getCount());
-        assertEquals(24.0, calc.getSum(), 0.00000001);
-        //assertEquals(0.5773502691896255, calc.getStandardDeviation(), 0.000000000000001);
-    }
-
-    @Test
-    public void testBug52125_3(){ // add duplicates as per bug
+    public void testStandardDeviation1(){ 
         calc.addValue(1L);
         calc.addValue(2L);
         calc.addValue(3L);
@@ -163,5 +158,30 @@ public class TestHisStatCalculator {
         assertEquals(6, calc.getCount());
         assertEquals(12.0, calc.getSum(), 0.000000000001);
         assertEquals(0.5773502691896255, calc.getStandardDeviation(), 0.000000000000001);
+        assertTrue(calc.getMean() == 2);
+    }
+    @Test
+    public void testClear(){ 
+        calc.addValue(1L);
+        calc.addValue(2L);
+        calc.addValue(3L);
+        assertEquals(3, calc.getCount());
+        assertEquals(6.0, calc.getSum(), 0.000000000001);
+        calc.clear();
+        assertEquals(0, calc.getCount());
+        assertEquals(0.0, calc.getSum(), 0.000000000001);
+
+    }
+    @Test
+    public void addBytes(){ 
+        calc.addBytes(300);
+        calc.addBytes(200);
+        calc.addBytes(100);
+        assertEquals(600, calc.getTotalBytes());
+        calc.addSentBytes(300);
+        calc.addSentBytes(200);
+        calc.addSentBytes(100);
+        assertEquals(600, calc.getTotalSentBytes());
+
     }
 }

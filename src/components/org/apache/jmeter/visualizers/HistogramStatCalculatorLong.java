@@ -26,7 +26,7 @@ import org.apache.jorphan.math.IStatCalculator;
 import org.slf4j.LoggerFactory;
 
 public class HistogramStatCalculatorLong implements IStatCalculator<Long> {
-    LatencyStats latencyStats = new LatencyStats(1,3600000000000L,2,1024,10000000000L,null);
+    LatencyStats latencyStats = new LatencyStats(1, 3600000000000L, 2, 1024, 10000000000L, null);
     Histogram histogram = latencyStats.getIntervalHistogram();
     private long bytes = 0;
     private long sentBytes = 0;
@@ -153,5 +153,4 @@ public class HistogramStatCalculatorLong implements IStatCalculator<Long> {
         max = Math.max(val, max);
         min = Math.min(val, min);
     }
-
 }

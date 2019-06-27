@@ -29,7 +29,7 @@ import org.apache.jmeter.samplers.SampleResult;
  *
  */
 public class SamplingStatCalculator {
-    private final HistogramStatCalculatorLong calculator = new HistogramStatCalculatorLong();
+    private HistogramStatCalculatorLong calculator = new HistogramStatCalculatorLong();
 
     private double maxThroughput;
 

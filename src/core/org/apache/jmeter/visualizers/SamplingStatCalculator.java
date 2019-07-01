@@ -21,6 +21,7 @@ package org.apache.jmeter.visualizers;
 import java.util.Map;
 
 import org.apache.jmeter.samplers.SampleResult;
+import org.apache.jorphan.math.HistogramStatCalculatorLong;
 
 /**
  * Aggregate sample data container. Just instantiate a new instance of this
@@ -29,7 +30,7 @@ import org.apache.jmeter.samplers.SampleResult;
  *
  */
 public class SamplingStatCalculator {
-    private HistogramStatCalculatorLong calculator = new HistogramStatCalculatorLong();
+    private HistogramStatCalculatorLong calculator= new HistogramStatCalculatorLong();
 
     private double maxThroughput;
 
@@ -53,6 +54,7 @@ public class SamplingStatCalculator {
         calculator.clear();
         maxThroughput = Double.MIN_VALUE;
         currentSample = new Sample();
+        calculator = new HistogramStatCalculatorLong();
     }
 
     /**

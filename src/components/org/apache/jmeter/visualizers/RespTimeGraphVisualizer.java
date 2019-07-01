@@ -71,6 +71,7 @@ import org.apache.jmeter.visualizers.gui.AbstractVisualizer;
 import org.apache.jmeter.visualizers.utils.Colors;
 import org.apache.jorphan.gui.GuiUtils;
 import org.apache.jorphan.gui.JLabeledTextField;
+import org.apache.jorphan.math.HistogramStatCalculatorLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

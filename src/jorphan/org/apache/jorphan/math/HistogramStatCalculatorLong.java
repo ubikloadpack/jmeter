@@ -16,19 +16,17 @@
  *
  */
 
-package org.apache.jmeter.visualizers;
+package org.apache.jorphan.math;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import org.HdrHistogram.Histogram;
 import org.LatencyUtils.LatencyStats;
-import org.apache.jorphan.math.IStatCalculator;
-import org.slf4j.LoggerFactory;
 
 public class HistogramStatCalculatorLong implements IStatCalculator<Long> {
-    LatencyStats latencyStats = new LatencyStats(1, 3600000000000L, 2, 1024, 10000000000L, null);
-    Histogram histogram = latencyStats.getIntervalHistogram();
+    private LatencyStats latencyStats = new LatencyStats(1, 3600000000000L, 2, 1024, 10000000000L, null);
+    private Histogram histogram = latencyStats.getIntervalHistogram();
     private long bytes = 0;
     private long sentBytes = 0;
     private long sum = 0;
@@ -36,7 +34,6 @@ public class HistogramStatCalculatorLong implements IStatCalculator<Long> {
     private long max = Long.MIN_VALUE;
 
     public HistogramStatCalculatorLong() {
-        LoggerFactory.getLogger(this.getClass()).info("HistogramStatCalculator used.");
     }
 
     @Override

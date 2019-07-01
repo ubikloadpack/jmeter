@@ -25,7 +25,6 @@ import java.util.Map;
 
 import org.HdrHistogram.Histogram;
 import org.LatencyUtils.LatencyStats;
-import org.apache.jmeter.visualizers.HistogramStatCalculatorLong;
 import org.junit.Before;
 import org.junit.Test;
 

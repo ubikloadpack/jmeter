@@ -123,7 +123,6 @@ public class AuthManager extends ConfigTestElement implements TestStateListener,
          */
         KERBEROS
     }
-    public boolean authManagerIsCleared=false;
     private static final class NullCredentials implements Credentials {
         @Override
         public String getPassword() {
@@ -558,7 +557,6 @@ public class AuthManager extends ConfigTestElement implements TestStateListener,
         if ((getControlledByThread() && !jMeterVariables.isSameUserOnNextIteration())
                 || (getClearEachIteration() && !getControlledByThread())) {
             kerberosManager.clearSubjects();
-            authManagerIsCleared=true;
         }
     }
     

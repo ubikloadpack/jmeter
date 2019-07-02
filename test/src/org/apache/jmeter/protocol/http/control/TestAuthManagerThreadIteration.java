@@ -17,8 +17,17 @@
  */
 package org.apache.jmeter.protocol.http.control;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+
+import java.lang.reflect.Field;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+
+import javax.security.auth.Subject;
 
 import org.apache.jmeter.threads.JMeterContext;
 import org.apache.jmeter.threads.JMeterContextService;
@@ -30,7 +39,22 @@ public class TestAuthManagerThreadIteration {
     private JMeterContext jmctx;
     private JMeterVariables jmvars;
     private static final String SAME_USER = "__jmv_SAME_USER";
+    private final ConcurrentMap<String, Future<Subject>> subjects = new ConcurrentHashMap<>();
 
+    public KerberosManager setKerosManager() throws IllegalAccessException, NoSuchFieldException {
+        KerberosManager kerberosManager = new KerberosManager();
+        Future<Subject> future = Executors.newSingleThreadExecutor().submit(new Callable<Subject>() {
+            @Override
+            public Subject call() throws Exception {
+                return new Subject();
+            }
+        });
+        subjects.put("test", future);
+        Field privateField = kerberosManager.getClass().getDeclaredField("subjects");
+        privateField.setAccessible(true);
+        privateField.set(kerberosManager, subjects);
+        return kerberosManager;
+    }
     @Before
     public void setUp() {
         jmctx = JMeterContextService.getContext();
@@ -38,49 +62,57 @@ public class TestAuthManagerThreadIteration {
     }
 
     @Test
-    public void testJmeterVariableCookieWhenThreadIterationIsADifferentUser() {
-          AuthManager authManager=new AuthManager();
-          authManager.setControlledByThread(false);
-          authManager.setClearEachIteration(true);
-          assertFalse("Before the iteration, the AuthManager shouldn't be cleared",
-                  authManager.authManagerIsCleared);
-          authManager.testIterationStart(null);
-          assertTrue("After the iteration, the AuthManager should be cleared",
-                  authManager.authManagerIsCleared);
-          
-          jmvars.putObject(SAME_USER, false);
-          jmctx.setVariables(jmvars);
-          authManager=new AuthManager();
-          assertFalse("Before the iteration, the AuthManager shouldn't be cleared",
-                  authManager.authManagerIsCleared);
-          authManager.setThreadContext(jmctx);
-          authManager.setControlledByThread(true);
-          authManager.testIterationStart(null);
-          assertTrue("After the iteration, the AuthManager should be cleared",
-                  authManager.authManagerIsCleared);
-    }
-    @Test
-    public void testJmeterVariableCookieWhenThreadIterationIsASameUser() {
-          AuthManager authManager=new AuthManager();
-          authManager.setControlledByThread(false);
-          authManager.setClearEachIteration(false);
-          assertFalse("Before the iteration, the AuthManager shouldn't be cleared",
-                  authManager.authManagerIsCleared);
-          authManager.testIterationStart(null);
-          assertFalse("After the iteration, the AuthManager shouldn't be cleared",
-                  authManager.authManagerIsCleared);
-          
-          jmvars.putObject(SAME_USER, true);
-          jmctx.setVariables(jmvars);
-          authManager=new AuthManager();
-          assertFalse("Before the iteration, the AuthManager shouldn't be cleared",
-                  authManager.authManagerIsCleared);
-          authManager.setThreadContext(jmctx);
-          authManager.setControlledByThread(true);
-          authManager.testIterationStart(null);
-          assertFalse("After the iteration, the AuthManager shouldn't be cleared",
-                  authManager.authManagerIsCleared);
+    public void testJmeterVariableAuthorizationWhenThreadIterationIsADifferentUser()
+            throws IllegalAccessException, NoSuchFieldException {
+        //Test button clear after each Iteration
+        KerberosManager kerberosManager=setKerosManager();
+        AuthManager authManager = new AuthManager();
+        Field authPrivateField = authManager.getClass().getDeclaredField("kerberosManager");
+        authPrivateField.setAccessible(true);
+        authPrivateField.set(authManager, kerberosManager);
+        assertNotNull("Before the iteration, the AuthManager shouldn't be cleared",subjects.get("test"));
+        authManager.setControlledByThread(false);
+        authManager.setClearEachIteration(true);
+        authManager.testIterationStart(null);
+        assertNull("After the iteration, the AuthManager should be cleared",subjects.get("test"));       
+        //Test button controlled by Thread
+        kerberosManager=setKerosManager();
+        jmvars.putObject(SAME_USER, false);
+        jmctx.setVariables(jmvars);
+        authManager.setThreadContext(jmctx);
+        authPrivateField.set(authManager, kerberosManager);
+        assertNotNull("Before the iteration, the AuthManager shouldn't be cleared",subjects.get("test"));
+        authManager.setControlledByThread(true);
+        authManager.setClearEachIteration(false);
+        authManager.testIterationStart(null);
+        assertNull("After the iteration, the AuthManager should be cleared",subjects.get("test"));
     }
 
+    @Test
+    public void testJmeterVariableAuthorizationWhenThreadIterationIsASameUser()
+            throws IllegalAccessException, NoSuchFieldException {
+        // Test button clear after each Iteration
+        KerberosManager kerberosManager = setKerosManager();
+        AuthManager authManager = new AuthManager();
+        Field authPrivateField = authManager.getClass().getDeclaredField("kerberosManager");
+        authPrivateField.setAccessible(true);
+        authPrivateField.set(authManager, kerberosManager);
+        assertNotNull("Before the iteration, the AuthManager shouldn't be cleared", subjects.get("test"));
+        authManager.setControlledByThread(false);
+        authManager.setClearEachIteration(false);
+        authManager.testIterationStart(null);
+        assertNotNull("After the iteration, the AuthManager shouldn't be cleared", subjects.get("test"));
+        // Test button controlled by Thread
+        kerberosManager = setKerosManager();
+        jmvars.putObject(SAME_USER, true);
+        jmctx.setVariables(jmvars);
+        authManager.setThreadContext(jmctx);
+        authPrivateField.set(authManager, kerberosManager);
+        assertNotNull("Before the iteration, the AuthManager shouldn't be cleared", subjects.get("test"));
+        authManager.setControlledByThread(true);
+        authManager.setClearEachIteration(false);
+        authManager.testIterationStart(null);
+        assertNotNull("After the iteration, the AuthManager shouldn't be cleared", subjects.get("test"));
+    }
 
 }

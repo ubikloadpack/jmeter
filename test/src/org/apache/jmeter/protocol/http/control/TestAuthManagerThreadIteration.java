@@ -41,7 +41,7 @@ public class TestAuthManagerThreadIteration {
     private static final String SAME_USER = "__jmv_SAME_USER";
     private final ConcurrentMap<String, Future<Subject>> subjects = new ConcurrentHashMap<>();
 
-    public KerberosManager setKerosManager() throws IllegalAccessException, NoSuchFieldException {
+    public KerberosManager initKerberosManager() throws IllegalAccessException, NoSuchFieldException {
         KerberosManager kerberosManager = new KerberosManager();
         Future<Subject> future = Executors.newSingleThreadExecutor().submit(new Callable<Subject>() {
             @Override
@@ -65,7 +65,7 @@ public class TestAuthManagerThreadIteration {
     public void testJmeterVariableAuthorizationWhenThreadIterationIsADifferentUser()
             throws IllegalAccessException, NoSuchFieldException {
         //Test button clear after each Iteration
-        KerberosManager kerberosManager=setKerosManager();
+        KerberosManager kerberosManager=initKerberosManager();
         AuthManager authManager = new AuthManager();
         Field authPrivateField = authManager.getClass().getDeclaredField("kerberosManager");
         authPrivateField.setAccessible(true);
@@ -74,9 +74,9 @@ public class TestAuthManagerThreadIteration {
         authManager.setControlledByThread(false);
         authManager.setClearEachIteration(true);
         authManager.testIterationStart(null);
-        assertNull("After the iteration, the AuthManager should be cleared",subjects.get("test"));       
+        assertNull("After the iteration, the AuthManager should be cleared",subjects.get("test"));
         //Test button controlled by Thread
-        kerberosManager=setKerosManager();
+        kerberosManager=initKerberosManager();
         jmvars.putObject(SAME_USER, false);
         jmctx.setVariables(jmvars);
         authManager.setThreadContext(jmctx);
@@ -92,7 +92,7 @@ public class TestAuthManagerThreadIteration {
     public void testJmeterVariableAuthorizationWhenThreadIterationIsASameUser()
             throws IllegalAccessException, NoSuchFieldException {
         // Test button clear after each Iteration
-        KerberosManager kerberosManager = setKerosManager();
+        KerberosManager kerberosManager = initKerberosManager();
         AuthManager authManager = new AuthManager();
         Field authPrivateField = authManager.getClass().getDeclaredField("kerberosManager");
         authPrivateField.setAccessible(true);
@@ -103,7 +103,7 @@ public class TestAuthManagerThreadIteration {
         authManager.testIterationStart(null);
         assertNotNull("After the iteration, the AuthManager shouldn't be cleared", subjects.get("test"));
         // Test button controlled by Thread
-        kerberosManager = setKerosManager();
+        kerberosManager = initKerberosManager();
         jmvars.putObject(SAME_USER, true);
         jmctx.setVariables(jmvars);
         authManager.setThreadContext(jmctx);

@@ -227,5 +227,24 @@ Figure &sect-num;.8. Sample HTTP login request</figure>
 
 </section>
 
+<section name="&sect-num;.7 choose the same user or different users" anchor="choose_users">
+<p>
+When creating an Http Request, we can choose to simulate the same user access or multiple different users, decide 
+whether Cache, Cookie, Authorization is cleared after each iteration.
+</p>
+<figure image="webtest/threadgroup3.png">
+Figure &sect-num;.9. Choose the same user or different users</figure>
+<p>
+You can choose to clear the cookie/cache/Authorization in the CookieManager/CacheManager/Authorization Manager,
+ or choose to be controlled by the Thread Group.
+</p>
+<figure image="webtest/threadgroup4.png">
+Figure &sect-num;.10. Use Thread Group to control CookieManager</figure>
+<figure image="webtest/threadgroup5.png">
+Figure &sect-num;.11. Use Thread Group to control CacheManager</figure>
+<figure image="webtest/threadgroup6.png">
+Figure &sect-num;.12. Use Thread Group to control Authorization Manager</figure>
+</section>
+
 </body>
 </document>

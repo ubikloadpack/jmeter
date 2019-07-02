@@ -229,8 +229,8 @@ Figure &sect-num;.8. Sample HTTP login request</figure>
 
 <section name="&sect-num;.7 choose the same user or different users" anchor="choose_users">
 <p>
-When creating an Http Request, we can choose to simulate the same user access or multiple different users, decide 
-whether Cache, Cookie, Authorization is cleared after each iteration.
+When creating an Http Request, we can choose to simulate the same user or multiple different users and decide 
+whether Cache, Cookie, Authorization are cleared after each iteration.
 </p>
 <figure image="webtest/threadgroup3.png">
 Figure &sect-num;.9. Choose the same user or different users</figure>

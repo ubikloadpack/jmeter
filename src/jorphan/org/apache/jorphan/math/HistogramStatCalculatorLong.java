@@ -23,10 +23,12 @@ import java.util.Map;
 
 import org.HdrHistogram.Histogram;
 import org.LatencyUtils.LatencyStats;
+import org.LatencyUtils.SimplePauseDetector;
 
 public class HistogramStatCalculatorLong implements IStatCalculator<Long> {
-    private LatencyStats latencyStats = new LatencyStats(1, 3600000000000L, 2, 1024, 10000000000L, null);
-    private Histogram histogram = latencyStats.getIntervalHistogram();
+    private SimplePauseDetector defaultPauseDetector = new SimplePauseDetector();
+    private LatencyStats latencyStats = new LatencyStats(1, 3600000000000L, 2, 1024, 10000000000L, defaultPauseDetector);
+    private Histogram histogram = new Histogram(latencyStats.getIntervalHistogram());
     private long bytes = 0;
     private long sentBytes = 0;
     private long sum = 0;
@@ -38,12 +40,13 @@ public class HistogramStatCalculatorLong implements IStatCalculator<Long> {
 
     @Override
     public void clear() {
-        histogram.reset();
         bytes = 0;
         sentBytes = 0;
         sum = 0;
         min = Long.MAX_VALUE;
         max = Long.MIN_VALUE;
+        latencyStats.stop();
+        histogram.reset();
     }
 
     @Override
@@ -139,15 +142,19 @@ public class HistogramStatCalculatorLong implements IStatCalculator<Long> {
     @Override
     public void addValue(Long val, long sampleCount) {
         sum += val * sampleCount;
-        histogram.recordValueWithCount(val, sampleCount);
+        for(int i=0;i<sampleCount;i++) {            
+            latencyStats.recordLatency(val); 
+        }
+        histogram.add(latencyStats.getIntervalHistogram());
         max = Math.max(val, max);
         min = Math.min(val, min);
     }
 
     @Override
     public void addValue(Long val) {
-        sum += val;
-        histogram.recordValue(val);
+        sum += val;        
+        latencyStats.recordLatency(val); 
+        histogram.add(latencyStats.getIntervalHistogram());
         max = Math.max(val, max);
         min = Math.min(val, min);
     }

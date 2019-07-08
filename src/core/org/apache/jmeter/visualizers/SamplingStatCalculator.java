@@ -26,7 +26,7 @@ import org.apache.jorphan.math.HistogramStatCalculatorLong;
 /**
  * Aggregate sample data container. Just instantiate a new instance of this
  * class, and then call {@link #addSample(SampleResult)} a few times, and pull
- * the stats out with whatever methods you prefer.
+ * the stats ou with whatever methods you prefer.
  *
  */
 public class SamplingStatCalculator {
@@ -267,7 +267,7 @@ public class SamplingStatCalculator {
         mySB.append("Max: " + this.getMax() + "  ");
         mySB.append("Error Rate: " + this.getErrorPercentage() + "  ");
         mySB.append("Sample Rate: " + this.getRate());
-        mySB.append("elapse: " + this.getElapsed());
+        mySB.append("elapsed: " + this.getElapsed());
         return mySB.toString();
     }
 

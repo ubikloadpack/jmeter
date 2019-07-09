@@ -19,6 +19,7 @@ package org.apache.jorphan.math;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
 
 import org.HdrHistogram.Histogram;
 import org.LatencyUtils.LatencyStats;
@@ -40,7 +41,7 @@ public class HistogramStatCalculatorLong implements IStatCalculator<Long> {
     private long sum = 0;
     private long min = Long.MAX_VALUE;
     private long max = Long.MIN_VALUE;
-
+    private Map<Long, Long> valuesMap = new TreeMap<>();
     public HistogramStatCalculatorLong() {
     }
 
@@ -53,6 +54,7 @@ public class HistogramStatCalculatorLong implements IStatCalculator<Long> {
         max = Long.MIN_VALUE;
         latencyStats.stop();
         histogram.reset();
+        valuesMap.clear();
     }
 
     @Override
@@ -75,6 +77,7 @@ public class HistogramStatCalculatorLong implements IStatCalculator<Long> {
             histogram.add(histoCalc.histogram);
             max = Math.max(histoCalc.max, max);
             min = Math.min(histoCalc.min, min);
+            valuesMap = updateAllValueCount(valuesMap, histoCalc.valuesMap);
         } else {
             throw new IllegalArgumentException("Only instances of HistogramStatCalculator allowed.");
         }
@@ -82,7 +85,7 @@ public class HistogramStatCalculatorLong implements IStatCalculator<Long> {
 
     @Override
     public Long getMedian() {
-        return histogram.getValueAtPercentile(50);
+        return histogram.getValueAtPercentile(50)/1000000;
     }
 
     @Override
@@ -102,27 +105,29 @@ public class HistogramStatCalculatorLong implements IStatCalculator<Long> {
 
     @Override
     public Long getPercentPoint(double percent) {
-        return histogram.getValueAtPercentile(100.0 * percent);
+        return histogram.getValueAtPercentile(100.0 * percent)/1000000;
     }
 
     @Override
     public Map<Number, Number[]> getDistribution() {
         Map<Number, Number[]> result = new HashMap<>();
-        histogram.percentiles(5).forEach(p -> {
-            result.put(p.getValueIteratedTo(),
-                    new Number[] { p.getValueIteratedTo(), p.getCountAddedInThisIterationStep() });
-        });
+        for (Map.Entry<Long,Long> entry : valuesMap.entrySet()) {
+            Number[] dis = new Number[2];
+            dis[0] = entry.getKey();
+            dis[1] = entry.getValue();
+            result.put(entry.getKey(), dis);   
+        }
         return result;
     }
 
     @Override
     public double getMean() {
-        return histogram.getMean();
+        return histogram.getMean()/1000000;
     }
 
     @Override
     public double getStandardDeviation() {
-        return histogram.getStdDeviation();
+        return histogram.getStdDeviation()/1000000;
     }
 
     @Override
@@ -144,24 +149,54 @@ public class HistogramStatCalculatorLong implements IStatCalculator<Long> {
     public double getSum() {
         return sum;
     }
+    /**
+     * @return the valuesMap
+     */
+    public Map<Long, Long> getValuesMap() {
+        return valuesMap;
+    }
+
 
     @Override
     public void addValue(Long val, long sampleCount) {
         sum += val * sampleCount;
         for (int i = 0; i < sampleCount; i++) {
-            latencyStats.recordLatency(val);
+            latencyStats.recordLatency(val*1000000);
         }
         histogram.add(latencyStats.getIntervalHistogram());
         max = Math.max(val, max);
         min = Math.min(val, min);
+        updateValueCount(val,sampleCount);
     }
 
     @Override
     public void addValue(Long val) {
         sum += val;
-        latencyStats.recordLatency(val);
+        latencyStats.recordLatency(val*1000000);
         histogram.add(latencyStats.getIntervalHistogram());
         max = Math.max(val, max);
         min = Math.min(val, min);
+        updateValueCount(val,1);
+    }
+    private void updateValueCount(Long actualValue, long sampleCount) {
+        Long count = valuesMap.get(actualValue);
+        if (count != null) {
+            valuesMap.put(actualValue, count+sampleCount);
+        } else {
+            // insert new value
+            valuesMap.put(actualValue, sampleCount);
+        }
+    }
+    
+    private Map<Long, Long> updateAllValueCount(Map<Long, Long> oldValuesMap, Map<Long, Long> newValuesMap) {
+        for (Map.Entry<Long, Long> entry : newValuesMap.entrySet()) {
+            Long key = entry.getKey();
+            if (oldValuesMap.get(key) != null) {
+                oldValuesMap.put(key, entry.getValue() + oldValuesMap.get(key));
+            } else {
+                oldValuesMap.put(key, entry.getValue());
+            }
+        }
+        return oldValuesMap;
     }
 }

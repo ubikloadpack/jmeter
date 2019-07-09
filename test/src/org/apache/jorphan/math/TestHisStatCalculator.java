@@ -114,6 +114,16 @@ public class TestHisStatCalculator {
         Map<Number, Number[]> map = calc.getDistribution();
         assertTrue(map.containsKey(long0));
         assertTrue(map.containsKey(long2));
+        assertTrue(map.get(long0)[1].longValue()==1);
+        assertTrue(map.get(long2)[1].longValue()==2);
+        HistogramStatCalculatorLong calc2 = new  HistogramStatCalculatorLong();
+        calc2.addValue(2L);
+        calc2.addValue(2L);
+        calc2.addValue(2L);
+        calc.addAll(calc2);
+        map = calc.getDistribution();
+        assertTrue(map.get(long0)[1].longValue()==1);
+        assertTrue(map.get(long2)[1].longValue()==5);
     }
     
     @Test
@@ -126,7 +136,7 @@ public class TestHisStatCalculator {
         calc.addValue(2L);
         assertEquals(6, calc.getCount());
         assertEquals(12.0, calc.getSum(), 0.000000000001);
-        assertEquals(0.5773502691896255, calc.getStandardDeviation(), 0.000000000000001);
+        assertEquals(0.5787915367575983, calc.getStandardDeviation(), 0.000000000000001);
     }
 
     @Test
@@ -141,8 +151,8 @@ public class TestHisStatCalculator {
         calc.addAll(calc2);
         assertEquals(6, calc.getCount());
         assertEquals(12.0, calc.getSum(), 0.000000000001);
-        assertEquals(0.5773502691896255, calc.getStandardDeviation(), 0.000000000000001);
-        assertTrue(calc.getMean() == 2);
+        assertEquals(0.5787915367575983, calc.getStandardDeviation(), 0.000000000000001);
+        assertTrue(calc.getMean() == 2.0032853333333334);
     }
     @Test
     public void testClear(){ 

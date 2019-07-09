@@ -114,7 +114,6 @@ public class TestHisStatCalculator {
         Map<Number, Number[]> map = calc.getDistribution();
         assertTrue(map.containsKey(long0));
         assertTrue(map.containsKey(long2));
-        System.out.println(map.get(long0));
     }
     
     @Test

@@ -15,7 +15,6 @@
  * limitations under the License.
  *
  */
-
 package org.apache.jorphan.math;
 
 import java.util.HashMap;
@@ -27,7 +26,14 @@ import org.LatencyUtils.SimplePauseDetector;
 
 public class HistogramStatCalculatorLong implements IStatCalculator<Long> {
     private SimplePauseDetector defaultPauseDetector = new SimplePauseDetector();
-    private LatencyStats latencyStats = new LatencyStats(1, 3600000000000L, 2, 1024, 10000000000L, defaultPauseDetector);
+    private static long lowestTrackableLatency = 1;
+    private static long highestTrackableLatency = 3600000000000L;
+    private static int numberOfSignificantValueDigits = 2;
+    private static int intervalEstimatorWindowLength = 1024;
+    private static long intervalEstimatorTimeCap = 10000000000L;
+    private LatencyStats latencyStats = new LatencyStats(lowestTrackableLatency, highestTrackableLatency,
+            numberOfSignificantValueDigits, intervalEstimatorWindowLength, intervalEstimatorTimeCap,
+            defaultPauseDetector);
     private Histogram histogram = new Histogram(latencyStats.getIntervalHistogram());
     private long bytes = 0;
     private long sentBytes = 0;
@@ -142,8 +148,8 @@ public class HistogramStatCalculatorLong implements IStatCalculator<Long> {
     @Override
     public void addValue(Long val, long sampleCount) {
         sum += val * sampleCount;
-        for(int i=0;i<sampleCount;i++) {            
-            latencyStats.recordLatency(val); 
+        for (int i = 0; i < sampleCount; i++) {
+            latencyStats.recordLatency(val);
         }
         histogram.add(latencyStats.getIntervalHistogram());
         max = Math.max(val, max);
@@ -152,8 +158,8 @@ public class HistogramStatCalculatorLong implements IStatCalculator<Long> {
 
     @Override
     public void addValue(Long val) {
-        sum += val;        
-        latencyStats.recordLatency(val); 
+        sum += val;
+        latencyStats.recordLatency(val);
         histogram.add(latencyStats.getIntervalHistogram());
         max = Math.max(val, max);
         min = Math.min(val, min);

@@ -19,6 +19,7 @@ package org.apache.jmeter.report.processor;
 
 import org.HdrHistogram.Histogram;
 import org.LatencyUtils.LatencyStats;
+import org.LatencyUtils.SimplePauseDetector;
 
 /**
  * The class ApdexSummaryData provides information for
@@ -28,8 +29,16 @@ import org.LatencyUtils.LatencyStats;
  *
  */
 public class StatisticsSummaryData {
-    LatencyStats latencyStats = new LatencyStats(1,3600000000000L,2,1024,10000000000L,null);
-    Histogram histogram = latencyStats.getIntervalHistogram();   
+    private SimplePauseDetector defaultPauseDetector = new SimplePauseDetector();
+    private static long lowestTrackableLatency = 1000000L;
+    private static long highestTrackableLatency = 3600000000000L;
+    private static int numberOfSignificantValueDigits = 2;
+    private static int intervalEstimatorWindowLength = 1024;
+    private static long intervalEstimatorTimeCap = 10000000000L;
+    private LatencyStats latencyStats = new LatencyStats(lowestTrackableLatency, highestTrackableLatency,
+            numberOfSignificantValueDigits, intervalEstimatorWindowLength, intervalEstimatorTimeCap,
+            defaultPauseDetector);
+    private Histogram histogram = new Histogram(latencyStats.getIntervalHistogram());
     private long firstTime = Long.MAX_VALUE;
     private long endTime = Long.MIN_VALUE;
     private long bytes = 0L;
@@ -164,7 +173,7 @@ public class StatisticsSummaryData {
      * @return the percentile1
      */
     public final long getPercentile(double percent) {
-        return histogram.getValueAtPercentile(percent);
+        return histogram.getValueAtPercentile(percent)/1000000;
     }
 
     /**
@@ -221,7 +230,7 @@ public class StatisticsSummaryData {
     }
 
     public double getMean() {
-        return histogram.getMean();
+        return histogram.getMean()/1000000;
     }
 
     /**
@@ -250,6 +259,7 @@ public class StatisticsSummaryData {
     }
     
     public void addValue(Long val) {
-        histogram.recordValue(val);
+        latencyStats.recordLatency(val*1000000);
+        histogram.add(latencyStats.getIntervalHistogram());
     }
 }

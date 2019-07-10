@@ -25,6 +25,7 @@ import java.util.Map;
 
 import org.HdrHistogram.Histogram;
 import org.LatencyUtils.LatencyStats;
+import org.LatencyUtils.SimplePauseDetector;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -32,7 +33,12 @@ public class TestHisStatCalculator {
 
     private HistogramStatCalculatorLong calc;
     private HistogramStatCalculatorLong calc1;
-
+    private SimplePauseDetector defaultPauseDetector = new SimplePauseDetector();
+    private static long lowestTrackableLatency = 1000000L;
+    private static long highestTrackableLatency = 3600000000000L;
+    private static int numberOfSignificantValueDigits = 2;
+    private static int intervalEstimatorWindowLength = 1024;
+    private static long intervalEstimatorTimeCap = 10000000000L;
     @Before
     public void setUp() {
         calc = new HistogramStatCalculatorLong();
@@ -59,15 +65,18 @@ public class TestHisStatCalculator {
     @Test
     public void testPercentage1()  {
         long[] values = new long[] { 10L, 9L, 5L, 6L, 1L, 3L, 8L, 2L, 7L, 4L };
-        LatencyStats latencyStats = new LatencyStats(1, 3600000000000L, 2, 1024, 10000000000L, null);
-        Histogram histogram = latencyStats.getIntervalHistogram();
+
+        LatencyStats latencyStats = new LatencyStats(lowestTrackableLatency, highestTrackableLatency,
+                numberOfSignificantValueDigits, intervalEstimatorWindowLength, intervalEstimatorTimeCap,
+                defaultPauseDetector);
+        Histogram histogram = new Histogram(latencyStats.getIntervalHistogram());
         for (long l : values) {
             calc.addValue(l);
-            histogram.recordValue(l);
+            histogram.recordValue(l*1000000);
         }
         assertEquals(9, calc.getPercentPoint(0.8999999).intValue());
-        assertEquals(Math.round(histogram.getValueAtPercentile(90)), calc.getPercentPoint(0.9).intValue());
-        assertEquals(Math.round(histogram.getValueAtPercentile(90)), calc.getPercentPoint(0.9f).intValue());
+        assertEquals(Math.round(histogram.getValueAtPercentile(90)/1000000), calc.getPercentPoint(0.9).intValue());
+        assertEquals(Math.round(histogram.getValueAtPercentile(90)/1000000), calc.getPercentPoint(0.9f).intValue());
     }
     
 
@@ -76,22 +85,26 @@ public class TestHisStatCalculator {
         long[] values = new long[] {
             10L, 20L, 30L, 40L, 50L, 60L, 80L, 90L
         };
-        LatencyStats latencyStats = new LatencyStats(1,3600000000000L,2,1024,10000000000L,null);
-        Histogram histogram = latencyStats.getIntervalHistogram();
+        LatencyStats latencyStats = new LatencyStats(lowestTrackableLatency, highestTrackableLatency,
+                numberOfSignificantValueDigits, intervalEstimatorWindowLength, intervalEstimatorTimeCap,
+                defaultPauseDetector);
+        Histogram histogram = new Histogram(latencyStats.getIntervalHistogram());
         for (long l : values) {
             calc.addValue(l);
-            histogram.recordValue(l);
+            histogram.recordValue(l*1000000);
         }
-        assertEquals((int) histogram.getValueAtPercentile(50), calc.getMedian().intValue());
+        assertEquals((int) histogram.getValueAtPercentile(50)/1000000, calc.getMedian().intValue());
     }
 
     @Test
     public void testPercentile3() {
         long[] values = new long[] { 5L,5L,5L, 1L, 7L };
-        LatencyStats latencyStats = new LatencyStats(1, 3600000000000L, 2, 1024, 10000000000L, null);
-        Histogram histogram = latencyStats.getIntervalHistogram();
+        LatencyStats latencyStats = new LatencyStats(lowestTrackableLatency, highestTrackableLatency,
+                numberOfSignificantValueDigits, intervalEstimatorWindowLength, intervalEstimatorTimeCap,
+                defaultPauseDetector);
+        Histogram histogram = new Histogram(latencyStats.getIntervalHistogram());
         for (long l : values) {
-            histogram.recordValue(l);
+            histogram.recordValue(l*1000000);
         }
         calc.addValue(5L, 3);
         calc.addValue(1L);
@@ -99,7 +112,7 @@ public class TestHisStatCalculator {
         assertTrue(7 == calc.getMax());
         assertTrue(1 == calc.getMin());
         assertEquals(5, calc.getCount());
-        assertEquals((int) histogram.getValueAtPercentile(50), calc.getMedian().intValue());
+        assertEquals((int) histogram.getValueAtPercentile(50)/1000000, calc.getMedian().intValue());
     }
 
     @Test
@@ -136,7 +149,7 @@ public class TestHisStatCalculator {
         calc.addValue(2L);
         assertEquals(6, calc.getCount());
         assertEquals(12.0, calc.getSum(), 0.000000000001);
-        assertEquals(0.5787915367575983, calc.getStandardDeviation(), 0.000000000000001);
+        assertEquals(0.605395635865781, calc.getStandardDeviation(), 0.000000000000001);
     }
 
     @Test
@@ -151,8 +164,8 @@ public class TestHisStatCalculator {
         calc.addAll(calc2);
         assertEquals(6, calc.getCount());
         assertEquals(12.0, calc.getSum(), 0.000000000001);
-        assertEquals(0.5787915367575983, calc.getStandardDeviation(), 0.000000000000001);
-        assertTrue(calc.getMean() == 2.0032853333333334);
+        assertEquals(0.605395635865781, calc.getStandardDeviation(), 0.000000000000001);
+        assertTrue(calc.getMean() ==1.835008);
     }
     @Test
     public void testClear(){ 

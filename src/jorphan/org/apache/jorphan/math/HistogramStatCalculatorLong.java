@@ -27,7 +27,7 @@ import org.LatencyUtils.SimplePauseDetector;
 
 public class HistogramStatCalculatorLong implements IStatCalculator<Long> {
     private SimplePauseDetector defaultPauseDetector = new SimplePauseDetector();
-    private static long lowestTrackableLatency = 1;
+    private static long lowestTrackableLatency = 1000000L;
     private static long highestTrackableLatency = 3600000000000L;
     private static int numberOfSignificantValueDigits = 2;
     private static int intervalEstimatorWindowLength = 1024;

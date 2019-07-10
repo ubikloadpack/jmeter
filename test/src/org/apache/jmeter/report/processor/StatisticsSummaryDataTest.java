@@ -22,12 +22,18 @@ import static org.junit.Assert.assertTrue;
 
 import org.HdrHistogram.Histogram;
 import org.LatencyUtils.LatencyStats;
+import org.LatencyUtils.SimplePauseDetector;
 import org.junit.Before;
 import org.junit.Test;
 
 public class StatisticsSummaryDataTest {
     private StatisticsSummaryData statisticsSummaryData;
-
+    private SimplePauseDetector defaultPauseDetector = new SimplePauseDetector();
+    private static long lowestTrackableLatency = 1000000L;
+    private static long highestTrackableLatency = 3600000000000L;
+    private static int numberOfSignificantValueDigits = 2;
+    private static int intervalEstimatorWindowLength = 1024;
+    private static long intervalEstimatorTimeCap = 10000000000L;
     @Before
     public void setUp() {
         statisticsSummaryData = new StatisticsSummaryData();
@@ -35,15 +41,17 @@ public class StatisticsSummaryDataTest {
 
     @Test
     public void testStatisticsSummaryData() {
-        LatencyStats latencyStats = new LatencyStats(1, 3600000000000L, 2, 1024, 10000000000L, null);
-        Histogram histogram = latencyStats.getIntervalHistogram();
+        LatencyStats latencyStats = new LatencyStats(lowestTrackableLatency, highestTrackableLatency,
+                numberOfSignificantValueDigits, intervalEstimatorWindowLength, intervalEstimatorTimeCap,
+                defaultPauseDetector);
+        Histogram histogram = new Histogram(latencyStats.getIntervalHistogram());
         long[] values = new long[] { 10L, 9L, 5L, 6L, 3L, 8L, 2L, 7L, 4L };
         for (long l : values) {
             statisticsSummaryData.addValue(l);
             statisticsSummaryData.setMax(l);
             statisticsSummaryData.setMin(l);
             statisticsSummaryData.incTotal();
-            histogram.recordValue(l);
+            histogram.recordValue(l*1000000L);
         }
         // test max/min
         assertTrue(10 == statisticsSummaryData.getMax());
@@ -56,9 +64,9 @@ public class StatisticsSummaryDataTest {
         statisticsSummaryData.incSentBytes(300);
         assertTrue(600 == statisticsSummaryData.getSentBytes());
         // test percentiles
-        assertEquals(histogram.getValueAtPercentile(90), statisticsSummaryData.getPercentile(90));
-        assertEquals(histogram.getValueAtPercentile(95), statisticsSummaryData.getPercentile(95));
-        assertEquals(histogram.getValueAtPercentile(99), statisticsSummaryData.getPercentile(99));
+        assertEquals(histogram.getValueAtPercentile(90)/1000000, statisticsSummaryData.getPercentile(90));
+        assertEquals(histogram.getValueAtPercentile(95)/1000000, statisticsSummaryData.getPercentile(95));
+        assertEquals(histogram.getValueAtPercentile(99)/1000000, statisticsSummaryData.getPercentile(99));
         // test bytes
         statisticsSummaryData.incBytes(100);
         statisticsSummaryData.incBytes(200);

@@ -149,7 +149,7 @@ public class TestHisStatCalculator {
         calc.addValue(2L);
         assertEquals(6, calc.getCount());
         assertEquals(12.0, calc.getSum(), 0.000000000001);
-        assertEquals(0.605395635865781, calc.getStandardDeviation(), 0.000000000000001);
+        assertEquals(0.5787915367575983, calc.getStandardDeviation(), 0.000000000000001);
     }
 
     @Test
@@ -164,8 +164,8 @@ public class TestHisStatCalculator {
         calc.addAll(calc2);
         assertEquals(6, calc.getCount());
         assertEquals(12.0, calc.getSum(), 0.000000000001);
-        assertEquals(0.605395635865781, calc.getStandardDeviation(), 0.000000000000001);
-        assertTrue(calc.getMean() ==1.835008);
+        assertEquals(0.5787915367575983, calc.getStandardDeviation(), 0.000000000000001);
+        assertTrue(calc.getMean() ==2.0032853333333334);
     }
     @Test
     public void testClear(){ 

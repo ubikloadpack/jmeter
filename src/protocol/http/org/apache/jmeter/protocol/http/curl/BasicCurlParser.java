@@ -877,7 +877,7 @@ public class BasicCurlParser {
            postdata = encodePostdata(postdata);
        } else {
            if (postdata.contains("@") && !dataOptionName.equals("data-raw")) {
-               postdata = postdata.replace("@", "");
+               postdata = postdata.replaceFirst("@", "");
                postdata = readFromFile(postdata);
                 if (!dataOptionName.equals("data-binary")) {
                     if (postdata != null) {

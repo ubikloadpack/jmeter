@@ -147,20 +147,29 @@ public class BasicCurlParser {
             super();
         }
 
+        /**
+         * 
+         * @return the method
+         */
         public String getMethod() {
             return method;
         }
-        
+
         /**
          * @param method the method to set
          */
         public void setMethod(String method) {
             this.method = method;
         }
-        
+
+        /**
+         * 
+         * @param value the post data
+         */
         public void setPostData(String value) {
             this.postData = value;
         }
+
         /**
          * @return the postData
          */
@@ -182,6 +191,11 @@ public class BasicCurlParser {
             this.compressed = compressed;
         }
         
+        /**
+         * 
+         * @param name the field of Header
+         * @param value the value of Header
+         */
         public void addHeader(String name, String value) {
             if (name != null && name.equalsIgnoreCase("COOKIE")) {
                 this.cookieInHeaders = value;
@@ -189,6 +203,7 @@ public class BasicCurlParser {
                 headers.put(name, value);
             }
         }
+
         /**
          * @return the cookieInHeaders
          */
@@ -223,18 +238,34 @@ public class BasicCurlParser {
             return Collections.unmodifiableMap(this.headers);
         }
         
+        /**
+         * 
+         * @return the list of options which are ignored
+         */
         public List<String> getOptionsInProperties() {
             return Collections.unmodifiableList(this.optionsInProperties);
         }
 
+        /**
+         * 
+         * @param option the option
+         */
         public void addOptionsInProperties(String option) {
             this.optionsInProperties.add(option);
         }
 
+        /**
+         * 
+         * @return the maximum transfer rate
+         */
         public int getLimitRate() {
             return limitRate;
         }
 
+        /**
+         * 
+         * @param limitRate the maximum transfer rate
+         */
         public void setLimitRate(String limitRate) {
             String unit = limitRate.substring(limitRate.length() - 1, limitRate.length()).toLowerCase();
             int value = Integer.parseInt(limitRate.substring(0, limitRate.length() - 1).toLowerCase());

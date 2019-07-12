@@ -590,6 +590,7 @@ public class BasicCurlParserTest {
         Assert.assertTrue("The limit rate should be 128000000",request.getLimitRate()==128000000);
         cmdLine = "curl 'http://jmeter.apache.org/' --limit-rate '171k'";
         request = basicCurlParser.parse(cmdLine);
+        System.out.println(request.getLimitRate());
         Assert.assertTrue("The limit rate should be 21888",request.getLimitRate()==21888);
         cmdLine = "curl 'http://jmeter.apache.org/' --limit-rate '54M'";
         request = basicCurlParser.parse(cmdLine);

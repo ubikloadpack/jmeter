@@ -240,7 +240,7 @@ public class BasicCurlParser {
             int value = Integer.parseInt(limitRate.substring(0, limitRate.length() - 1).toLowerCase());
             switch (unit) {
             case "k":
-                this.limitRate = value;
+                this.limitRate = value * 128;
                 break;
             case "m":
                 this.limitRate = value * 128000;

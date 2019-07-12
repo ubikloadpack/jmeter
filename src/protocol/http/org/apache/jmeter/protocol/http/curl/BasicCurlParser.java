@@ -813,7 +813,7 @@ public class BasicCurlParser {
     * @param authorization    the object of authorization
     */
    public void setAuthUserPasswd(String authentication, String url, Authorization authorization) {
-       String[] authorizationParameters = authentication.split(":");
+       String[] authorizationParameters = authentication.split(":",2);
        authorization.setUser(authorizationParameters[0].trim());
        authorization.setPass(authorizationParameters[1].trim());
        authorization.setURL(url);
@@ -885,9 +885,9 @@ public class BasicCurlParser {
     * @param request               http request
     * @param proxyServerUserPasswd the username and password of proxy server
     */
-   private void setProxyServerUserInfo(Request request, String proxyServerUserPasswd) {
-       if (proxyServerUserPasswd.contains(":")) {
-           String[] userInfo = proxyServerUserPasswd.split(":");
+   private void setProxyServerUserInfo(Request request, String authentication) {
+       if (authentication.contains(":")) {
+           String[] userInfo = authentication.split(":",2);
            request.setProxyServer("username", userInfo[0]);
            request.setProxyServer("password", userInfo[1]);
        }

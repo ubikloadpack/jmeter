@@ -587,8 +587,6 @@ public class BasicCurlParser {
         super();
     }
     private static Pattern deleteLinePattern = Pattern.compile("\r|\n|\r\n");
-    private static Pattern cookiePattern = Pattern.compile("(.+)=(.+)(;?)");
-
     public Request parse(String commandLine) {
         String[] args = translateCommandline(commandLine);
         CLArgsParser parser = new CLArgsParser(args, OPTIONS);
@@ -640,8 +638,7 @@ public class BasicCurlParser {
                     request.setConnectTimeout(Double.valueOf(value) * 1000);
                 } else if (option.getDescriptor().getId() == COOKIE_OPT) {
                     String value = option.getArgument(0);
-                    Matcher m = cookiePattern.matcher(value);
-                    if (m.matches()) {
+                    if (isValidCookie(value)) {
                         request.setCookies(value);
                     } else {
                         request.setFilepathCookie(value);
@@ -900,7 +897,7 @@ public class BasicCurlParser {
       
        if (postdata.contains("@")) {
            String contentFile = null;
-           String[] arr = postdata.split("@");
+           String[] arr = postdata.split("@",2);
            try {
                contentFile = URLEncoder.encode(readFromFile(arr[1]), StandardCharsets.UTF_8.name());
            } catch (UnsupportedEncodingException e) {
@@ -965,8 +962,19 @@ public class BasicCurlParser {
         Matcher m = deleteLinePattern.matcher(postdata);
         return m.replaceAll("");
     }
-   
-
+    
+   /**
+    * Verify if the string is cookie or filename
+    * @param str
+    * @return
+    */
+    public static boolean isValidCookie(String str) {
+        for (String r : str.split(";")) {
+            if (!r.contains("="))
+                return false;
+        }
+        return true;
+    }
    /**
     * Convert string to cookie
     * 
@@ -980,7 +988,7 @@ public class BasicCurlParser {
         while (tok.hasMoreTokens()) {
             String nextCookie = tok.nextToken();
             if (nextCookie.contains("=")) {
-                String[] cookieParameters = nextCookie.split("=");
+                String[] cookieParameters = nextCookie.split("=",2);
                 if (!DYNAMIC_COOKIES.contains(cookieParameters[0])) {
                     Cookie newCookie = new Cookie();
                     newCookie.setName(cookieParameters[0]);

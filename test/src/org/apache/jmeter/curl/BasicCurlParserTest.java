@@ -364,6 +364,19 @@ public class BasicCurlParserTest {
         Assert.assertEquals("With method 'parser',the parameters in the file need to be encoded' ", "name=test",
                 request.getPostData());
     }
+    @Test
+    public void testDataUrlEncodeFromFile1() throws IOException {
+        String encoding = StandardCharsets.UTF_8.name();
+        File file = tempFolder.newFile("test.txt");
+        FileUtils.writeStringToFile(file, "test@", encoding, true);
+        String pathname = file.getAbsolutePath();
+        String cmdLine = "curl 'https://www.w3schools.com/html/tryit.asp?filename=tryhtml_form_submit/action_page.php' "
+                + "-H 'cache-control: no-cache' --data-urlencode 'name@" + pathname + "' ";
+        BasicCurlParser basicCurlParser = new BasicCurlParser();
+        BasicCurlParser.Request request = basicCurlParser.parse(cmdLine);
+        Assert.assertEquals("With method 'parser',the parameters in the file need to be encoded' ", "name=test%40",
+                request.getPostData());
+    }
 
     @Test
     public void testDataBinaryReadFromFile() throws IOException {
@@ -621,5 +634,13 @@ public class BasicCurlParserTest {
         BasicCurlParser.Request request = basicCurlParser.parse(cmdLine);
         Assert.assertTrue("Option proxy-ntlm should show warning",
                 request.getOptionsNoSupport().contains("proxy-ntlm"));
+    }
+    
+    @Test
+    public void testIsValidCookiet() {
+        String str="a=b;c=d";
+        Assert.assertTrue("The string should be cookies",BasicCurlParser.isValidCookie(str));
+        str="test.txt";
+        Assert.assertFalse("The string should be filename",BasicCurlParser.isValidCookie(str));
     }
 }

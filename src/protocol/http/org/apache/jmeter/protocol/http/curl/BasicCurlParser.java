@@ -971,7 +971,9 @@ public class BasicCurlParser {
     public static boolean isValidCookie(String str) {
         for (String r : str.split(";")) {
             if (!r.contains("="))
+            {
                 return false;
+            }
         }
         return true;
     }

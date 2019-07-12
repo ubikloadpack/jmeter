@@ -21,8 +21,10 @@ package org.apache.jmeter.protocol.http.curl;
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -42,6 +44,7 @@ import org.apache.commons.cli.avalon.CLOptionDescriptor;
 import org.apache.commons.io.FileUtils;
 import org.apache.jmeter.protocol.http.control.AuthManager.Mechanism;
 import org.apache.jmeter.protocol.http.control.Authorization;
+import org.apache.jmeter.protocol.http.control.Cookie;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -144,7 +147,13 @@ public class BasicCurlParser {
     static {
         PROPERTIES_OPT.add(MAX_REDIRS_OPT);
     }
-    
+    private static final List<String>DYNAMIC_COOKIES = new ArrayList<>();// $NON-NLS-1$
+    static {
+        DYNAMIC_COOKIES.add("PHPSESSID");
+        DYNAMIC_COOKIES.add("JSESSIONID");
+        DYNAMIC_COOKIES.add("ASPSESSIONID");
+        DYNAMIC_COOKIES.add("connect.sid");
+    }
     public static final class Request {
         private boolean compressed;
         private String url;
@@ -153,7 +162,9 @@ public class BasicCurlParser {
         private String postData;
         private String interfaceName;
         private double connectTimeout = -1;
-        private String cookie = null;
+        private String cookies = "";
+        private String cookieInHeaders = "";
+        private String filepathCookie="";
         private Authorization authorization = new Authorization();
         private String cacert = "";
         private Map<String, String> formData = new LinkedHashMap<>();
@@ -168,6 +179,12 @@ public class BasicCurlParser {
         private String resolverDNS;
         private int limitRate = 0;
         private String noproxy;
+        private static final List<String> NOT_ADD_HEADERS = new ArrayList<>();// $NON-NLS-1$
+        static {
+            NOT_ADD_HEADERS.add("Connection");
+            NOT_ADD_HEADERS.add("Host");
+        }
+
 
         public Request() {
             super();
@@ -209,9 +226,26 @@ public class BasicCurlParser {
         }
         
         public void addHeader(String name, String value) {
-            headers.put(name, value);
+            if (name.equalsIgnoreCase("COOKIE")) {
+               this.cookieInHeaders=value;
+            }
+            else if (!NOT_ADD_HEADERS.contains(name)) {
+                headers.put(name, value);
+            } 
         }
-        
+        /**
+         * @return the cookieInHeaders
+         */
+        public List<Cookie> getCookieInHeaders(String url) {
+            return stringToCookie(cookieInHeaders,url);
+        }
+
+        /**
+         * @param cookieInHeaders the cookieInHeaders to set
+         */
+        public void setCookieInHeaders(String cookieInHeaders) {
+            this.cookieInHeaders = cookieInHeaders;
+        }
         /**
          * @return the url
          */
@@ -300,21 +334,6 @@ public class BasicCurlParser {
         public void addOptionsNoSupport(String option) {
             this.optionsNoSupport.add(option);
         }
-        
-        /**
-         * @return the cookie
-         */
-        public String getCookie() {
-            return cookie;
-        }
-
-        /**
-         * @param cookie set the cookie
-         */
-        public void setCookie(String cookie) {
-            this.cookie = cookie;
-        }
-
         /**
          *
          * @return the map of proxy server
@@ -423,6 +442,34 @@ public class BasicCurlParser {
 
         public void setMaxTime(double maxTime) {
             this.maxTime = maxTime;
+        }
+
+        /**
+         * @return the filepathCookie
+         */
+        public String getFilepathCookie() {
+            return filepathCookie;
+        }
+
+        /**
+         * @param filepathCookie the filepathCookie to set
+         */
+        public void setFilepathCookie(String filepathCookie) {
+            this.filepathCookie = filepathCookie;
+        }
+
+        /**
+         * @return the cookies
+         */
+        public List<Cookie> getCookies(String url) {
+            return stringToCookie(cookies, url);
+        }
+
+        /**
+         * @param cookies the cookies to set
+         */
+        public void setCookies(String cookies) {
+            this.cookies = cookies;
         }
 
         /* (non-Javadoc)
@@ -582,7 +629,7 @@ public class BasicCurlParser {
         super();
     }
     private static Pattern deleteLinePattern = Pattern.compile("\r|\n|\r\n");
-    
+    private static Pattern cookiePattern = Pattern.compile("(.+)=(.+)(;?)");
     public Request parse(String commandLine) {
         String[] args = translateCommandline(commandLine);
         CLArgsParser parser = new CLArgsParser(args, OPTIONS);
@@ -638,7 +685,12 @@ public class BasicCurlParser {
                     request.setConnectTimeout(Double.valueOf(value) * 1000);
                 } else if (option.getDescriptor().getId() == COOKIE_OPT) {
                     String value = option.getArgument(0);
-                    request.setCookie(value);
+                    Matcher m = cookiePattern.matcher(value);
+                    if (m.matches()) {
+                        request.setCookies(value);
+                    } else {
+                        request.setFilepathCookie(value);
+                    }
                 } else if (option.getDescriptor().getId() == USER_OPT) {
                     String value = option.getArgument(0);
                     setAuthUserPasswd(value, request.getUrl(), request.getAuthorization());
@@ -685,7 +737,8 @@ public class BasicCurlParser {
                 } else if (NOSUPPORT_OPTIONS_OPT.contains(option.getDescriptor().getId())) {
                     request.addOptionsNoSupport(option.getDescriptor().getName());
                 } else if (PROPERTIES_OPT.contains(option.getDescriptor().getId())) {
-                    request.addOptionsInProperties(option.getDescriptor().getName());
+                    request.addOptionsInProperties(
+                            "--" + option.getDescriptor().getName() + " is in 'httpsampler.max_redirects(1062 line)'");
                 }
             }
             if (isPostToGet) {
@@ -808,16 +861,16 @@ public class BasicCurlParser {
     * Set the parameters of proxy server in http request advanced
     *
     * @param request         http request
-    * @param proxyServerPara the parameters of proxy server
+    * @param proxyServerParameters the parameters of proxy server
     *
     */
-   private void setProxyServer(Request request, String proxyServerPara) {
-       if (!proxyServerPara.contains("://")) {
-           proxyServerPara = "http://" + proxyServerPara;
+   private void setProxyServer(Request request, String proxyServerParameters) {
+       if (!proxyServerParameters.contains("://")) {
+           proxyServerParameters = "http://" + proxyServerParameters;
        }
        URI uriProxy = null;
        try {
-           uriProxy = new URI(proxyServerPara);
+           uriProxy = new URI(proxyServerParameters);
            request.setProxyServer("scheme", uriProxy.getScheme());
            Optional<String> userInfoOptional = Optional.ofNullable(uriProxy.getUserInfo());
            if (userInfoOptional.isPresent()) {
@@ -838,8 +891,8 @@ public class BasicCurlParser {
                request.setProxyServer("port", "1080");
            }
        } catch (URISyntaxException e) {
-           LOGGER.error("string '{}' cannot be converted to a URL", proxyServerPara);
-           throw new IllegalArgumentException(proxyServerPara + " cannot be converted to a URL");
+           LOGGER.error("string '{}' cannot be converted to a URL", proxyServerParameters);
+           throw new IllegalArgumentException(proxyServerParameters + " cannot be converted to a URL");
        }
    }
 
@@ -961,5 +1014,40 @@ public class BasicCurlParser {
            repl = m.replaceAll("");
        }
        return repl;
+   }
+   
+
+   /**
+    * Convert string to cookie
+    * 
+    * @param cookieStr
+    * @param url
+    * @return list of cookies
+    */
+   public static List<Cookie> stringToCookie(String cookieStr, String url) {
+       List<Cookie> cookies = new ArrayList<>();
+       final StringTokenizer tok = new StringTokenizer(cookieStr, "; ", true);
+        while (tok.hasMoreTokens()) {
+            String nextCookie = tok.nextToken();
+            if (nextCookie.contains("=")) {
+                String[] cookieParameters = nextCookie.split("=");
+                if (!DYNAMIC_COOKIES.contains(cookieParameters[0])) {
+                    Cookie newCookie = new Cookie();
+                    newCookie.setName(cookieParameters[0]);
+                    newCookie.setValue(cookieParameters[1]);
+                    URL newUrl;
+                    try {
+                        newUrl = new URL(url.trim());
+                        newCookie.setDomain(newUrl.getHost());
+                        newCookie.setPath(newUrl.getPath());
+                        cookies.add(newCookie);
+                    } catch (MalformedURLException e) {
+                        throw new IllegalArgumentException(
+                                "unqualified url " + url.trim() + ", unable to create cookies.");
+                    }
+                }
+            }
+        }
+       return cookies;
    }
 }

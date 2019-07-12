@@ -21,10 +21,12 @@ package org.apache.jmeter.curl;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.jmeter.protocol.http.control.Cookie;
 import org.apache.jmeter.protocol.http.curl.BasicCurlParser;
 import org.junit.Assert;
 import org.junit.Rule;
@@ -54,13 +56,13 @@ public class BasicCurlParserTest {
         BasicCurlParser basicCurlParser = new BasicCurlParser();
         BasicCurlParser.Request request = basicCurlParser.parse(cmdLine);
         Assert.assertEquals("http://jmeter.apache.org/", request.getUrl());
-        Assert.assertEquals(6, request.getHeaders().size());
+        Assert.assertEquals(5, request.getHeaders().size());
         Assert.assertTrue(request.isCompressed());
         Assert.assertEquals("GET", request.getMethod());
-        String resParser = "Request [compressed=true, url=http://jmeter.apache.org/, method=GET, "
-                + "headers={User-Agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10.11; rv:63.0) Gecko/20100101 "
-                + "Firefox/63.0, Accept=text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8, "
-                + "Accept-Language=en-US,en;q=0.5, DNT=1, Connection=keep-alive, Upgrade-Insecure-Requests=1}]";
+        String resParser = "Request [compressed=true, url=http://jmeter.apache.org/, method=GET, headers={User-Agent=Mozilla/5.0 "
+                + "(Macintosh; Intel Mac OS X 10.11; rv:63.0) Gecko/20100101 Firefox/63.0, Accept=text/html,application/xhtml+xml,"
+                + "application/xml;q=0.9,*/*;q=0.8, Accept-Language=en-US,en;q=0.5, DNT=1, "
+                + "Upgrade-Insecure-Requests=1}]";
         Assert.assertEquals("The method 'toString' should get all parameters correctly", resParser, request.toString());
     }
 
@@ -143,7 +145,7 @@ public class BasicCurlParserTest {
         BasicCurlParser basicCurlParser = new BasicCurlParser();
         BasicCurlParser.Request request = basicCurlParser.parse(cmdLine);
         Assert.assertEquals("https://jmeter.apache.org/test", request.getUrl());
-        Assert.assertEquals(9, request.getHeaders().size());
+        Assert.assertEquals(8, request.getHeaders().size());
         Assert.assertTrue(request.isCompressed());
         Assert.assertEquals("POST", request.getMethod());
         Assert.assertEquals("The method 'getPostData' should return the data correctly",
@@ -183,7 +185,7 @@ public class BasicCurlParserTest {
                 + "-H 'Connection: keep-alive' -H 'Upgrade-Insecure-Requests: 1' -A 'Mozilla/5.0'";
         BasicCurlParser basicCurlParser = new BasicCurlParser();
         BasicCurlParser.Request request = basicCurlParser.parse(cmdLine);
-        Assert.assertEquals("With method 'parser', the quantity of Headers should be 6' ", 6,
+        Assert.assertEquals("With method 'parser', the quantity of Headers should be 5' ", 5,
                 request.getHeaders().size());
         Assert.assertEquals("With method 'parser', Headers need to add 'user-agent' with value 'Mozilla/5.0' ",
                 "Mozilla/5.0", request.getHeaders().get("User-Agent"));
@@ -491,13 +493,36 @@ public class BasicCurlParserTest {
                 "www.baidu.com", request.getHeaders().get("Referer"));
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void testStringtoCookie() {
+        String cookieStr = "name=Tom;password=123456";
+        String url = "api.imgur.com/3/upload";
+        BasicCurlParser.stringToCookie(cookieStr, url);
+    }
     @Test
     public void testCookie() {
         String cmdLine = "curl -X POST  \"https://api.imgur.com/3/upload\" -b 'name=Tom;password=123456'";
         BasicCurlParser basicCurlParser = new BasicCurlParser();
         BasicCurlParser.Request request = basicCurlParser.parse(cmdLine);
-        Assert.assertEquals("With method 'parser', the cookie should be set in CookieManager",
-                "name=Tom;password=123456", request.getCookie());
+        List<Cookie>cookies=new ArrayList<>();
+        Cookie c1=new Cookie();
+        c1.setDomain("api.imgur.com");
+        c1.setName("name");
+        c1.setValue("Tom");
+        c1.setPath("/3/upload");
+        Cookie c2=new Cookie();
+        c2.setDomain("api.imgur.com");
+        c2.setName("password");
+        c2.setValue("123456");
+        c2.setPath("/3/upload");
+        cookies.add(c1);
+        cookies.add(c2);
+        Assert.assertTrue("With method 'parser', the cookie should be set in CookieManager",
+                 request.getCookies("https://api.imgur.com/3/upload").contains(c1));
+        Assert.assertTrue("With method 'parser', the cookie should be set in CookieManager",
+                request.getCookies("https://api.imgur.com/3/upload").contains(c2));
+        Assert.assertTrue("With method 'parser', the cookie should be set in CookieManager",
+                request.getCookies("https://api.imgur.com/3/upload").size()==2);
     }
     @Test
     public void testCookieFromFile() throws IOException {
@@ -507,8 +532,21 @@ public class BasicCurlParserTest {
         BasicCurlParser basicCurlParser = new BasicCurlParser();
         BasicCurlParser.Request request = basicCurlParser.parse(cmdLine);
         Assert.assertEquals("With method 'parser', the file of cookie should be uploaded in CookieManager",
-                file.getAbsolutePath(), request.getCookie());}
-
+                file.getAbsolutePath(), request.getFilepathCookie());}
+    @Test
+    public void testCookieInHeader() {
+        String cmdLine = "curl 'http://jmeter.apache.org/' -H 'cookie: PHPSESSID=testphpsessid;a=b' --compressed";
+        BasicCurlParser basicCurlParser = new BasicCurlParser();
+        BasicCurlParser.Request request = basicCurlParser.parse(cmdLine);
+        List<Cookie>cookies=request.getCookieInHeaders("http://jmeter.apache.org/");
+        Cookie c1=new Cookie();
+        c1.setDomain("jmeter.apache.org");
+        c1.setName("a");
+        c1.setValue("b");
+        c1.setPath("/");
+        Assert.assertEquals("Just static cookie in header can be added in CookieManager", c1, cookies.get(0));
+        Assert.assertTrue("Just static cookie in header can be added in CookieManager", cookies.size() == 1);
+    }
     @Test
     public void testIgnoreOptions() {
         String cmdLine = "curl 'http://jmeter.apache.org/' --include --keepalive-time '20'";
@@ -573,7 +611,7 @@ public class BasicCurlParserTest {
         BasicCurlParser basicCurlParser = new BasicCurlParser();
         BasicCurlParser.Request request = basicCurlParser.parse(cmdLine);
         Assert.assertTrue("Option max-redirs should show warning",
-                request.getOptionsInProperties().contains("max-redirs"));
+                request.getOptionsInProperties().contains("--max-redirs is in 'httpsampler.max_redirects(1062 line)'"));
     }
 
     @Test

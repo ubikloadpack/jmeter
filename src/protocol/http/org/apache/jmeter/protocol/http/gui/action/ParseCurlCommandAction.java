@@ -20,7 +20,7 @@ package org.apache.jmeter.protocol.http.gui.action;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Container;
-import java.awt.GridLayout;
+import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -37,12 +37,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.StringTokenizer;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import javax.activation.MimetypesFileTypeMap;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
@@ -123,8 +121,7 @@ public class ParseCurlCommandAction extends AbstractAction implements MenuCreato
     }
     private JSyntaxTextArea cURLCommandTA;
     private JLabel statusText;
-    private static Pattern cookiePattern = Pattern.compile("(.+)=(.+)(;?)");
-
+    private JCheckBox uploadCookiesCheckBox;
     public ParseCurlCommandAction() {
         super();
     }
@@ -144,20 +141,23 @@ public class ParseCurlCommandAction extends AbstractAction implements MenuCreato
                 false);
         Container contentPane = messageDialog.getContentPane();
         contentPane.setLayout(new BorderLayout());
-        statusText = new JLabel("", JLabel.CENTER);
+        statusText = new JLabel("",JLabel.CENTER);
         statusText.setForeground(Color.RED);
         contentPane.add(statusText, BorderLayout.NORTH);
-        cURLCommandTA = JSyntaxTextArea.getInstance(10, 80, false);
+        cURLCommandTA = JSyntaxTextArea.getInstance(20, 80, false);
         cURLCommandTA.setCaretPosition(0);
         contentPane.add(JTextScrollPane.getInstance(cURLCommandTA), BorderLayout.CENTER);
-        JPanel buttonPanel = new JPanel(new GridLayout(2, 1));
-        filePanel = new FilePanel("Read from file"); // $NON-NLS-1$
-        buttonPanel.add(filePanel);
+        JPanel optionPanel = new JPanel(new BorderLayout(3, 1));
+        filePanel = new FilePanel(JMeterUtils.getResString("curl_import_from_file")); // $NON-NLS-1$
+        optionPanel.add(filePanel,BorderLayout.CENTER);
+        uploadCookiesCheckBox =  new JCheckBox(JMeterUtils.getResString("curl_add_cookie_header_to_cookiemanager"), false);
+        optionPanel.add(uploadCookiesCheckBox,BorderLayout.NORTH);
         JButton button = new JButton(JMeterUtils.getResString("curl_create_request"));
         button.setActionCommand(CREATE_REQUEST);
         button.addActionListener(this);
-        buttonPanel.add(button);
-        contentPane.add(buttonPanel, BorderLayout.SOUTH);
+        button.setPreferredSize(new Dimension(50, 50));
+        optionPanel.add(button,BorderLayout.SOUTH);
+        contentPane.add(optionPanel, BorderLayout.SOUTH);
         messageDialog.pack();
         ComponentUtil.centerComponentInComponent(GuiPackage.getInstance().getMainFrame(), messageDialog);
         SwingUtilities.invokeLater(() -> messageDialog.setVisible(true));
@@ -228,6 +228,9 @@ public class ParseCurlCommandAction extends AbstractAction implements MenuCreato
             createDnsResolver(request, dnsCacheManager);
             threadGroupHT.add(dnsCacheManager);
         }
+        CookieManager cookieManager = new CookieManager();
+        createCookieManager(cookieManager, request);
+        threadGroupHT.add(cookieManager);
         ResultCollector resultCollector = new ResultCollector();
         resultCollector.setProperty(TestElement.NAME, "View Results Tree");
         resultCollector.setProperty(TestElement.GUI_CLASS, ViewResultsFullVisualizer.class.getName());
@@ -250,9 +253,6 @@ public class ParseCurlCommandAction extends AbstractAction implements MenuCreato
         HTTPSamplerProxy httpSampler = createSampler(request,commentText);
         HashTree samplerHT = parentHT.add(httpSampler);
         samplerHT.add(httpSampler.getHeaderManager());
-        if (request.getCookie() != null) {
-            samplerHT.add(httpSampler.getCookieManager());
-        }
         if (request.getCacert().equals("cert")) {
             samplerHT.add(httpSampler.getKeystoreConfig());
         }
@@ -277,7 +277,8 @@ public class ParseCurlCommandAction extends AbstractAction implements MenuCreato
                     "Created from cURL on " + LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME));
         } // NOSONAR
         httpSampler.setProtocol(new URL(request.getUrl()).getProtocol());
-        httpSampler.setPath(request.getUrl());
+        httpSampler.setPath(new URL(request.getUrl()).getPath());
+        httpSampler.setDomain(new URL(request.getUrl()).getHost());
         httpSampler.setUseKeepAlive(request.isKeepAlive());
         httpSampler.setFollowRedirects(true);
         httpSampler.setMethod(request.getMethod());
@@ -297,10 +298,6 @@ public class ParseCurlCommandAction extends AbstractAction implements MenuCreato
         if (!request.getFormData().isEmpty() || !request.getFormStringData().isEmpty()) {
             setFormData(request, httpSampler);
             httpSampler.setDoMultipart(true);
-        }
-        if (request.getCookie() != null) {
-            CookieManager cookieManager = createCookieManager(request);
-            httpSampler.addTestElement(cookieManager);
         }
         if (request.getCacert().equals("cert")) {
             KeystoreConfig keystoreConfig = createKeystoreConfiguration();
@@ -353,33 +350,37 @@ public class ParseCurlCommandAction extends AbstractAction implements MenuCreato
      * @param request {@link Request}
      * @return{@link CookieManager} element
      */
-    private CookieManager createCookieManager(Request request) {
-        CookieManager cookieManager = new CookieManager();
+    private void createCookieManager(CookieManager cookieManager,Request request) {
         cookieManager.setProperty(TestElement.GUI_CLASS, CookiePanel.class.getName());
         cookieManager.setProperty(TestElement.NAME, "HTTP CookieManager");
         cookieManager.setProperty(TestElement.COMMENTS,
                 "Created from cURL on " + LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME));
-        Matcher m = cookiePattern.matcher(request.getCookie());
-        if (m.matches()) {
-            List<Cookie> cookies = stringToCookie(request.getCookie(), request.getUrl());
-            for (Cookie c : cookies) {
+        if (!request.getCookies(request.getUrl()).isEmpty()) {
+            for (Cookie c : request.getCookies(request.getUrl())) {
                 cookieManager.getCookies().addItem(c);
             }
-        } else {
-            File file = new File(request.getCookie());
-            if (file.isFile() && file.exists()) {
-                try {
-                    cookieManager.addFile(request.getCookie());
-                } catch (IOException e) {
-                    LOGGER.error("Failed to read from File {}", request.getCookie());
-                    throw new IllegalArgumentException("Failed to read from File " + request.getCookie());
-                }
-            } else {
-                LOGGER.error("File {} doesn't exist", request.getCookie());
-                throw new IllegalArgumentException("File " + request.getCookie() + " doesn't exist");
+        }
+        if (!request.getCookieInHeaders(request.getUrl()).isEmpty()&&uploadCookiesCheckBox.isSelected()) {
+            for (Cookie c : request.getCookieInHeaders(request.getUrl())) {
+                cookieManager.getCookies().addItem(c);
             }
         }
-        return cookieManager;
+        if (!request.getFilepathCookie().isEmpty()) {
+            String pathfileCookie=request.getFilepathCookie();
+            File file = new File(pathfileCookie);
+            if (file.isFile() && file.exists()) {
+                try {
+                    cookieManager.addFile(pathfileCookie);
+                } catch (IOException e) {
+                    LOGGER.error("Failed to read from File {}", pathfileCookie);
+                    throw new IllegalArgumentException("Failed to read from File " + pathfileCookie);
+                }
+            } else {
+                LOGGER.error("File {} doesn't exist", pathfileCookie);
+                throw new IllegalArgumentException("File " + pathfileCookie + " doesn't exist");
+            }
+        }
+        
     }
 
     /**
@@ -422,9 +423,8 @@ public class ParseCurlCommandAction extends AbstractAction implements MenuCreato
     private boolean canAddAuthManagerInHttpRequest(Request request, AuthManager authManager) {
         Authorization auth = request.getAuthorization();
         for (int i = 0; i < authManager.getAuthObjects().size(); i++) {
-            if (auth.getURL().equals(authManager.getAuthObjectAt(i).getURL())
-                    && (!authManager.getAuthObjectAt(i).getUser().equals(auth.getUser())
-                            || !authManager.getAuthObjectAt(i).getPass().equals(auth.getPass()))
+            if (!authManager.getAuthObjectAt(i).getUser().equals(auth.getUser())
+                    || !authManager.getAuthObjectAt(i).getPass().equals(auth.getPass())
                     || !authManager.getAuthObjectAt(i).getMechanism().equals(auth.getMechanism())) {
                 return true;
             }
@@ -523,7 +523,7 @@ public class ParseCurlCommandAction extends AbstractAction implements MenuCreato
      */
     private void setFormData(Request request, HTTPSamplerProxy httpSampler) {
         if (request.getPostData() != null) {
-            throw new IllegalArgumentException("--form and --data cant appear in the same command");
+            throw new IllegalArgumentException("--form and --data can't appear in the same command");
         }
         List<HTTPFileArg> httpFileArgs = new ArrayList<>();
         for (Map.Entry<String, String> entry : request.getFormStringData().entrySet()) {
@@ -649,7 +649,8 @@ public class ParseCurlCommandAction extends AbstractAction implements MenuCreato
                             }
                         }
                         statusText.setText(JMeterUtils.getResString("curl_create_success"));
-                    } catch (Exception ex) {
+                    } 
+                    catch (Exception ex) {
                         LOGGER.error("Error creating test plan from cURL command:{}, error:{}", commandsList.get(i),
                                 ex.getMessage(), ex);
                         statusText.setText(
@@ -667,7 +668,7 @@ public class ParseCurlCommandAction extends AbstractAction implements MenuCreato
     }
 
 
-    private List<Request>  parseCommands(boolean isReadFromFile, List<String> commandsList) {
+    public List<Request>  parseCommands(boolean isReadFromFile, List<String> commandsList) {
         List<Request> requests = new ArrayList<>();
         BasicCurlParser basicCurlParser = new BasicCurlParser();
         for (int i = 0; i < commandsList.size(); i++) {
@@ -735,14 +736,22 @@ public class ParseCurlCommandAction extends AbstractAction implements MenuCreato
                         canAddDnsResolver=canAddDnsResolverInHttpRequest(request, dnsCacheManager);
                     }
                 }
-                CookieManager cookieManager = sampler.getCookieManager();
+                if (!request.getCookies(request.getUrl()).isEmpty() || !request.getFilepathCookie().isEmpty()
+                        || (!request.getCookieInHeaders(request.getUrl()).isEmpty()&&uploadCookiesCheckBox.isSelected())) {
+                    JMeterTreeNode jMeterTreeNodeCookie = findFirstNodeOfType(CookieManager.class);
+                    if (jMeterTreeNodeCookie == null) {
+                        CookieManager cookieManager = new CookieManager();
+                        createCookieManager(cookieManager, request);
+                        treeModel.addComponent(cookieManager, currentNode);
+                    } else {
+                        CookieManager cookieManager = (CookieManager) jMeterTreeNodeCookie.getTestElement();
+                        createCookieManager(cookieManager, request);
+                    }
+                } 
                 HeaderManager headerManager = sampler.getHeaderManager();
                 KeystoreConfig keystoreConfig = sampler.getKeystoreConfig();
                 final JMeterTreeNode newNode = treeModel.addComponent(sampler, currentNode);
                 treeModel.addComponent(headerManager, newNode);
-                if (request.getCookie() != null) {
-                    treeModel.addComponent(cookieManager, newNode);
-                }
                 if (request.getCacert().equals("cert")) {
                     treeModel.addComponent(keystoreConfig, newNode);
                 }
@@ -788,52 +797,13 @@ public class ParseCurlCommandAction extends AbstractAction implements MenuCreato
         // NOOP
     }
 
-    /**
-     * Convert string to cookie
-     * 
-     * @param cookieStr
-     * @param url
-     * @return list of cookies
-     */
-    public List<Cookie> stringToCookie(String cookieStr, String url) {
-        List<Cookie> cookies = new ArrayList<>();
-        final StringTokenizer tok = new StringTokenizer(cookieStr, "; ", true);
-        while (tok.hasMoreTokens()) {
-            String nextCookie = tok.nextToken();
-            if (nextCookie.contains("=")) {
-                String[] cookieParameters = nextCookie.split("=");
-                Cookie newCookie = new Cookie();
-                newCookie.setName(cookieParameters[0]);
-                newCookie.setValue(cookieParameters[1]);
-                URL newUrl;
-                try {
-                    newUrl = new URL(url);
-                    newCookie.setDomain(newUrl.getHost());
-                    newCookie.setPath(newUrl.getPath());
-                    cookies.add(newCookie);
-                } catch (MalformedURLException e) {
-                    throw new IllegalArgumentException("unqualified url" + url);
-                }
-            }
-        }
-        return cookies;
-    }
-
-    public static List<String> readFromFile(String pathname) {
+    public List<String> readFromFile(String pathname) throws IOException {
         String encoding = StandardCharsets.UTF_8.name();
         File file = new File(pathname);
-        List<String> res = new ArrayList<>();
-        if (file.exists() && file.isFile()) {
-            try {
-                res = FileUtils.readLines(file, encoding);
-            } catch (IOException e) {
-                LOGGER.error("can't find or open the file {}", pathname);
-            }
-        }
-        return res;
+        return FileUtils.readLines(file, encoding);
     }
 
-    public static List<String> readFromTextPanel(String commands) {
+    public List<String> readFromTextPanel(String commands) {
         String[] cs = commands.split("curl");
         List<String> s = new ArrayList<>();
         for (int i = 1; i < cs.length; i++) {
@@ -842,35 +812,37 @@ public class ParseCurlCommandAction extends AbstractAction implements MenuCreato
         return s;
     }
     
-    private String createCommentText(Request request) {
+    public String createCommentText(Request request) {
         StringBuilder commentText = new StringBuilder();
         if (!request.getOptionsIgnored().isEmpty()) {
             for (String s : request.getOptionsIgnored()) {
                 commentText.append("--"+s + " ");
             }
-            commentText.append("ignore; ");
+            commentText.append("ignoring; ");
         }
         if (!request.getOptionsInProperties().isEmpty()) {
             for (String s : request.getOptionsInProperties()) {
-                commentText.append("--"+s + " ");
+                commentText.append(s + " ");
             }
-            commentText.append("configure in jmeter.properties; ");
+            commentText.append("configure in jmeter.properties ");
         }
-        if (request.getLimitRate()!=0) {
-            commentText.append("Please configure the limit rate in 'jmeter.properties, the value is "+request.getLimitRate()+";");
+        if (request.getLimitRate() != 0) {
+            commentText.append(
+                    "Please configure the limit rate in 'httpclient.socket.http.cps' of 'jmeter.properties(374 line), the value is "
+                            + request.getLimitRate() + ";");
         }
         if (!request.getOptionsNoSupport().isEmpty()) {
             for (String s : request.getOptionsNoSupport()) {
                 commentText.append("--"+s + " ");
             }
-            commentText.append("not support; ");
+            commentText.append("not supported; ");
         }
         if (request.getNoproxy()!=null) {
-            commentText.append("Please configure noproxy list in terminal and restart Jmeter. ");
+            commentText.append("Please configure noproxy list in terminal and restart JMeter. ");
             commentText.append("Look: https://jmeter.apache.org/usermanual/get-started.html#proxy_server");
         }
         if (!request.getCacert().isEmpty()) {
-            commentText.append("Please configure the SSL file with CA certificates in 'system.properties. ");
+            commentText.append("Please configure the SSL file with CA certificates in 'SSL configuration' of 'system.properties(49 line)'. ");
             commentText.append("Look: https://jmeter.apache.org/usermanual/properties_reference.html#ssl_config");
         }
         return commentText.toString();

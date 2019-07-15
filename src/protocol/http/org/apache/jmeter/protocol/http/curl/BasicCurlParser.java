@@ -969,20 +969,20 @@ public class BasicCurlParser {
     * @param dataOptionName the different option of "--data"
     * @return the post data
     */
-    private String getPostDataByDifferentOption(String postdata, String dataOptionName) {
-        if (dataOptionName.equals("data-urlencode")) {
-            postdata = encodePostdata(postdata);
-        } else {
-            if (postdata.charAt(0) == '@' && !dataOptionName.equals("data-raw")) {
-                postdata = postdata.substring(1, postdata.length());
-                postdata = readFromFile(postdata);
-                if (!dataOptionName.equals("data-binary") && postdata != null) {
-                    postdata = deleteLineBreak(postdata);
-                }
-            }
-        }
-        return postdata;
-    }
+   private String getPostDataByDifferentOption(String postdata, String dataOptionName) {
+       if (dataOptionName.equals("data-urlencode")) {
+           postdata = encodePostdata(postdata);
+       } else {
+           if (postdata.charAt(0) == '@' && !dataOptionName.equals("data-raw")) {
+               postdata = postdata.substring(1, postdata.length());
+               postdata = readFromFile(postdata);
+               if (!dataOptionName.equals("data-binary") && postdata != null) {
+                   postdata = deleteLineBreak(postdata);
+               }
+           }
+       }
+       return postdata;
+   }
 
    /**
     * Encode the post data

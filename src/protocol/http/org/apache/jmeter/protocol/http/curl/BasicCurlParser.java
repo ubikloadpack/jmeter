@@ -284,42 +284,84 @@ public class BasicCurlParser {
             }
         }
 
+        /**
+         * 
+         * @return this list of hosts which don't use proxy
+         */
         public String getNoproxy() {
             return noproxy;
         }
 
+        /**
+         * Set the list of hosts which don't use proxy
+         * 
+         * @param noproxy
+         */
         public void setNoproxy(String noproxy) {
             this.noproxy = noproxy;
         }
 
+        /**
+         * 
+         * @return the DNS resolver
+         */
         public String getDNSResolver() {
             return dnsresolver;
         }
 
+        /**
+         * set DNS resolver
+         * 
+         * @param dnsresolver
+         */
         public void setDNSResolver(String dnsresolver) {
             this.dnsresolver = dnsresolver;
         }
-
+        
+        /**
+         *   
+         * @return the interface name to perform an operation
+         */
         public String getInterfaceName() {
             return interfaceName;
         }
 
+        /**
+         * 
+         * @param interfaceName the name of interface
+         */
         public void setInterfaceName(String interfaceName) {
             this.interfaceName = interfaceName;
         }
 
+        /**
+         * 
+         * @return the list of options which are ignored
+         */
         public List<String> getOptionsIgnored() {
             return Collections.unmodifiableList(this.optionsIgnored);
         }
-
+        
+        /**
+         * a
+         * @param option option is ignored
+         */
         public void addOptionsIgnored(String option) {
             this.optionsIgnored.add(option);
         }
 
+        /**
+         * 
+         * @return the list of options which are not supported by JMeter
+         */
         public List<String> getOptionsNoSupport() {
             return Collections.unmodifiableList(this.optionsNoSupport);
         }
-
+        
+        /**
+         * 
+         * @param option option is not supported
+         */
         public void addOptionsNoSupport(String option) {
             this.optionsNoSupport.add(option);
         }
@@ -404,31 +446,58 @@ public class BasicCurlParser {
         public void addFormData(String key, String value) {
             formData.put(key, value);
         }
-
+        
+        /**
+         * 
+         * @return the options which work for SSL
+         */
         public String getCACert() {
             return CACert;
         }
-
+        
+        /**
+         * the options which work for SSL
+         * @param CACert
+         */
         public void setCacert(String CACert) {
             this.CACert = CACert;
         }
-
+        
+        /**
+         * 
+         * @return the authorization
+         */
         public Authorization getAuthorization() {
             return authorization;
         }
-
+        
+        /**
+         * 
+         * @return the connection time out
+         */
         public double getConnectTimeout() {
             return connectTimeout;
         }
-
+        /**
+         * 
+         * @param connectTimeout the connection time out 
+         */
         public void setConnectTimeout(double connectTimeout) {
             this.connectTimeout = connectTimeout;
         }
-
+        
+        /**
+         * 
+         * @return the max time of connection
+         */
         public double getMaxTime() {
             return maxTime;
         }
-
+       
+        /**
+         * 
+         * @param the max time of connection
+         */
         public void setMaxTime(double maxTime) {
             this.maxTime = maxTime;
         }
@@ -646,7 +715,7 @@ public class BasicCurlParser {
                 } else if (DATAS_OPT.contains(option.getDescriptor().getId())) {
                     String value = option.getArgument(0);
                     String dataOptionName = option.getDescriptor().getName();
-                    value = getPostDataByDifferentOption(value, dataOptionName);
+                    value = getPostDataByDifferentOption(value.trim(), dataOptionName);
                     request.setMethod("POST");
                     request.setPostData(value);
                 } else if (FORMS_OPT.contains(option.getDescriptor().getId())) {
@@ -904,9 +973,9 @@ public class BasicCurlParser {
        if (dataOptionName.equals("data-urlencode")) {
            postdata = encodePostdata(postdata);
        } else {
-           if (postdata.contains("@") && !dataOptionName.equals("data-raw")) {
-               postdata = postdata.replaceFirst("@", "");
-               postdata = readFromFile(postdata.trim());
+           if (postdata.charAt(0)=='@' && !dataOptionName.equals("data-raw")) {
+               postdata = postdata.substring(1,postdata.length());
+               postdata = readFromFile(postdata);
                 if (!dataOptionName.equals("data-binary")&&postdata != null) {
                         postdata = deleteLineBreak(postdata);
                 }

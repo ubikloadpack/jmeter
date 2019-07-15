@@ -37,16 +37,16 @@ import org.junit.rules.TemporaryFolder;
  * @since 5.1
  */
 public class BasicCurlParserTest {
-    
+
     @Rule
     public TemporaryFolder tempFolder = new TemporaryFolder();
     /**
-     * 
+     *
      */
     public BasicCurlParserTest() {
         super();
     }
-    
+
     @Test
     public void testFFParsing() {
         String cmdLine = "curl 'http://jmeter.apache.org/' -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.11; rv:63.0) Gecko/20100101 Firefox/63.0' "

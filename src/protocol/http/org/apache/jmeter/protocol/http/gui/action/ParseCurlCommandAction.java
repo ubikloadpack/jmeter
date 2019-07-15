@@ -104,7 +104,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Opens a popup where user can enter a cURL command line and create a test plan
  * from it
- * 
+ *
  * @since 5.1
  */
 public class ParseCurlCommandAction extends AbstractAction implements MenuCreator, ActionListener { // NOSONAR
@@ -133,7 +133,7 @@ public class ParseCurlCommandAction extends AbstractAction implements MenuCreato
 
     /**
      * Show popup where user can import cURL command
-     * 
+     *
      * @param event {@link ActionEvent}
      */
     private final void showInputDialog(ActionEvent event) {
@@ -321,7 +321,7 @@ public class ParseCurlCommandAction extends AbstractAction implements MenuCreato
     }
 
     /**
-     * 
+     *
      * @param request {@link Request}
      * @return {@link HeaderManager} element
      */
@@ -346,7 +346,7 @@ public class ParseCurlCommandAction extends AbstractAction implements MenuCreato
 
     /**
      * Create Cookie Manager
-     * 
+     *
      * @param request {@link Request}
      * @return{@link CookieManager} element
      */
@@ -385,7 +385,7 @@ public class ParseCurlCommandAction extends AbstractAction implements MenuCreato
 
     /**
      * Create Keystore Configuration
-     * 
+     *
      * @param request {@link Request}
      * @return{@link KeystoreConfig} element
      */
@@ -400,7 +400,7 @@ public class ParseCurlCommandAction extends AbstractAction implements MenuCreato
 
     /**
      * Create Authorization manager
-     * 
+     *
      * @param request {@link Request}
      * @return {@link AuthManager} element
      */
@@ -415,7 +415,7 @@ public class ParseCurlCommandAction extends AbstractAction implements MenuCreato
 
     /**
      * Whether to update Authorization Manager in http request
-     * 
+     *
      * @param request     {@link Request}
      * @param authManager {@link AuthManager} element
      * @return whether to update Authorization Manager in http request
@@ -431,10 +431,10 @@ public class ParseCurlCommandAction extends AbstractAction implements MenuCreato
         }
         return false;
     }
-   
+
     /**
      * Whether to update Authorization Manager in Thread Group
-     * 
+     *
      * @param request     {@link Request}
      * @param authManager {@link AuthManager} element
      * @return whether to update Authorization Manager in Thread Group
@@ -451,7 +451,7 @@ public class ParseCurlCommandAction extends AbstractAction implements MenuCreato
 
     /**
      * Create DnsCacheManager
-     * 
+     *
      * @param request {@link Request}
      * @return{@link DnsCacheManager} element
      */
@@ -477,7 +477,7 @@ public class ParseCurlCommandAction extends AbstractAction implements MenuCreato
     }
     /**
      * Create DnsCacheManager
-     * 
+     *
      * @param request {@link Request}
      * @return{@link DnsCacheManager} element
      */
@@ -517,7 +517,7 @@ public class ParseCurlCommandAction extends AbstractAction implements MenuCreato
     }
     /**
      * Set parameters in http request
-     * 
+     *
      * @param request     {@link Request}
      * @param httpSampler
      */
@@ -563,7 +563,7 @@ public class ParseCurlCommandAction extends AbstractAction implements MenuCreato
         }
     }
     /**
-     * 
+     *
      * @param request     {@link Request}
      * @param httpSampler
      */
@@ -649,7 +649,7 @@ public class ParseCurlCommandAction extends AbstractAction implements MenuCreato
                             }
                         }
                         statusText.setText(JMeterUtils.getResString("curl_create_success"));
-                    } 
+                    }
                     catch (Exception ex) {
                         LOGGER.error("Error creating test plan from cURL command:{}, error:{}", commandsList.get(i),
                                 ex.getMessage(), ex);
@@ -747,7 +747,7 @@ public class ParseCurlCommandAction extends AbstractAction implements MenuCreato
                         CookieManager cookieManager = (CookieManager) jMeterTreeNodeCookie.getTestElement();
                         createCookieManager(cookieManager, request);
                     }
-                } 
+                }
                 HeaderManager headerManager = sampler.getHeaderManager();
                 KeystoreConfig keystoreConfig = sampler.getKeystoreConfig();
                 final JMeterTreeNode newNode = treeModel.addComponent(sampler, currentNode);
@@ -811,7 +811,7 @@ public class ParseCurlCommandAction extends AbstractAction implements MenuCreato
         }
         return s;
     }
-    
+
     public String createCommentText(Request request) {
         StringBuilder commentText = new StringBuilder();
         if (!request.getOptionsIgnored().isEmpty()) {

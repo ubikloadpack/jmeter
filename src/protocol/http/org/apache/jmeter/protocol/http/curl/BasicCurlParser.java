@@ -52,7 +52,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Basic cURL command parser that handles:
- * 
+ *
  * @since 5.1
  */
 public class BasicCurlParser {
@@ -176,14 +176,14 @@ public class BasicCurlParser {
         public String getPostData() {
             return postData;
         }
-        
+
         /**
          * @return the compressed
          */
         public boolean isCompressed() {
             return compressed;
         }
-        
+
         /**
          * @param compressed the compressed to set
          */
@@ -223,14 +223,14 @@ public class BasicCurlParser {
         public String getUrl() {
             return url;
         }
-        
+
         /**
          * @param url the url to set
          */
         public void setUrl(String url) {
             this.url = url;
         }
-        
+
         /**
          * @return the headers
          */
@@ -682,7 +682,7 @@ public class BasicCurlParser {
             D_PROXY_NEGOTIATE_OPT, D_KEEPALIVETILE_OPT, D_MAX_TIME_OPT, D_OUTPUT_OPT, D_CREATE_DIRS_OPT, D_RAW_OPT,
             D_INTERFACE_OPT, D_RESOLVER_OPT, D_LIMIT_RATE_OPT, D_MAX_REDIRS ,D_NOPROXY
     };
-    
+
     public BasicCurlParser() {
         super();
     }
@@ -806,7 +806,7 @@ public class BasicCurlParser {
                     "Unexpected format for command line:" + commandLine + ", error:" + error);
         }
     }
-    
+
     /**
      * Crack a command line.
      * @param toProcess the command line to process.
@@ -1077,7 +1077,7 @@ public class BasicCurlParser {
     }
    /**
     * Convert string to cookie
-    * 
+    *
     * @param cookieStr
     * @param url
     * @return list of cookies

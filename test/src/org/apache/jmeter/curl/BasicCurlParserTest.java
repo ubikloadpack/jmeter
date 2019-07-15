@@ -365,7 +365,7 @@ public class BasicCurlParserTest {
                 request.getPostData());
     }
     @Test
-    public void testDataUrlEncodeFromFile1() throws IOException {
+    public void testDataUrlEncodeWithSecondAtSign() throws IOException {
         String encoding = StandardCharsets.UTF_8.name();
         File file = tempFolder.newFile("test.txt");
         FileUtils.writeStringToFile(file, "test@", encoding, true);

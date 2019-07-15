@@ -188,7 +188,7 @@ public class BasicCurlParser {
         public void setCompressed(boolean compressed) {
             this.compressed = compressed;
         }
-        
+
         /**
          * @param name the field of Header
          * @param value the value of Header
@@ -234,7 +234,7 @@ public class BasicCurlParser {
         public Map<String, String> getHeaders() {
             return Collections.unmodifiableMap(this.headers);
         }
-        
+
         /**
          * @return the list of options which are ignored
          */
@@ -306,7 +306,7 @@ public class BasicCurlParser {
         public void setDNSResolver(String dnsresolver) {
             this.dnsresolver = dnsresolver;
         }
-        
+
         /**
          * @return the interface name to perform an operation
          */
@@ -327,7 +327,7 @@ public class BasicCurlParser {
         public List<String> getOptionsIgnored() {
             return Collections.unmodifiableList(this.optionsIgnored);
         }
-        
+
         /**
          * @param option option is ignored
          */
@@ -341,7 +341,7 @@ public class BasicCurlParser {
         public List<String> getOptionsNoSupport() {
             return Collections.unmodifiableList(this.optionsNoSupport);
         }
-        
+
         /**
          * @param option option is not supported
          */
@@ -419,14 +419,14 @@ public class BasicCurlParser {
         public void addFormData(String key, String value) {
             formData.put(key, value);
         }
-        
+
         /**
          * @return the options which work for SSL
          */
         public String getCACert() {
             return CACert;
         }
-        
+
         /**
          * the options which work for SSL
          * @param CACert
@@ -434,14 +434,14 @@ public class BasicCurlParser {
         public void setCacert(String CACert) {
             this.CACert = CACert;
         }
-        
+
         /**
          * @return the authorization
          */
         public Authorization getAuthorization() {
             return authorization;
         }
-        
+
         /**
          * @return the connection time out
          */
@@ -449,19 +449,19 @@ public class BasicCurlParser {
             return connectTimeout;
         }
         /**
-         * @param connectTimeout the connection time out 
+         * @param connectTimeout the connection time out
          */
         public void setConnectTimeout(double connectTimeout) {
             this.connectTimeout = connectTimeout;
         }
-        
+
         /**
          * @return the max time of connection
          */
         public double getMaxTime() {
             return maxTime;
         }
-       
+
         /**
          * @param the max time of connection
          */
@@ -500,7 +500,6 @@ public class BasicCurlParser {
         /* (non-Javadoc)
          * @see java.lang.Object#toString()
          */
-        
         @Override
         public String toString() {
             StringBuilder builder = new StringBuilder();
@@ -515,7 +514,6 @@ public class BasicCurlParser {
             builder.append("]");
             return builder.toString();
         }
-       
     }
     private static final CLOptionDescriptor D_COMPRESSED_OPT =
             new CLOptionDescriptor("compressed", CLOptionDescriptor.ARGUMENT_DISALLOWED, COMPRESSED_OPT,
@@ -1025,7 +1023,7 @@ public class BasicCurlParser {
         Matcher m = deleteLinePattern.matcher(postdata);
         return m.replaceAll("");
     }
-    
+
    /**
     * Verify if the string is cookie or filename
     * @param str

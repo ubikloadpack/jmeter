@@ -484,7 +484,6 @@ public class ParseCurlCommandAction extends AbstractAction implements MenuCreato
     private void createDnsResolver(Request request, DNSCacheManager dnsCacheManager) {
         dnsCacheManager.setProperty(TestElement.GUI_CLASS, DNSCachePanel.class.getName());
         dnsCacheManager.setProperty(TestElement.NAME, "DNS Cache Manager");
-
         dnsCacheManager.setCustomResolver(true);
         dnsCacheManager.getHosts().clear();
         String[]resolveParameters=request.getDNSResolver().split(":");
@@ -498,9 +497,8 @@ public class ParseCurlCommandAction extends AbstractAction implements MenuCreato
                     "Created from cURL on " + LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME));
         }
         dnsCacheManager.addHost(resolveParameters[0], resolveParameters[2]);
-
     }
-    
+
     private boolean canAddDnsResolverInHttpRequest(Request request, DNSCacheManager dnsCacheManager) {
         if (dnsCacheManager.getHosts().size() != 1) {
             return true;
@@ -847,6 +845,4 @@ public class ParseCurlCommandAction extends AbstractAction implements MenuCreato
         }
         return commentText.toString();
     }
-
-    
 }

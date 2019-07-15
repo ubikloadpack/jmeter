@@ -969,20 +969,20 @@ public class BasicCurlParser {
     * @param dataOptionName the different option of "--data"
     * @return the post data
     */
-   private String getPostDataByDifferentOption(String postdata, String dataOptionName) {
-       if (dataOptionName.equals("data-urlencode")) {
-           postdata = encodePostdata(postdata);
-       } else {
-           if (postdata.charAt(0)=='@' && !dataOptionName.equals("data-raw")) {
-               postdata = postdata.substring(1,postdata.length());
-               postdata = readFromFile(postdata);
-                if (!dataOptionName.equals("data-binary")&&postdata != null) {
-                        postdata = deleteLineBreak(postdata);
+    private String getPostDataByDifferentOption(String postdata, String dataOptionName) {
+        if (dataOptionName.equals("data-urlencode")) {
+            postdata = encodePostdata(postdata);
+        } else {
+            if (postdata.charAt(0) == '@' && !dataOptionName.equals("data-raw")) {
+                postdata = postdata.substring(1, postdata.length());
+                postdata = readFromFile(postdata);
+                if (!dataOptionName.equals("data-binary") && postdata != null) {
+                    postdata = deleteLineBreak(postdata);
                 }
-           }
-       }
-       return postdata;
-   }
+            }
+        }
+        return postdata;
+    }
 
    /**
     * Encode the post data
@@ -991,20 +991,19 @@ public class BasicCurlParser {
     * @return the result of encoding
     *
     */
-   private String encodePostdata(String postdata) {
-      
-       if (postdata.contains("@")) {
-           String contentFile = null;
-           String[] arr = postdata.split("@",2);
-           try {
-               contentFile = URLEncoder.encode(readFromFile(arr[1]), StandardCharsets.UTF_8.name());
-           } catch (UnsupportedEncodingException e) {
-               LOGGER.error("string '{}' cannot be encoded", readFromFile(arr[1]));// NOSONAR
-           }
-           if (!arr[0].isEmpty()) {
-               contentFile = arr[0] + "=" + contentFile;
-           }
-           return contentFile;
+    private String encodePostdata(String postdata) {
+        if (postdata.contains("@")) {
+            String contentFile = null;
+            String[] arr = postdata.split("@", 2);
+            try {
+                contentFile = URLEncoder.encode(readFromFile(arr[1]), StandardCharsets.UTF_8.name());
+            } catch (UnsupportedEncodingException e) {
+                LOGGER.error("string '{}' cannot be encoded", readFromFile(arr[1]));// NOSONAR
+            }
+            if (!arr[0].isEmpty()) {
+                contentFile = arr[0] + "=" + contentFile;
+            }
+            return contentFile;
         } else {
             if (!postdata.contains("=")) {
                 try {
@@ -1023,10 +1022,9 @@ public class BasicCurlParser {
                     throw new IllegalArgumentException(
                             postdata.substring(index + 1, postdata.length()) + " cannot be encoded");
                 }
-
-           }
-       }
-   }
+            }
+        }
+    }
 
    /**
     * Read the postdata from file
@@ -1068,20 +1066,20 @@ public class BasicCurlParser {
     */
     public static boolean isValidCookie(String str) {
         for (String r : str.split(";")) {
-            if (!r.contains("="))
-            {
+            if (!r.contains("=")) {
                 return false;
             }
         }
         return true;
     }
-   /**
-    * Convert string to cookie
-    *
-    * @param cookieStr
-    * @param url
-    * @return list of cookies
-    */
+
+    /**
+     * Convert string to cookie
+     *
+     * @param cookieStr
+     * @param url
+     * @return list of cookies
+     */
    public static List<Cookie> stringToCookie(String cookieStr, String url) {
        List<Cookie> cookies = new ArrayList<>();
        final StringTokenizer tok = new StringTokenizer(cookieStr, "; ", true);

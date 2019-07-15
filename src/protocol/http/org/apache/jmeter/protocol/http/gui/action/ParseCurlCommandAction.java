@@ -380,7 +380,6 @@ public class ParseCurlCommandAction extends AbstractAction implements MenuCreato
                 throw new IllegalArgumentException("File " + pathfileCookie + " doesn't exist");
             }
         }
-        
     }
 
     /**

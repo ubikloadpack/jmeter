@@ -148,7 +148,6 @@ public class BasicCurlParser {
         }
 
         /**
-         * 
          * @return the method
          */
         public String getMethod() {
@@ -163,7 +162,6 @@ public class BasicCurlParser {
         }
 
         /**
-         * 
          * @param value the post data
          */
         public void setPostData(String value) {
@@ -192,7 +190,6 @@ public class BasicCurlParser {
         }
         
         /**
-         * 
          * @param name the field of Header
          * @param value the value of Header
          */
@@ -239,7 +236,6 @@ public class BasicCurlParser {
         }
         
         /**
-         * 
          * @return the list of options which are ignored
          */
         public List<String> getOptionsInProperties() {
@@ -247,7 +243,6 @@ public class BasicCurlParser {
         }
 
         /**
-         * 
          * @param option the option
          */
         public void addOptionsInProperties(String option) {
@@ -255,7 +250,6 @@ public class BasicCurlParser {
         }
 
         /**
-         * 
          * @return the maximum transfer rate
          */
         public int getLimitRate() {
@@ -263,7 +257,6 @@ public class BasicCurlParser {
         }
 
         /**
-         * 
          * @param limitRate the maximum transfer rate
          */
         public void setLimitRate(String limitRate) {
@@ -285,7 +278,6 @@ public class BasicCurlParser {
         }
 
         /**
-         * 
          * @return this list of hosts which don't use proxy
          */
         public String getNoproxy() {
@@ -294,7 +286,6 @@ public class BasicCurlParser {
 
         /**
          * Set the list of hosts which don't use proxy
-         * 
          * @param noproxy
          */
         public void setNoproxy(String noproxy) {
@@ -302,7 +293,6 @@ public class BasicCurlParser {
         }
 
         /**
-         * 
          * @return the DNS resolver
          */
         public String getDNSResolver() {
@@ -311,7 +301,6 @@ public class BasicCurlParser {
 
         /**
          * set DNS resolver
-         * 
          * @param dnsresolver
          */
         public void setDNSResolver(String dnsresolver) {
@@ -319,7 +308,6 @@ public class BasicCurlParser {
         }
         
         /**
-         *   
          * @return the interface name to perform an operation
          */
         public String getInterfaceName() {
@@ -327,7 +315,6 @@ public class BasicCurlParser {
         }
 
         /**
-         * 
          * @param interfaceName the name of interface
          */
         public void setInterfaceName(String interfaceName) {
@@ -335,7 +322,6 @@ public class BasicCurlParser {
         }
 
         /**
-         * 
          * @return the list of options which are ignored
          */
         public List<String> getOptionsIgnored() {
@@ -343,7 +329,6 @@ public class BasicCurlParser {
         }
         
         /**
-         * a
          * @param option option is ignored
          */
         public void addOptionsIgnored(String option) {
@@ -351,7 +336,6 @@ public class BasicCurlParser {
         }
 
         /**
-         * 
          * @return the list of options which are not supported by JMeter
          */
         public List<String> getOptionsNoSupport() {
@@ -359,14 +343,12 @@ public class BasicCurlParser {
         }
         
         /**
-         * 
          * @param option option is not supported
          */
         public void addOptionsNoSupport(String option) {
             this.optionsNoSupport.add(option);
         }
         /**
-         *
          * @return the map of proxy server
          */
         public Map<String, String> getProxyServer() {
@@ -374,7 +356,6 @@ public class BasicCurlParser {
         }
 
         /**
-         *
          * @param proxyServer set the map of proxy server
          */
         public void setProxyServer(String key, String value) {
@@ -382,7 +363,6 @@ public class BasicCurlParser {
         }
 
         /**
-         *
          * @return if the Http request keeps alive
          */
         public boolean isKeepAlive() {
@@ -390,7 +370,6 @@ public class BasicCurlParser {
         }
 
         /**
-         *
          * @param isKeepAlive set if the Http request keeps alive
          */
         public void setKeepAlive(boolean isKeepAlive) {
@@ -398,7 +377,6 @@ public class BasicCurlParser {
         }
 
         /**
-         *
          * @return the list of DNS server
          */
         public Set<String> getDnsServers() {
@@ -406,7 +384,6 @@ public class BasicCurlParser {
         }
 
         /**
-         *
          * @param dnsServer set the list of DNS server
          */
         public void addDnsServers(String dnsServer) {
@@ -414,7 +391,6 @@ public class BasicCurlParser {
         }
 
         /**
-         *
          * @return the map of form data
          */
         public Map<String, String> getFormStringData() {
@@ -422,7 +398,6 @@ public class BasicCurlParser {
         }
 
         /**
-         *
          * @param key   the key of form data
          * @param value the value of form data
          */
@@ -431,7 +406,6 @@ public class BasicCurlParser {
         }
 
         /**
-         *
          * @return the map of form data
          */
         public Map<String, String> getFormData() {
@@ -439,7 +413,6 @@ public class BasicCurlParser {
         }
 
         /**
-         *
          * @param key   the key of form data
          * @param value the value of form data
          */
@@ -448,7 +421,6 @@ public class BasicCurlParser {
         }
         
         /**
-         * 
          * @return the options which work for SSL
          */
         public String getCACert() {
@@ -464,7 +436,6 @@ public class BasicCurlParser {
         }
         
         /**
-         * 
          * @return the authorization
          */
         public Authorization getAuthorization() {
@@ -472,14 +443,12 @@ public class BasicCurlParser {
         }
         
         /**
-         * 
          * @return the connection time out
          */
         public double getConnectTimeout() {
             return connectTimeout;
         }
         /**
-         * 
          * @param connectTimeout the connection time out 
          */
         public void setConnectTimeout(double connectTimeout) {
@@ -487,7 +456,6 @@ public class BasicCurlParser {
         }
         
         /**
-         * 
          * @return the max time of connection
          */
         public double getMaxTime() {
@@ -495,7 +463,6 @@ public class BasicCurlParser {
         }
        
         /**
-         * 
          * @param the max time of connection
          */
         public void setMaxTime(double maxTime) {

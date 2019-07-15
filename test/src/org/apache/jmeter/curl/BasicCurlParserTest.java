@@ -635,7 +635,7 @@ public class BasicCurlParserTest {
         Assert.assertTrue("Option proxy-ntlm should show warning",
                 request.getOptionsNoSupport().contains("proxy-ntlm"));
     }
-    
+
     @Test
     public void testIsValidCookiet() {
         String str="a=b;c=d";

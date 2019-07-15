@@ -25,16 +25,15 @@ import org.HdrHistogram.Histogram;
 import org.LatencyUtils.LatencyStats;
 
 public class HistogramStatCalculatorLong implements IStatCalculator<Long> {
-    private LatencyStats latencyStats = new LatencyStats();
-    private Histogram histogram = new Histogram(latencyStats.getIntervalHistogram());
+    private LatencyStats latencyStats = LatencyStats.Builder.create().build();
+    Histogram intervalHistogram = latencyStats.getIntervalHistogram();
+    private Histogram histogram = new Histogram(intervalHistogram);
     private long bytes = 0;
     private long sentBytes = 0;
     private long sum = 0;
     private long min = Long.MAX_VALUE;
     private long max = Long.MIN_VALUE;
     private Map<Long, Long> valuesMap = new TreeMap<>();
-    public HistogramStatCalculatorLong() {
-    }
 
     @Override
     public void clear() {
@@ -153,8 +152,9 @@ public class HistogramStatCalculatorLong implements IStatCalculator<Long> {
         sum += val * sampleCount;
         for (int i = 0; i < sampleCount; i++) {
             latencyStats.recordLatency(val*1000000);
+            latencyStats.getIntervalHistogramInto(intervalHistogram);
+            histogram.add(intervalHistogram);
         }
-        histogram.add(latencyStats.getIntervalHistogram());
         max = Math.max(val, max);
         min = Math.min(val, min);
         updateValueCount(val,sampleCount);
@@ -164,7 +164,8 @@ public class HistogramStatCalculatorLong implements IStatCalculator<Long> {
     public void addValue(Long val) {
         sum += val;
         latencyStats.recordLatency(val*1000000);
-        histogram.add(latencyStats.getIntervalHistogram());
+        latencyStats.getIntervalHistogramInto(intervalHistogram);
+        histogram.add(intervalHistogram);
         max = Math.max(val, max);
         min = Math.min(val, min);
         updateValueCount(val,1);

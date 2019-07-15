@@ -28,8 +28,9 @@ import org.LatencyUtils.LatencyStats;
  *
  */
 public class StatisticsSummaryData {
-    private LatencyStats latencyStats = new LatencyStats();
-    private Histogram histogram = new Histogram(latencyStats.getIntervalHistogram());
+    private LatencyStats latencyStats = LatencyStats.Builder.create().build();
+    Histogram intervalHistogram = latencyStats.getIntervalHistogram();
+    private Histogram histogram = new Histogram(intervalHistogram);
     private long firstTime = Long.MAX_VALUE;
     private long endTime = Long.MIN_VALUE;
     private long bytes = 0L;
@@ -251,6 +252,7 @@ public class StatisticsSummaryData {
     
     public void addValue(Long val) {
         latencyStats.recordLatency(val*1000000);
-        histogram.add(latencyStats.getIntervalHistogram());
+        latencyStats.getIntervalHistogramInto(intervalHistogram);
+        histogram.add(intervalHistogram);
     }
 }

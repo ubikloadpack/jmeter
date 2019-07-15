@@ -104,7 +104,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Opens a popup where user can enter a cURL command line and create a test plan
  * from it
- *
+ * 
  * @since 5.1
  */
 public class ParseCurlCommandAction extends AbstractAction implements MenuCreator, ActionListener { // NOSONAR
@@ -133,19 +133,17 @@ public class ParseCurlCommandAction extends AbstractAction implements MenuCreato
 
     /**
      * Show popup where user can import cURL command
-     *
+     * 
      * @param event {@link ActionEvent}
      */
     private final void showInputDialog(ActionEvent event) {
-        EscapeDialog messageDialog = new EscapeDialog(getParentFrame(event),
-                JMeterUtils.getResString("curl_import"), //$NON-NLS-1$
+        EscapeDialog messageDialog = new EscapeDialog(getParentFrame(event), JMeterUtils.getResString("curl_import"), //$NON-NLS-1$
                 false);
         Container contentPane = messageDialog.getContentPane();
         contentPane.setLayout(new BorderLayout());
         statusText = new JLabel("",JLabel.CENTER);
         statusText.setForeground(Color.RED);
         contentPane.add(statusText, BorderLayout.NORTH);
-
         cURLCommandTA = JSyntaxTextArea.getInstance(20, 80, false);
         cURLCommandTA.setCaretPosition(0);
         contentPane.add(JTextScrollPane.getInstance(cURLCommandTA), BorderLayout.CENTER);
@@ -179,7 +177,7 @@ public class ParseCurlCommandAction extends AbstractAction implements MenuCreato
 
     private DNSCacheManager findNodeOfTypeDnsCacheManagerByType(boolean isCustom) {
         JMeterTreeModel treeModel = GuiPackage.getInstance().getTreeModel();
-        DNSCacheManager dnsCacheManager = new DNSCacheManager();
+        DNSCacheManager dnsCacheManager=new DNSCacheManager();
         List<JMeterTreeNode> res = treeModel.getNodesOfType(DNSCacheManager.class);
         for (JMeterTreeNode jm : res) {
             dnsCacheManager = (DNSCacheManager) jm.getTestElement();
@@ -225,7 +223,7 @@ public class ParseCurlCommandAction extends AbstractAction implements MenuCreato
             createDnsServer(request, dnsCacheManager);
             threadGroupHT.add(dnsCacheManager);
         }
-        if (request.getResolverDNS()!=null) {
+        if (request.getDNSResolver()!=null) {
             DNSCacheManager dnsCacheManager = new DNSCacheManager();
             createDnsResolver(request, dnsCacheManager);
             threadGroupHT.add(dnsCacheManager);
@@ -255,7 +253,7 @@ public class ParseCurlCommandAction extends AbstractAction implements MenuCreato
         HTTPSamplerProxy httpSampler = createSampler(request,commentText);
         HashTree samplerHT = parentHT.add(httpSampler);
         samplerHT.add(httpSampler.getHeaderManager());
-        if (request.getCacert().equals("cert")) {
+        if (request.getCACert().equals("cert")) {
             samplerHT.add(httpSampler.getKeystoreConfig());
         }
         return httpSampler;
@@ -301,7 +299,7 @@ public class ParseCurlCommandAction extends AbstractAction implements MenuCreato
             setFormData(request, httpSampler);
             httpSampler.setDoMultipart(true);
         }
-        if (request.getCacert().equals("cert")) {
+        if (request.getCACert().equals("cert")) {
             KeystoreConfig keystoreConfig = createKeystoreConfiguration();
             httpSampler.addTestElement(keystoreConfig);
         }
@@ -323,7 +321,7 @@ public class ParseCurlCommandAction extends AbstractAction implements MenuCreato
     }
 
     /**
-     *
+     * 
      * @param request {@link Request}
      * @return {@link HeaderManager} element
      */
@@ -348,7 +346,7 @@ public class ParseCurlCommandAction extends AbstractAction implements MenuCreato
 
     /**
      * Create Cookie Manager
-     *
+     * 
      * @param request {@link Request}
      * @return{@link CookieManager} element
      */
@@ -382,11 +380,12 @@ public class ParseCurlCommandAction extends AbstractAction implements MenuCreato
                 throw new IllegalArgumentException("File " + pathfileCookie + " doesn't exist");
             }
         }
+        
     }
 
     /**
      * Create Keystore Configuration
-     *
+     * 
      * @param request {@link Request}
      * @return{@link KeystoreConfig} element
      */
@@ -401,7 +400,7 @@ public class ParseCurlCommandAction extends AbstractAction implements MenuCreato
 
     /**
      * Create Authorization manager
-     *
+     * 
      * @param request {@link Request}
      * @return {@link AuthManager} element
      */
@@ -416,7 +415,7 @@ public class ParseCurlCommandAction extends AbstractAction implements MenuCreato
 
     /**
      * Whether to update Authorization Manager in http request
-     *
+     * 
      * @param request     {@link Request}
      * @param authManager {@link AuthManager} element
      * @return whether to update Authorization Manager in http request
@@ -432,10 +431,10 @@ public class ParseCurlCommandAction extends AbstractAction implements MenuCreato
         }
         return false;
     }
-
+   
     /**
      * Whether to update Authorization Manager in Thread Group
-     *
+     * 
      * @param request     {@link Request}
      * @param authManager {@link AuthManager} element
      * @return whether to update Authorization Manager in Thread Group
@@ -452,7 +451,7 @@ public class ParseCurlCommandAction extends AbstractAction implements MenuCreato
 
     /**
      * Create DnsCacheManager
-     *
+     * 
      * @param request {@link Request}
      * @return{@link DnsCacheManager} element
      */
@@ -478,7 +477,7 @@ public class ParseCurlCommandAction extends AbstractAction implements MenuCreato
     }
     /**
      * Create DnsCacheManager
-     *
+     * 
      * @param request {@link Request}
      * @return{@link DnsCacheManager} element
      */
@@ -488,7 +487,7 @@ public class ParseCurlCommandAction extends AbstractAction implements MenuCreato
 
         dnsCacheManager.setCustomResolver(true);
         dnsCacheManager.getHosts().clear();
-        String[]resolveParameters=request.getResolverDNS().split(":");
+        String[]resolveParameters=request.getDNSResolver().split(":");
         String port=resolveParameters[1];
         if(!port.equals("443")&&!port.equals("80")&&!port.equals("*")) {
             dnsCacheManager.setProperty(TestElement.COMMENTS,
@@ -499,13 +498,14 @@ public class ParseCurlCommandAction extends AbstractAction implements MenuCreato
                     "Created from cURL on " + LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME));
         }
         dnsCacheManager.addHost(resolveParameters[0], resolveParameters[2]);
-    }
 
+    }
+    
     private boolean canAddDnsResolverInHttpRequest(Request request, DNSCacheManager dnsCacheManager) {
         if (dnsCacheManager.getHosts().size() != 1) {
             return true;
         } else {
-            String[] resolveParameters = request.getResolverDNS().split(":");
+            String[] resolveParameters = request.getDNSResolver().split(":");
             String host = resolveParameters[0];
             String address = resolveParameters[2];
             StaticHost statichost = (StaticHost) dnsCacheManager.getHosts().get(0).getObjectValue();
@@ -517,7 +517,7 @@ public class ParseCurlCommandAction extends AbstractAction implements MenuCreato
     }
     /**
      * Set parameters in http request
-     *
+     * 
      * @param request     {@link Request}
      * @param httpSampler
      */
@@ -563,7 +563,7 @@ public class ParseCurlCommandAction extends AbstractAction implements MenuCreato
         }
     }
     /**
-     *
+     * 
      * @param request     {@link Request}
      * @param httpSampler
      */
@@ -649,7 +649,7 @@ public class ParseCurlCommandAction extends AbstractAction implements MenuCreato
                             }
                         }
                         statusText.setText(JMeterUtils.getResString("curl_create_success"));
-                    }
+                    } 
                     catch (Exception ex) {
                         LOGGER.error("Error creating test plan from cURL command:{}, error:{}", commandsList.get(i),
                                 ex.getMessage(), ex);
@@ -726,7 +726,7 @@ public class ParseCurlCommandAction extends AbstractAction implements MenuCreato
                         canAddDnsServer=canAddDnsServerInHttpRequest(request, dnsCacheManager);
                     }
                 }
-                if (request.getResolverDNS()!=null) {
+                if (request.getDNSResolver()!=null) {
                     DNSCacheManager dnsCacheManager = findNodeOfTypeDnsCacheManagerByType(true);
                     if (dnsCacheManager == null) {
                         dnsCacheManager=new DNSCacheManager();
@@ -747,12 +747,12 @@ public class ParseCurlCommandAction extends AbstractAction implements MenuCreato
                         CookieManager cookieManager = (CookieManager) jMeterTreeNodeCookie.getTestElement();
                         createCookieManager(cookieManager, request);
                     }
-                }
+                } 
                 HeaderManager headerManager = sampler.getHeaderManager();
                 KeystoreConfig keystoreConfig = sampler.getKeystoreConfig();
                 final JMeterTreeNode newNode = treeModel.addComponent(sampler, currentNode);
                 treeModel.addComponent(headerManager, newNode);
-                if (request.getCacert().equals("cert")) {
+                if (request.getCACert().equals("cert")) {
                     treeModel.addComponent(keystoreConfig, newNode);
                 }
                 if (canAddAuthManagerInHttpRequest) {
@@ -811,7 +811,7 @@ public class ParseCurlCommandAction extends AbstractAction implements MenuCreato
         }
         return s;
     }
-
+    
     public String createCommentText(Request request) {
         StringBuilder commentText = new StringBuilder();
         if (!request.getOptionsIgnored().isEmpty()) {
@@ -841,10 +841,12 @@ public class ParseCurlCommandAction extends AbstractAction implements MenuCreato
             commentText.append("Please configure noproxy list in terminal and restart JMeter. ");
             commentText.append("Look: https://jmeter.apache.org/usermanual/get-started.html#proxy_server");
         }
-        if (!request.getCacert().isEmpty()) {
+        if (!request.getCACert().isEmpty()) {
             commentText.append("Please configure the SSL file with CA certificates in 'SSL configuration' of 'system.properties(49 line)'. ");
             commentText.append("Look: https://jmeter.apache.org/usermanual/properties_reference.html#ssl_config");
         }
         return commentText.toString();
     }
+
+    
 }

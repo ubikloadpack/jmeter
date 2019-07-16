@@ -847,7 +847,7 @@ public class BasicCurlParser {
     * @param authorization    the object of authorization
     */
    public void setAuthUserPasswd(String authentication, String url, Authorization authorization) {
-       String[] authorizationParameters = authentication.split(":",2);
+       String[] authorizationParameters = authentication.split(":", 2);
        authorization.setUser(authorizationParameters[0].trim());
        authorization.setPass(authorizationParameters[1].trim());
        authorization.setURL(url);
@@ -921,7 +921,7 @@ public class BasicCurlParser {
     */
    private void setProxyServerUserInfo(Request request, String authentication) {
        if (authentication.contains(":")) {
-           String[] userInfo = authentication.split(":",2);
+           String[] userInfo = authentication.split(":", 2);
            request.setProxyServer("username", userInfo[0]);
            request.setProxyServer("password", userInfo[1]);
        }
@@ -1051,7 +1051,7 @@ public class BasicCurlParser {
         while (tok.hasMoreTokens()) {
             String nextCookie = tok.nextToken();
             if (nextCookie.contains("=")) {
-                String[] cookieParameters = nextCookie.split("=",2);
+                String[] cookieParameters = nextCookie.split("=", 2);
                 if (!DYNAMIC_COOKIES.contains(cookieParameters[0])) {
                     Cookie newCookie = new Cookie();
                     newCookie.setName(cookieParameters[0]);

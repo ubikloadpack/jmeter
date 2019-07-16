@@ -365,7 +365,7 @@ public class BasicCurlParserTest {
                 request.getPostData());
     }
     @Test
-    public void testDataUrlEncodeWithSecondAtSign() throws IOException {
+    public void testDataUrlEncodeWith2AtSymbol() throws IOException {
         String encoding = StandardCharsets.UTF_8.name();
         File file = tempFolder.newFile("test.txt");
         FileUtils.writeStringToFile(file, "test@", encoding, true);
@@ -637,7 +637,7 @@ public class BasicCurlParserTest {
     }
 
     @Test
-    public void testIsValidCookiet() {
+    public void testIsValidCookie() {
         String str="a=b;c=d";
         Assert.assertTrue("The string should be cookies",BasicCurlParser.isValidCookie(str));
         str="test.txt";

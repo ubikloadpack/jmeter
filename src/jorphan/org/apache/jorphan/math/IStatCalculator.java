@@ -23,27 +23,9 @@ import java.util.Map;
 public interface IStatCalculator<T extends Number & Comparable<? super T>> {
     void clear();
 
-    /**
-     * Add to received bytes
-     * 
-     * @param newValue number of newly received bytes
-     */
-    void addBytes(long newValue);
-
-    /**
-     * Add to sent bytes
-     * 
-     * @param newValue number of newly sent bytes
-     */
-    void addSentBytes(long newValue);
-
     void addAll(IStatCalculator<T> calc);
 
     T getMedian();
-
-    long getTotalBytes();
-
-    long getTotalSentBytes();
 
     /**
      * Get the value which %percent% of the values are less than. This works just

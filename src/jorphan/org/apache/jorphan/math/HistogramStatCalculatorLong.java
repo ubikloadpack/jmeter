@@ -47,12 +47,10 @@ public class HistogramStatCalculatorLong implements IStatCalculator<Long> {
         valuesMap.clear();
     }
 
-    @Override
     public void addBytes(long newValue) {
         bytes += newValue;
     }
 
-    @Override
     public void addSentBytes(long newValue) {
         sentBytes += newValue;
     }
@@ -78,12 +76,11 @@ public class HistogramStatCalculatorLong implements IStatCalculator<Long> {
         return histogram.getValueAtPercentile(50)/1000000;
     }
 
-    @Override
+
     public long getTotalBytes() {
         return bytes;
     }
 
-    @Override
     public long getTotalSentBytes() {
         return sentBytes;
     }

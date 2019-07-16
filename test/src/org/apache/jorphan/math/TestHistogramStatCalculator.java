@@ -29,7 +29,7 @@ import org.LatencyUtils.SimplePauseDetector;
 import org.junit.Before;
 import org.junit.Test;
 
-public class TestHisStatCalculator {
+public class TestHistogramStatCalculator {
 
     private HistogramStatCalculatorLong calc;
     private HistogramStatCalculatorLong calc1;
@@ -56,8 +56,8 @@ public class TestHisStatCalculator {
             calc1.addValue(l);
         }
         calc.addAll(calc1);
-        assertTrue(23 == calc.getMax());
-        assertTrue(2 == calc.getMin());
+        assertEquals(Long.valueOf(23), calc.getMax());
+        assertEquals(Long.valueOf(2), calc.getMin());
         assertEquals(12, calc.getCount());
         assertEquals(11, calc.getPercentPoint(0.8999999).intValue());
     }
@@ -109,10 +109,10 @@ public class TestHisStatCalculator {
         calc.addValue(5L, 3);
         calc.addValue(1L);
         calc.addValue(7L);
-        assertTrue(7 == calc.getMax());
-        assertTrue(1 == calc.getMin());
+        assertEquals(Long.valueOf(7), calc.getMax());
+        assertEquals(Long.valueOf(1), calc.getMin());
         assertEquals(5, calc.getCount());
-        assertEquals((int) histogram.getValueAtPercentile(50)/1000000, calc.getMedian().intValue());
+        assertEquals((int) histogram.getValueAtPercentile(50) / 1000000, calc.getMedian().intValue());
     }
 
     @Test
@@ -127,16 +127,16 @@ public class TestHisStatCalculator {
         Map<Number, Number[]> map = calc.getDistribution();
         assertTrue(map.containsKey(long0));
         assertTrue(map.containsKey(long2));
-        assertTrue(map.get(long0)[1].longValue()==1);
-        assertTrue(map.get(long2)[1].longValue()==2);
+        assertEquals(1, map.get(long0)[1].longValue());
+        assertEquals(2, map.get(long2)[1].longValue());
         HistogramStatCalculatorLong calc2 = new  HistogramStatCalculatorLong();
         calc2.addValue(2L);
         calc2.addValue(2L);
         calc2.addValue(2L);
         calc.addAll(calc2);
         map = calc.getDistribution();
-        assertTrue(map.get(long0)[1].longValue()==1);
-        assertTrue(map.get(long2)[1].longValue()==5);
+        assertEquals(1,map.get(long0)[1].longValue());
+        assertEquals(5,map.get(long2)[1].longValue());
     }
     
     @Test
@@ -165,7 +165,7 @@ public class TestHisStatCalculator {
         assertEquals(6, calc.getCount());
         assertEquals(12.0, calc.getSum(), 0.000000000001);
         assertEquals(0.5787915367575983, calc.getStandardDeviation(), 0.000000000000001);
-        assertTrue(calc.getMean() ==2.0032853333333334);
+        assertEquals(2.0032853333333334,calc.getMean(),0.0);
     }
     @Test
     public void testClear(){ 

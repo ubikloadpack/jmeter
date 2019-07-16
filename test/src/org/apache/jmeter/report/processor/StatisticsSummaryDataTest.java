@@ -18,7 +18,6 @@
 package org.apache.jmeter.report.processor;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 import org.HdrHistogram.Histogram;
 import org.LatencyUtils.LatencyStats;
@@ -34,6 +33,7 @@ public class StatisticsSummaryDataTest {
     private static int numberOfSignificantValueDigits = 2;
     private static int intervalEstimatorWindowLength = 1024;
     private static long intervalEstimatorTimeCap = 10000000000L;
+
     @Before
     public void setUp() {
         statisticsSummaryData = new StatisticsSummaryData();
@@ -51,43 +51,43 @@ public class StatisticsSummaryDataTest {
             statisticsSummaryData.setMax(l);
             statisticsSummaryData.setMin(l);
             statisticsSummaryData.incTotal();
-            histogram.recordValue(l*1000000L);
+            histogram.recordValue(l * 1000000L);
         }
         // test max/min
-        assertTrue(10 == statisticsSummaryData.getMax());
-        assertTrue(2 == statisticsSummaryData.getMin());
+        assertEquals(10, statisticsSummaryData.getMax());
+        assertEquals(2, statisticsSummaryData.getMin());
         // test total
-        assertTrue(9 == statisticsSummaryData.getTotal());
+        assertEquals(9, statisticsSummaryData.getTotal());
         // test sentByte
         statisticsSummaryData.incSentBytes(100);
         statisticsSummaryData.incSentBytes(200);
         statisticsSummaryData.incSentBytes(300);
-        assertTrue(600 == statisticsSummaryData.getSentBytes());
+        assertEquals(600, statisticsSummaryData.getSentBytes());
         // test percentiles
-        assertEquals(histogram.getValueAtPercentile(90)/1000000, statisticsSummaryData.getPercentile(90));
-        assertEquals(histogram.getValueAtPercentile(95)/1000000, statisticsSummaryData.getPercentile(95));
-        assertEquals(histogram.getValueAtPercentile(99)/1000000, statisticsSummaryData.getPercentile(99));
+        assertEquals(histogram.getValueAtPercentile(90) / 1000000, statisticsSummaryData.getPercentile(90));
+        assertEquals(histogram.getValueAtPercentile(95) / 1000000, statisticsSummaryData.getPercentile(95));
+        assertEquals(histogram.getValueAtPercentile(99) / 1000000, statisticsSummaryData.getPercentile(99));
         // test bytes
         statisticsSummaryData.incBytes(100);
         statisticsSummaryData.incBytes(200);
         statisticsSummaryData.incBytes(300);
-        assertTrue(600 == statisticsSummaryData.getBytes());
+        assertEquals(600, statisticsSummaryData.getBytes());
         // test elapsedTime
         statisticsSummaryData.setEndTime(1000);
         statisticsSummaryData.setFirstTime(400);
-        assertTrue(statisticsSummaryData.getEndTime() - statisticsSummaryData.getFirstTime() == statisticsSummaryData
-                .getElapsedTime());
+        assertEquals(statisticsSummaryData.getEndTime() - statisticsSummaryData.getFirstTime(),
+                statisticsSummaryData.getElapsedTime());
         double kbytesPerSecond = statisticsSummaryData.getBytes()
                 / ((double) statisticsSummaryData.getElapsedTime() / 1000) / 1024;
-        assertTrue(statisticsSummaryData.getEndTime() - statisticsSummaryData.getFirstTime() == statisticsSummaryData
-                .getElapsedTime());
-        assertTrue(kbytesPerSecond == statisticsSummaryData.getKBytesPerSecond());
+        assertEquals(statisticsSummaryData.getEndTime() - statisticsSummaryData.getFirstTime(),
+                statisticsSummaryData.getElapsedTime());
+        assertEquals(kbytesPerSecond, statisticsSummaryData.getKBytesPerSecond(),0);
         // test SentBytesPerSecond
         double bytesPerSecond = statisticsSummaryData.getSentBytes()
                 / ((double) statisticsSummaryData.getElapsedTime() / 1000);
-        assertTrue(bytesPerSecond == statisticsSummaryData.getBytesPerSecond());
+        assertEquals(bytesPerSecond, statisticsSummaryData.getBytesPerSecond(),0);
         // test SentKBytesPerSecond
         double tKBytesPerSecond = bytesPerSecond / 1024;
-        assertTrue(tKBytesPerSecond == statisticsSummaryData.getKBytesPerSecond());
+        assertEquals(tKBytesPerSecond, statisticsSummaryData.getKBytesPerSecond(),0);
     }
 }

@@ -17,6 +17,9 @@
  */
 package org.apache.jmeter.report.processor;
 
+import org.HdrHistogram.Histogram;
+import org.LatencyUtils.LatencyStats;
+
 /**
  * The class ApdexSummaryData provides information for
  * StatisticsSummaryConsumer.
@@ -25,17 +28,15 @@ package org.apache.jmeter.report.processor;
  *
  */
 public class StatisticsSummaryData {
-
+    private LatencyStats latencyStats = LatencyStats.Builder.create().build();
+    Histogram intervalHistogram = latencyStats.getIntervalHistogram();
+    private Histogram histogram = new Histogram(intervalHistogram);
     private long firstTime = Long.MAX_VALUE;
     private long endTime = Long.MIN_VALUE;
     private long bytes = 0L;
     private long sentBytes = 0L;
     private long errors = 0L;
     private long total = 0L;
-    private final MeanAggregator mean;
-    private final PercentileAggregator percentile1;
-    private final PercentileAggregator percentile2;
-    private final PercentileAggregator percentile3;
     private long min = Long.MAX_VALUE;
     private long max = Long.MIN_VALUE;
 
@@ -163,40 +164,8 @@ public class StatisticsSummaryData {
     /**
      * @return the percentile1
      */
-    public final PercentileAggregator getPercentile1() {
-        return percentile1;
-    }
-
-    /**
-     * Gets the percentile2.
-     *
-     * @return the percentile2
-     */
-    public final PercentileAggregator getPercentile2() {
-        return percentile2;
-    }
-
-    /**
-     * Gets the percentile3.
-     *
-     * @return the percentile3
-     */
-    public final PercentileAggregator getPercentile3() {
-        return percentile3;
-    }
-
-    /**
-     * Instantiates a new statistics info.
-     * @param percentileIndex1 value of first percentile
-     * @param percentileIndex2 value of second percentile
-     * @param percentileIndex3 value of third percentile
-     */
-    public StatisticsSummaryData(long percentileIndex1, long percentileIndex2,
-            long percentileIndex3) {
-        percentile1 = new PercentileAggregator(percentileIndex1);
-        percentile2 = new PercentileAggregator(percentileIndex2);
-        percentile3 = new PercentileAggregator(percentileIndex3);
-        mean = new MeanAggregator();
+    public final long getPercentile(double percent) {
+        return histogram.getValueAtPercentile(percent)/1000000;
     }
 
     /**
@@ -252,11 +221,8 @@ public class StatisticsSummaryData {
         errors++;
     }
 
-    /**
-     * @return the mean response times
-     */
-    public MeanAggregator getMean() {
-        return mean;
+    public double getMean() {
+        return histogram.getMean()/1000000;
     }
 
     /**
@@ -282,5 +248,11 @@ public class StatisticsSummaryData {
      */
     public double getSentKBytesPerSecond() {
         return getSentBytesPerSecond() / 1024;
+    }
+    
+    public void addValue(Long val) {
+        latencyStats.recordLatency(val*1000000);
+        latencyStats.getIntervalHistogramInto(intervalHistogram);
+        histogram.add(intervalHistogram);
     }
 }

@@ -128,7 +128,7 @@ public class BasicCurlParser {
         private String cookieInHeaders = "";
         private String filepathCookie="";
         private Authorization authorization = new Authorization();
-        private String caCert = "";
+        private String CACert = "";
         private Map<String, String> formData = new LinkedHashMap<>();
         private Map<String, String> formStringData = new LinkedHashMap<>();
         private Set<String> dnsServers = new HashSet<>();
@@ -138,7 +138,7 @@ public class BasicCurlParser {
         private List<String> optionsNoSupport = new ArrayList<>();
         private List<String> optionsInProperties = new ArrayList<>();
         private Map<String, String> proxyServer = new LinkedHashMap<>();
-        private String dnsResolver;
+        private String dnsresolver;
         private int limitRate = 0;
         private String noproxy;
         private static final List<String> HEADERS_TO_IGNORE = Arrays.asList("Connection", "Host");// $NON-NLS-1$
@@ -148,14 +148,14 @@ public class BasicCurlParser {
         }
 
         /**
-         * @return the HTTP method
+         * @return the method
          */
         public String getMethod() {
             return method;
         }
 
         /**
-         * @param method the HTTP method to set
+         * @param method the method to set
          */
         public void setMethod(String method) {
             this.method = method;
@@ -194,9 +194,9 @@ public class BasicCurlParser {
          * @param value the value of Header
          */
         public void addHeader(String name, String value) {
-            if (name.equalsIgnoreCase("COOKIE")) {
+            if (name != null && name.equalsIgnoreCase("COOKIE")) {
                 this.cookieInHeaders = value;
-            } else if (!HEADERS_TO_IGNORE.contains(name)) {
+            } else if (name != null && !HEADERS_TO_IGNORE.contains(name)) {
                 headers.put(name, value);
             }
         }
@@ -257,7 +257,6 @@ public class BasicCurlParser {
         }
 
         /**
-         * Tranform the bandwidth to cps value (Character Per Second), cps = bandwidth*1024/8
          * @param limitRate the maximum transfer rate
          */
         public void setLimitRate(String limitRate) {
@@ -265,13 +264,13 @@ public class BasicCurlParser {
             int value = Integer.parseInt(limitRate.substring(0, limitRate.length() - 1).toLowerCase());
             switch (unit) {
             case "k":
-                this.limitRate = value * 1024 / 8;
+                this.limitRate = value * 128;
                 break;
             case "m":
-                this.limitRate = value * 1024 / 8 * 1000;
+                this.limitRate = value * 128000;
                 break;
             case "g":
-                this.limitRate = value * 1024 / 8 * 1000000;
+                this.limitRate = value * 128000000;
                 break;
             default:
                 break;
@@ -296,16 +295,16 @@ public class BasicCurlParser {
         /**
          * @return the DNS resolver
          */
-        public String getDnsResolver() {
-            return dnsResolver;
+        public String getDNSResolver() {
+            return dnsresolver;
         }
 
         /**
          * set DNS resolver
-         * @param dnsResolver
+         * @param dnsresolver
          */
-        public void setDnsResolver(String dnsResolver) {
-            this.dnsResolver = dnsResolver;
+        public void setDNSResolver(String dnsresolver) {
+            this.dnsresolver = dnsresolver;
         }
 
         /**
@@ -422,18 +421,18 @@ public class BasicCurlParser {
         }
 
         /**
-         * @return the certificate of the CA
+         * @return the options which work for SSL
          */
-        public String getCaCert() {
-            return caCert;
+        public String getCACert() {
+            return CACert;
         }
 
         /**
          * the options which work for SSL
-         * @param caCert
+         * @param CACert
          */
-        public void setCacert(String caCert) {
-            this.caCert = caCert;
+        public void setCacert(String CACert) {
+            this.CACert = CACert;
         }
 
         /**
@@ -743,7 +742,7 @@ public class BasicCurlParser {
                     request.setInterfaceName(value);
                 } else if (option.getDescriptor().getId() == RESOLVER_OPT) {
                     String value = option.getArgument(0);
-                    request.setDnsResolver(value);
+                    request.setDNSResolver(value);
                 } else if (option.getDescriptor().getId() == LIMIT_RATE_OPT) {
                     String value = option.getArgument(0);
                     request.setLimitRate(value);
@@ -843,7 +842,7 @@ public class BasicCurlParser {
     *
     * Set the username , password and baseurl of authorization
     *
-    * @param authentication   the username and password of authorization
+    * @param authorizationStr the username and password of authorization
     * @param url              the baseurl of authorization
     * @param authorization    the object of authorization
     */
@@ -889,13 +888,18 @@ public class BasicCurlParser {
        URI uriProxy = null;
        try {
            uriProxy = new URI(proxyServerParameters);
-            request.setProxyServer("scheme", uriProxy.getScheme());
-            Optional<String> userInfoOptional = Optional.ofNullable(uriProxy.getUserInfo());
-            if (userInfoOptional.isPresent()) {
-                setProxyServerUserInfo(request, userInfoOptional.get());
-            }
-            Optional<String> hostOptional = Optional.ofNullable(uriProxy.getHost());
-            if (hostOptional.isPresent()) {
+           request.setProxyServer("scheme", uriProxy.getScheme());
+           Optional<String> userInfoOptional = Optional.ofNullable(uriProxy.getUserInfo());
+           if (userInfoOptional.isPresent()) {
+               String userInfoString = userInfoOptional.get();
+               if (userInfoString.contains(":")) {
+                   String[] userInfo = userInfoString.split(":", 2);
+                   request.setProxyServer("username", userInfo[0]);
+                   request.setProxyServer("password", userInfo[1]);
+               }
+           }
+           Optional<String> hostOptional = Optional.ofNullable(uriProxy.getHost());
+           if (hostOptional.isPresent()) {
                request.setProxyServer("servername", hostOptional.get());
            }
            if (uriProxy.getPort() != -1) {
@@ -913,7 +917,7 @@ public class BasicCurlParser {
     * Set the username and password of proxy server
     *
     * @param request               http request
-    * @param authentication        the username and password of proxy server
+    * @param proxyServerUserPasswd the username and password of proxy server
     */
    private void setProxyServerUserInfo(Request request, String authentication) {
        if (authentication.contains(":")) {
@@ -937,7 +941,7 @@ public class BasicCurlParser {
            if (postdata.charAt(0) == '@' && !dataOptionName.equals("data-raw")) {
                postdata = postdata.substring(1, postdata.length());
                postdata = readFromFile(postdata);
-               if (!dataOptionName.equals("data-binary")) {
+               if (!dataOptionName.equals("data-binary") && postdata != null) {
                    postdata = deleteLineBreak(postdata);
                }
            }
@@ -1023,7 +1027,7 @@ public class BasicCurlParser {
    /**
     * Verify if the string is cookie or filename
     * @param str
-    * @return Whether the format of the string is cookie
+    * @return
     */
     public static boolean isValidCookie(String str) {
         for (String r : str.split(";")) {

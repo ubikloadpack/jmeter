@@ -142,7 +142,7 @@ public class BasicCurlParser {
         private int limitRate = 0;
         private String noproxy;
         private static final List<String> HEADERS_TO_IGNORE = Arrays.asList("Connection", "Host");// $NON-NLS-1$
-        private final int ONE_KILOBYTE_IN_CPS = 1024 / 8;
+        private final int ONE_KILOBYTE_IN_CPS = 1024;
         public Request() {
             super();
         }
@@ -257,7 +257,11 @@ public class BasicCurlParser {
         }
 
         /**
-         * Tranform the bandwidth to cps value (Character Per Second), cps = bandwidth*1024/8
+         * Tranform the bandwidth to cps value (Character Per Second), cps =
+         * bandwidth*1024/8, the unit of bandwidth in JMeter is measured in kbit/s. And
+         * the speed in Curl is measured in bytes/second, so the conversion formula is
+         * cps=limitRate*1024
+         * 
          * @param limitRate the maximum transfer rate
          */
         public void setLimitRate(String limitRate) {

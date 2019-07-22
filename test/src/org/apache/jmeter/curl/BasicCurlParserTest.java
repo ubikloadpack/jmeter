@@ -558,7 +558,7 @@ public class BasicCurlParserTest {
         c1.setValue("b");
         c1.setPath("/");
         Assert.assertEquals("Just static cookie in header can be added in CookieManager", c1, cookies.get(0));
-        Assert.assertTrue("Just static cookie in header can be added in CookieManager", cookies.size() == 1);
+        Assert.assertEquals("Just static cookie in header can be added in CookieManager", 1, cookies.size());
     }
     @Test
     public void testIgnoreOptions() {

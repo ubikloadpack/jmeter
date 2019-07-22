@@ -261,7 +261,6 @@ public class BasicCurlParser {
          * bandwidth*1024/8, the unit of bandwidth in JMeter is measured in kbit/s. And
          * the speed in Curl is measured in bytes/second, so the conversion formula is
          * cps=limitRate*1024
-         * 
          * @param limitRate the maximum transfer rate
          */
         public void setLimitRate(String limitRate) {

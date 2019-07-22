@@ -194,7 +194,7 @@ public class BasicCurlParser {
          * @param value the value of Header
          */
         public void addHeader(String name, String value) {
-            if ("COOKIE".equalsIgnoreCase(name)) {
+            if (name.equalsIgnoreCase("COOKIE")) {
                 this.cookieInHeaders = value;
             } else if (!HEADERS_TO_IGNORE.contains(name)) {
                 headers.put(name, value);
@@ -257,10 +257,7 @@ public class BasicCurlParser {
         }
 
         /**
-         * Tranform the bandwidth to cps value (byte/s), cps =
-         * bandwidth*1024/8, the unit of bandwidth in JMeter is measured in kbit/s. And
-         * the speed in Curl is measured in bytes/second, so the conversion formula is
-         * cps=limitRate*1024
+         * Tranform the bandwidth to cps value (Character Per Second), cps = bandwidth*1024/8
          * 
          * @param limitRate the maximum transfer rate
          */
@@ -269,16 +266,13 @@ public class BasicCurlParser {
             int value = Integer.parseInt(limitRate.substring(0, limitRate.length() - 1).toLowerCase());
             switch (unit) {
             case "k":
-                this.limitRate = value * ONE_KILOBYTE_IN_CPS;
+                this.limitRate = value * 1024 / 8;
                 break;
             case "m":
-                this.limitRate = value * ONE_KILOBYTE_IN_CPS * 1000;
+                this.limitRate = value * 1024 / 8 * 1000;
                 break;
             case "g":
-                this.limitRate = value * ONE_KILOBYTE_IN_CPS * 1000000;
-                break;
-            default:
-                break;
+                this.limitRate = value * 1024 / 8 * 1000000;
             }
         }
 

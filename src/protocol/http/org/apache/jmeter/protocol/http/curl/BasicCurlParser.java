@@ -258,7 +258,6 @@ public class BasicCurlParser {
 
         /**
          * Tranform the bandwidth to cps value (Character Per Second), cps = bandwidth*1024/8
-         * 
          * @param limitRate the maximum transfer rate
          */
         public void setLimitRate(String limitRate) {
@@ -273,6 +272,9 @@ public class BasicCurlParser {
                 break;
             case "g":
                 this.limitRate = value * 1024 / 8 * 1000000;
+                break;
+            default:
+                break;
             }
         }
 

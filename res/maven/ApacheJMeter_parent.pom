@@ -99,6 +99,8 @@ under the License.
       <jsoup.version>1.11.3</jsoup.version>
       <rhino.version>1.7.10</rhino.version>
       <junit.version>4.12</junit.version>
+      <jmespath-core.version>0.3.0</jmespath-core.version>
+      <jmespath-jackson.version>0.3.0</jmespath-jackson.version>
       <mongo-java-driver.version>2.11.3</mongo-java-driver.version>
       <ph-css.version>6.1.1</ph-css.version>
       <ph-commons.version>9.2.1</ph-commons.version>
@@ -298,6 +300,16 @@ under the License.
         <artifactId>junit</artifactId>
         <version>${junit.version}</version>
       </dependency>
+      <dependency>
+        <groupId>io.burt</groupId>
+        <artifactId>jmespath-core</artifactId>
+        <version>${jmespath-core.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.burt</groupId>
+        <artifactId>jmespath-jackson</artifactId>
+        <version>${jmespath-jackson.version}</version>
+      </dependency>      
       <dependency>
         <groupId>org.spockframework</groupId>
         <artifactId>spock-core</artifactId>

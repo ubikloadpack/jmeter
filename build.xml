@@ -430,6 +430,8 @@
     <include name="${lib.dir}/${rhino.jar}"/>
     <include name="${lib.dir}/${javax.activation.jar}"/>
     <include name="${lib.dir}/${javax.activation-api.jar}"/>
+    <include name="${lib.dir}/${jmespath-core.jar}"/>
+  	<include name="${lib.dir}/${jmespath-jackson.jar}"/>
     <include name="${lib.dir}/${jodd-core.jar}"/>
     <include name="${lib.dir}/${jodd-lagarto.jar}"/>
     <include name="${lib.dir}/${jodd-log.jar}"/>
@@ -513,6 +515,7 @@
     <pathelement location="${lib.dir}/${jakarta-oro.jar}"/>
     <pathelement location="${lib.dir}/${jackson-annotations.jar}"/>
     <pathelement location="${lib.dir}/${jackson-core.jar}"/>
+    <pathelement location="${lib.dir}/${jackson-jackson.jar}"/>
     <pathelement location="${lib.dir}/${jackson-databind.jar}"/>
     <pathelement location="${lib.dir}/${javamail.jar}"/>
     <pathelement location="${lib.dir}/${jcharts.jar}"/>
@@ -528,6 +531,7 @@
     <pathelement location="${lib.dir}/${json-smart.jar}"/>
     <pathelement location="${lib.dir}/${jsoup.jar}"/>
     <pathelement location="${lib.dir}/${junit.jar}"/>
+    <pathelement location="${lib.dir}/${jmespath-core.jar}"/>
     <pathelement location="${lib.dir}/${log4j-1.2-api.jar}"/>
     <pathelement location="${lib.dir}/${log4j-core.jar}"/>
     <pathelement location="${lib.dir}/${log4j-slf4j-impl.jar}"/>
@@ -3507,6 +3511,8 @@ run JMeter unless all the JMeter jars are added.
     <process_jarfile jarname="json-smart"/>
     <process_jarfile jarname="jsoup"/>
     <process_jarfile jarname="junit"/>
+    <process_jarfile jarname="jmespath-core"/>
+    <process_jarfile jarname="jmespath-jackson"/>
     <process_jarfile jarname="mongo-java-driver"/>
     <process_jarfile jarname="ph-css" />
     <process_jarfile jarname="ph-commons" />

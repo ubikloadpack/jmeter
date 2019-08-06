@@ -40,12 +40,10 @@ import io.burt.jmespath.JmesPath;
 import io.burt.jmespath.jackson.JacksonRuntime;
 /**
  * Handles the extractions
- * https://github.com/jayway/JsonPath/blob/master/json-path/src/test/java/com/jayway/jsonpath/ComplianceTest.java
  * @since 3.0
  */
-public class JSON2Manager {
-
-    private static final Logger log = LoggerFactory.getLogger(JSON2Manager.class);
+public class JMESManager {
+    private static final Logger log = LoggerFactory.getLogger(JMESManager.class);
     /**
      * This Map can hardly grow above 10 elements as it is used within JSONPostProcessor to
      * store the computed JsonPath for the set of JSON Path Expressions.
@@ -63,7 +61,7 @@ public class JSON2Manager {
      * @throws ParseException when parsing fails
      * @throws IOException
      */
-    public List<Object> extractWithJsonPath(String jsonString, String jsonPath) throws IOException {
+    public List<Object> jmesSelector(String jsonString, String jsonPath) throws IOException {
         JmesPath<JsonNode> jmespath = new JacksonRuntime();
         ObjectMapper mapper = new ObjectMapper();
         List<Object> results = new ArrayList<>();

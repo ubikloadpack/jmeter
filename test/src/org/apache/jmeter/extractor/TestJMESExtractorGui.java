@@ -19,20 +19,20 @@ package org.apache.jmeter.extractor;
 
 import static org.junit.Assert.assertThat;
 
-import org.apache.jmeter.extractor.json.jsonpath.JSON2PostProcessor;
+import org.apache.jmeter.extractor.json.jsonpath.JMESExtractor;
 import org.apache.jmeter.threads.JMeterContext;
 import org.apache.jmeter.threads.JMeterContextService;
 import org.apache.jmeter.threads.JMeterVariables;
 import org.hamcrest.CoreMatchers;
 import org.junit.Test;
 
-public class TestJSON2PostProcessor {
+public class TestJMESExtractorGui {
     private static final String VAR_NAME = "varName";
 
     @Test
     public void testProcessWith2PostProcessor() {
         JMeterContext context = JMeterContextService.getContext();
-        JSON2PostProcessor processor = setupProcessor(context, "-1", true);
+        JMESExtractor processor = setupProcessor(context, "-1", true);
         JMeterVariables vars = new JMeterVariables();
         processor.setDefaultValues("NONE");
         processor.setJsonPathExpressions("a.b.c.d");
@@ -49,7 +49,7 @@ public class TestJSON2PostProcessor {
     @Test
     public void testProcessWith2PostProcessor1() {
         JMeterContext context = JMeterContextService.getContext();
-        JSON2PostProcessor processor = setupProcessor(context, "-1", true);
+        JMESExtractor processor = setupProcessor(context, "-1", true);
         JMeterVariables vars = new JMeterVariables();
         processor.setComputeConcatenation(true);
         processor.setDefaultValues("NONE");
@@ -66,7 +66,7 @@ public class TestJSON2PostProcessor {
     @Test
     public void testPR235CaseEmptyResponse() {
         JMeterContext context = JMeterContextService.getContext();
-        JSON2PostProcessor processor = setupProcessor(context, "-1", true);
+        JMESExtractor processor = setupProcessor(context, "-1", true);
         JMeterVariables vars = new JMeterVariables();
         processor.setDefaultValues("NONE");
         processor.setJsonPathExpressions("[*]");
@@ -83,7 +83,7 @@ public class TestJSON2PostProcessor {
     @Test
     public void testProcessWith2PostProcessor2() {
         JMeterContext context = JMeterContextService.getContext();
-        JSON2PostProcessor processor = setupProcessor(context, "-1", true);
+        JMESExtractor processor = setupProcessor(context, "-1", true);
         JMeterVariables vars = new JMeterVariables();
         processor.setDefaultValues("NONE");
         processor.setJsonPathExpressions("people[:2].first");
@@ -102,7 +102,7 @@ public class TestJSON2PostProcessor {
     @Test
     public void testProcessWith2PostProcessor3() {
         JMeterContext context = JMeterContextService.getContext();
-        JSON2PostProcessor processor = setupProcessor(context, "-1", true);
+        JMESExtractor processor = setupProcessor(context, "-1", true);
         JMeterVariables vars = new JMeterVariables();
         processor.setDefaultValues("NONE");
         processor.setJsonPathExpressions("people[2]");
@@ -120,7 +120,7 @@ public class TestJSON2PostProcessor {
     @Test
     public void testProcessWith2PostProcessor4() {
         JMeterContext context = JMeterContextService.getContext();
-        JSON2PostProcessor processor = setupProcessor(context, "-1", true);
+        JMESExtractor processor = setupProcessor(context, "-1", true);
         JMeterVariables vars = new JMeterVariables();
         processor.setDefaultValues("NONE");
         processor.setJsonPathExpressions("k");
@@ -132,13 +132,13 @@ public class TestJSON2PostProcessor {
         assertThat(vars.get("varname"), CoreMatchers.is(CoreMatchers.nullValue()));
         assertThat(vars.get("varname_matchNr"), CoreMatchers.is("1"));
     }
-    private JSON2PostProcessor setupProcessor(JMeterContext context, String matchNumbers) {
+    private JMESExtractor setupProcessor(JMeterContext context, String matchNumbers) {
         return setupProcessor(context, matchNumbers, true);
     }
 
-    private JSON2PostProcessor setupProcessor(JMeterContext context, String matchNumbers,
+    private JMESExtractor setupProcessor(JMeterContext context, String matchNumbers,
             boolean computeConcatenation) {
-        JSON2PostProcessor processor = new JSON2PostProcessor();
+        JMESExtractor processor = new JMESExtractor();
         processor.setThreadContext(context);
         processor.setRefNames(VAR_NAME);
         processor.setMatchNumbers(matchNumbers);

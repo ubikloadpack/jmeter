@@ -29,7 +29,7 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
-import org.apache.jmeter.extractor.json.jsonpath.JSON2PostProcessor;
+import org.apache.jmeter.extractor.json.jsonpath.JMESExtractor;
 import org.apache.jmeter.gui.GUIMenuSortOrder;
 import org.apache.jmeter.processor.gui.AbstractPostProcessorGui;
 import org.apache.jmeter.testelement.TestElement;
@@ -41,7 +41,7 @@ import org.apache.jorphan.gui.JLabeledTextField;
  * @since 3.0
  */
 @GUIMenuSortOrder(2)
-public class JSON2PostProcessorGui extends AbstractPostProcessorGui {
+public class JMESExtractorGui extends AbstractPostProcessorGui {
 
     private static final long serialVersionUID = -2845056031828291476L;
 
@@ -51,7 +51,7 @@ public class JSON2PostProcessorGui extends AbstractPostProcessorGui {
     private JLabeledTextField matchNumbersField;
     private JCheckBox computeConcatenationField;
 
-    public JSON2PostProcessorGui() {
+    public JMESExtractorGui() {
         super();
         init();
     }
@@ -59,13 +59,13 @@ public class JSON2PostProcessorGui extends AbstractPostProcessorGui {
 
     @Override
     public String getLabelResource() {
-        return "json2_post_processor_title";//$NON-NLS-1$
+        return "jmes_extractor_title";//$NON-NLS-1$
     }
 
     @Override
     public void configure(TestElement element) {
         super.configure(element);
-        JSON2PostProcessor config = (JSON2PostProcessor) element;
+        JMESExtractor config = (JMESExtractor) element;
         showScopeSettings(config, true);
         refNamesField.setText(config.getRefNames());
         jsonPathExpressionsField.setText(config.getJsonPathExpressions());
@@ -79,7 +79,7 @@ public class JSON2PostProcessorGui extends AbstractPostProcessorGui {
      */
     @Override
     public TestElement createTestElement() {
-        JSON2PostProcessor config = new JSON2PostProcessor();
+        JMESExtractor config = new JMESExtractor();
         modifyTestElement(config);
         return config;
     }
@@ -92,8 +92,8 @@ public class JSON2PostProcessorGui extends AbstractPostProcessorGui {
     @Override
     public void modifyTestElement(TestElement c) {
         super.configureTestElement(c);
-        if (c instanceof JSON2PostProcessor) {
-            JSON2PostProcessor config = (JSON2PostProcessor) c;
+        if (c instanceof JMESExtractor) {
+            JMESExtractor config = (JMESExtractor) c;
             saveScopeSettings(config);
             config.setRefNames(refNamesField.getText());
             config.setJsonPathExpressions(jsonPathExpressionsField.getText());
@@ -113,7 +113,7 @@ public class JSON2PostProcessorGui extends AbstractPostProcessorGui {
         jsonPathExpressionsField.setText(""); //$NON-NLS-1$
         matchNumbersField.setText(""); //$NON-NLS-1$
         defaultValuesField.setText(""); //$NON-NLS-1$
-        computeConcatenationField.setSelected(JSON2PostProcessor.COMPUTE_CONCATENATION_DEFAULT_VALUE);
+        computeConcatenationField.setSelected(JMESExtractor.COMPUTE_CONCATENATION_DEFAULT_VALUE);
     }
 
     private void init() { // WARNING: called from ctor so must not be overridden (i.e. must be private or final)

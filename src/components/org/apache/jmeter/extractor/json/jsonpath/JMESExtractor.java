@@ -36,26 +36,26 @@ import org.slf4j.LoggerFactory;
  * JSON-PATH based extractor
  * @since 3.0
  */
-public class JSON2PostProcessor extends AbstractScopedTestElement implements Serializable, PostProcessor, ThreadListener{
+public class JMESExtractor extends AbstractScopedTestElement implements Serializable, PostProcessor, ThreadListener{
 
     private static final long serialVersionUID = 1L;
-    private static final Logger log = LoggerFactory.getLogger(JSON2PostProcessor.class);
+    private static final Logger log = LoggerFactory.getLogger(JMESExtractor.class);
 
-    private static final String JSON_PATH_EXPRESSIONS = "JSONPostProcessor.jsonPathExprs"; // $NON-NLS-1$
-    private static final String REFERENCE_NAMES = "JSONPostProcessor.referenceNames"; // $NON-NLS-1$
-    private static final String DEFAULT_VALUES = "JSONPostProcessor.defaultValues"; // $NON-NLS-1$
-    private static final String MATCH_NUMBERS = "JSONPostProcessor.match_numbers"; // $NON-NLS-1$
-    private static final String COMPUTE_CONCATENATION = "JSONPostProcessor.compute_concat"; // $NON-NLS-1$
+    private static final String JSON_PATH_EXPRESSIONS = "JMESExtractor.jsonPathExprs"; // $NON-NLS-1$
+    private static final String REFERENCE_NAMES = "JMESExtractor.referenceNames"; // $NON-NLS-1$
+    private static final String DEFAULT_VALUES = "JMESExtractor.defaultValues"; // $NON-NLS-1$
+    private static final String MATCH_NUMBERS = "JMESExtractor.match_numbers"; // $NON-NLS-1$
+    private static final String COMPUTE_CONCATENATION = "JMESExtractor.compute_concat"; // $NON-NLS-1$
     private static final String REF_MATCH_NR = "_matchNr"; // $NON-NLS-1$
     private static final String ALL_SUFFIX = "_ALL"; // $NON-NLS-1$
 
     private static final String JSON_CONCATENATION_SEPARATOR = ","; //$NON-NLS-1$
     public static final boolean COMPUTE_CONCATENATION_DEFAULT_VALUE = false;
 
-    private static final ThreadLocal<JSON2Manager> localMatcher = new ThreadLocal<JSON2Manager>() {
+    private static final ThreadLocal<JMESManager> localMatcher = new ThreadLocal<JMESManager>() {
         @Override
-        protected JSON2Manager initialValue() {
-            return new JSON2Manager();
+        protected JMESManager initialValue() {
+            return new JMESManager();
         }
     };
 
@@ -92,7 +92,7 @@ public class JSON2PostProcessor extends AbstractScopedTestElement implements Ser
                 }
                 vars.put(refNames, defaultValues);
             } else {
-                List<Object> extractedValues = localMatcher.get().extractWithJsonPath(jsonResponse,
+                List<Object> extractedValues = localMatcher.get().jmesSelector(jsonResponse,
                         jsonPathExpressions);
                 // if no values extracted, default value added
                 if (extractedValues.isEmpty()) {
@@ -115,7 +115,7 @@ public class JSON2PostProcessor extends AbstractScopedTestElement implements Ser
                                 vars.put(refNames + "_" + index, extractedString); // $NON-NLS-1$
                                 if (getComputeConcatenation()) {
                                     concat.append(extractedString)
-                                            .append(JSON2PostProcessor.JSON_CONCATENATION_SEPARATOR);
+                                            .append(JMESExtractor.JSON_CONCATENATION_SEPARATOR);
                                 }
                                 index++;
                             }

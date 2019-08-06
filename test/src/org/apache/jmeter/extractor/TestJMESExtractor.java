@@ -26,7 +26,7 @@ import org.apache.jmeter.threads.JMeterVariables;
 import org.hamcrest.CoreMatchers;
 import org.junit.Test;
 
-public class TestJMESExtractorGui {
+public class TestJMESExtractor {
     private static final String VAR_NAME = "varName";
 
     @Test

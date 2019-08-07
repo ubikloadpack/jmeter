@@ -66,10 +66,10 @@ public class JMESExtractorGui extends AbstractPostProcessorGui {
         super.configure(element);
         JMESExtractor config = (JMESExtractor) element;
         showScopeSettings(config, true);
-        refNamesField.setText(config.getRefNames());
+        refNamesField.setText(config.getRefName());
         jsonPathExpressionsField.setText(config.getJsonPathExpressions());
-        matchNumbersField.setText(config.getMatchNumbers());
-        defaultValuesField.setText(config.getDefaultValues());
+        matchNumbersField.setText(config.getMatchNumber());
+        defaultValuesField.setText(config.getDefaultValue());
     }
 
     /**
@@ -93,9 +93,9 @@ public class JMESExtractorGui extends AbstractPostProcessorGui {
         if (c instanceof JMESExtractor) {
             JMESExtractor config = (JMESExtractor) c;
             saveScopeSettings(config);
-            config.setRefNames(refNamesField.getText());
+            config.setRefName(refNamesField.getText());
             config.setJsonPathExpressions(jsonPathExpressionsField.getText());
-            config.setDefaultValues(defaultValuesField.getText());
+            config.setDefaultValue(defaultValuesField.getText());
             config.setMatchNumbers(matchNumbersField.getText());
         }
     }

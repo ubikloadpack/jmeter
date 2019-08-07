@@ -37,7 +37,7 @@ public class TestJMESExtractor {
     private JMESExtractor setupProcessor(JMeterContext context, String matchNumbers, boolean computeConcatenation) {
         JMESExtractor processor = new JMESExtractor();
         processor.setThreadContext(context);
-        processor.setRefNames(VAR_NAME);
+        processor.setRefName(VAR_NAME);
         processor.setMatchNumbers(matchNumbers);
         return processor;
     }
@@ -48,9 +48,9 @@ public class TestJMESExtractor {
         JMeterContext context = JMeterContextService.getContext();
         JMESExtractor processor = setupProcessor(context, "-1", true);
         JMeterVariables vars = new JMeterVariables();
-        processor.setDefaultValues("NONE");
+        processor.setDefaultValue("NONE");
         processor.setJsonPathExpressions("a.b.c.d");
-        processor.setRefNames("varname");
+        processor.setRefName("varname");
         processor.setScopeVariable("contentvar");
         context.setVariables(vars);
         vars.put("contentvar", "{\"a\": {\"b\": {\"c\": {\"d\": \"value\"}}}}");
@@ -97,9 +97,9 @@ public class TestJMESExtractor {
         JMESExtractor processor = setupProcessor(context, "-1", true);
         JMeterVariables vars = new JMeterVariables();
         processor.setMatchNumbers("1");
-        processor.setDefaultValues("NONE");
+        processor.setDefaultValue("NONE");
         processor.setJsonPathExpressions("a.b.c.d");
-        processor.setRefNames("varname");
+        processor.setRefName("varname");
         processor.setScopeVariable("contentvar");
         context.setVariables(vars);
         vars.put("contentvar", "{\"a\": {\"b\": {\"c\": {\"d\": \"value\"}}}}");
@@ -114,9 +114,9 @@ public class TestJMESExtractor {
         JMESExtractor processor = setupProcessor(context, "-1", true);
         JMeterVariables vars = new JMeterVariables();
         processor.setMatchNumbers("0");
-        processor.setDefaultValues("NONE");
+        processor.setDefaultValue("NONE");
         processor.setJsonPathExpressions("a.b.c.d");
-        processor.setRefNames("varname");
+        processor.setRefName("varname");
         processor.setScopeVariable("contentvar");
         context.setVariables(vars);
         vars.put("contentvar", "{\"a\": {\"b\": {\"c\": {\"d\": \"value\"}}}}");
@@ -130,9 +130,9 @@ public class TestJMESExtractor {
         JMESExtractor processor = setupProcessor(context, "-1", true);
         JMeterVariables vars = new JMeterVariables();
         processor.setMatchNumbers("2");
-        processor.setDefaultValues("NONE");
+        processor.setDefaultValue("NONE");
         processor.setJsonPathExpressions("a.b.c.d");
-        processor.setRefNames("varname");
+        processor.setRefName("varname");
         processor.setScopeVariable("contentvar");
         context.setVariables(vars);
         vars.put("contentvar", "{\"a\": {\"b\": {\"c\": {\"d\": \"value\"}}}}");
@@ -146,9 +146,9 @@ public class TestJMESExtractor {
         JMeterContext context = JMeterContextService.getContext();
         JMESExtractor processor = setupProcessor(context, "-1", true);
         JMeterVariables vars = new JMeterVariables();
-        processor.setDefaultValues("NONE");
+        processor.setDefaultValue("NONE");
         processor.setJsonPathExpressions("[*]");
-        processor.setRefNames("varname");
+        processor.setRefName("varname");
         processor.setScopeVariable("contentvar");
         context.setVariables(vars);
         vars.put("contentvar", "");
@@ -164,9 +164,9 @@ public class TestJMESExtractor {
         JMeterContext context = JMeterContextService.getContext();
         JMESExtractor processor = setupProcessor(context, "-1", true);
         JMeterVariables vars = new JMeterVariables();
-        processor.setDefaultValues("NONE");
+        processor.setDefaultValue("NONE");
         processor.setJsonPathExpressions("k");
-        processor.setRefNames("varname");
+        processor.setRefName("varname");
         processor.setScopeVariable("contentvar");
         context.setVariables(vars);
         vars.put("contentvar", "{\"a\": {\"b\": {\"c\": {\"d\": \"value\"}}}}");
@@ -180,9 +180,9 @@ public class TestJMESExtractor {
         JMESExtractor processor = setupProcessor(context, "-1", true);
         JMeterVariables vars = new JMeterVariables();
         processor.setMatchNumbers("0");
-        processor.setDefaultValues("NONE");
+        processor.setDefaultValue("NONE");
         processor.setJsonPathExpressions("a.b.c.e");
-        processor.setRefNames("varname");
+        processor.setRefName("varname");
         processor.setScopeVariable("contentvar");
         context.setVariables(vars);
         vars.put("contentvar", "{\"a\": {\"b\": {\"c\": {\"d\": \"value\"}}}}");

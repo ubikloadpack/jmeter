@@ -18,7 +18,6 @@
 package org.apache.jmeter.extractor.json.jsonpath;
 
 import java.io.Serializable;
-import java.util.Collections;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.jmeter.processor.PostProcessor;
@@ -106,37 +105,37 @@ public class JMESExtractor extends AbstractScopedTestElement implements Serializ
                     jsonPath.setActualObj(actualObj);
                     jsonPath.setExpression(expression);
                     result = JMES_EXTRACTOR_CACHE.get(jsonPath);
+                    if (result.isNull()) {
+                        vars.put(refNames, defaultValues);
+                        vars.put(refNames + REF_MATCH_NR, "0"); //$NON-NLS-1$
+                    } else {
+                        if (matchNumber < 0) {
+                            String extractedString = stringify(result);
+                            vars.put(refNames+"_" + 1, extractedString); // $NON-NLS-1$
+                        } else if (matchNumber == 0) {
+                            placeObjectIntoVars(vars, refNames, result);
+                        } else {
+                            if (matchNumber > 1) {
+                                if (log.isDebugEnabled()) {
+                                    log.debug(
+                                            "matchNumber({}) exceeds number of items found({}), default value will be used",
+                                            matchNumber, 1);
+                                }
+                                vars.put(refNames, defaultValues);
+                            } else {
+                                placeObjectIntoVars(vars, refNames, result);
+                            }
+                        }
+                        if (matchNumber != 0) {
+                            vars.put(refNames + REF_MATCH_NR, Integer.toString(1));
+                        }
+                    }
                 } catch (JsonParseException | JsonMappingException e) {
                     if (log.isDebugEnabled()) {
                         log.debug("Could not find JSON Path {} in [{}]: {}", jsonPathExpressions, jsonResponse,
                                 e.getLocalizedMessage());
                     }
-                    Collections.emptyList();
-                }
-                if (result == null) {
                     vars.put(refNames, defaultValues);
-                    vars.put(refNames + REF_MATCH_NR, "0"); //$NON-NLS-1$
-                } else {
-                    if (matchNumber < 0) {
-                        String extractedString = stringify(result);
-                        vars.put(refNames+"_" + 1, extractedString); // $NON-NLS-1$
-                    } else if (matchNumber == 0) {
-                        placeObjectIntoVars(vars, refNames, result);
-                    } else {
-                        if (matchNumber > 1) {
-                            if (log.isDebugEnabled()) {
-                                log.debug(
-                                        "matchNumber({}) exceeds number of items found({}), default value will be used",
-                                        matchNumber, 1);
-                            }
-                            vars.put(refNames, defaultValues);
-                        } else {
-                            placeObjectIntoVars(vars, refNames, result);
-                        }
-                    }
-                    if (matchNumber != 0) {
-                        vars.put(refNames + REF_MATCH_NR, Integer.toString(1));
-                    }
                 }
             }
         } catch (Exception e) {

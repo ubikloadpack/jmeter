@@ -18,6 +18,7 @@
 package org.apache.jmeter.extractor.json.jsonpath;
 
 import java.io.Serializable;
+import java.util.Collections;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.jmeter.processor.PostProcessor;
@@ -26,6 +27,7 @@ import org.apache.jmeter.testelement.AbstractScopedTestElement;
 import org.apache.jmeter.testelement.ThreadListener;
 import org.apache.jmeter.threads.JMeterContext;
 import org.apache.jmeter.threads.JMeterVariables;
+import org.apache.jmeter.util.JMeterUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,9 +55,12 @@ public class JMESExtractor extends AbstractScopedTestElement implements Serializ
     private static final String DEFAULT_VALUES = "JMESExtractor.defaultValues"; // $NON-NLS-1$
     private static final String MATCH_NUMBERS = "JMESExtractor.match_numbers"; // $NON-NLS-1$
     private static final String REF_MATCH_NR = "_matchNr"; // $NON-NLS-1$
-    private static final String ALL_SUFFIX = "_ALL"; // $NON-NLS-1$
-    public static final boolean COMPUTE_CONCATENATION_DEFAULT_VALUE = false;
-    LoadingCache<Expression<JsonNode>, JsonNode> JMES_EXTRACTOR_CACHE;
+    private static final LoadingCache<JsonPath, JsonNode> JMES_EXTRACTOR_CACHE;
+    static {
+        final int cacheSize = JMeterUtils.getPropDefault("JMESExtractor.parser.cache.size", 400);
+        JMES_EXTRACTOR_CACHE = Caffeine.newBuilder().maximumSize(cacheSize)
+                .build(jmes -> jmes.expression.search(jmes.actualObj));
+    }
 
     @Override
     public void process() {
@@ -96,39 +101,50 @@ public class JMESExtractor extends AbstractScopedTestElement implements Serializ
                 JsonNode result = null;
                 try {
                     actualObj = mapper.readValue(jsonResponse, JsonNode.class);
-                    JMES_EXTRACTOR_CACHE = Caffeine.newBuilder().maximumSize(400).build(e -> e.search(actualObj));
                     Expression<JsonNode> expression = jmespath.compile(jsonPathExpressions);
-                    result = JMES_EXTRACTOR_CACHE.get(expression);
-                    if (result.isNull()) {
-                        vars.put(refNames, defaultValues);
-                        vars.put(refNames + REF_MATCH_NR, "0"); //$NON-NLS-1$
-                        if (matchNumber < 0) {
-                            log.debug("No value extracted, storing empty in: {}{}", refNames, ALL_SUFFIX);
-                            vars.put(refNames + ALL_SUFFIX, "");
-                        }
-                    } else {
-                        String suffix = (matchNumber < 0) ? "_1" : "";
-                        placeObjectIntoVars(vars, refNames + suffix, result, 0);
-                        if (matchNumber < 0) {
-                            vars.put(refNames + ALL_SUFFIX, vars.get(refNames + suffix));
-                        }
-                        if (matchNumber != 0) {
-                            vars.put(refNames + REF_MATCH_NR, Integer.toString(1));
-                        }
-                    }
+                    JsonPath jsonPath = new JsonPath();
+                    jsonPath.setActualObj(actualObj);
+                    jsonPath.setExpression(expression);
+                    result = JMES_EXTRACTOR_CACHE.get(jsonPath);
                 } catch (JsonParseException | JsonMappingException e) {
                     if (log.isDebugEnabled()) {
                         log.debug("Could not find JSON Path {} in [{}]: {}", jsonPathExpressions, jsonResponse,
                                 e.getLocalizedMessage());
+                    }
+                    Collections.emptyList();
+                }
+                if (result == null) {
+                    vars.put(refNames, defaultValues);
+                    vars.put(refNames + REF_MATCH_NR, "0"); //$NON-NLS-1$
+                } else {
+                    if (matchNumber < 0) {
+                        String extractedString = stringify(result);
+                        vars.put(refNames+"_" + 1, extractedString); // $NON-NLS-1$
+                    } else if (matchNumber == 0) {
+                        placeObjectIntoVars(vars, refNames, result);
+                    } else {
+                        if (matchNumber > 1) {
+                            if (log.isDebugEnabled()) {
+                                log.debug(
+                                        "matchNumber({}) exceeds number of items found({}), default value will be used",
+                                        matchNumber, 1);
+                            }
+                            vars.put(refNames, defaultValues);
+                        } else {
+                            placeObjectIntoVars(vars, refNames, result);
+                        }
+                    }
+                    if (matchNumber != 0) {
+                        vars.put(refNames + REF_MATCH_NR, Integer.toString(1));
                     }
                 }
             }
         } catch (Exception e) {
             // if something wrong, default value added
             if (log.isDebugEnabled()) {
-                log.error("Error processing JSON content in {}, message: {}", getName(), e.getLocalizedMessage(), e);
+                log.debug("Error processing JSON content in {}, message: {}", getName(), e.getLocalizedMessage(), e);
             } else {
-                log.error("Error processing JSON content in {}, message: {}", getName(), e.getLocalizedMessage());
+                log.debug("Error processing JSON content in {}, message: {}", getName(), e.getLocalizedMessage());
             }
             vars.put(refNames, defaultValues);
         }
@@ -141,8 +157,8 @@ public class JMESExtractor extends AbstractScopedTestElement implements Serializ
         }
     }
 
-    private void placeObjectIntoVars(JMeterVariables vars, String currentRefName, Object extractedValues, int matchNr) {
-        vars.put(currentRefName, stringify(extractedValues));
+    private void placeObjectIntoVars(JMeterVariables vars, String currentRefName, Object extractedValue) {
+        vars.put(currentRefName, stringify(extractedValue));
     }
 
     private String stringify(Object obj) {
@@ -189,5 +205,38 @@ public class JMESExtractor extends AbstractScopedTestElement implements Serializ
 
     public String getMatchNumbers() {
         return getPropertyAsString(MATCH_NUMBERS);
+    }
+
+    class JsonPath {
+        /**
+         * @return the expression
+         */
+        public Expression<JsonNode> getExpression() {
+            return expression;
+        }
+
+        /**
+         * @param expression the expression to set
+         */
+        public void setExpression(Expression<JsonNode> expression) {
+            this.expression = expression;
+        }
+
+        /**
+         * @return the actualObj
+         */
+        public JsonNode getActualObj() {
+            return actualObj;
+        }
+
+        /**
+         * @param actualObj the actualObj to set
+         */
+        public void setActualObj(JsonNode actualObj) {
+            this.actualObj = actualObj;
+        }
+
+        Expression<JsonNode> expression;
+        JsonNode actualObj;
     }
 }

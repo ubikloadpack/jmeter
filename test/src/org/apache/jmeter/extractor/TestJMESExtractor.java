@@ -51,7 +51,6 @@ public class TestJMESExtractor {
         JMeterContext context = JMeterContextService.getContext();
         JMESExtractor processor = setupProcessor(context, "-1", true);
         JMeterVariables vars = new JMeterVariables();
-        processor.setComputeConcatenation(true);
         processor.setDefaultValues("NONE");
         processor.setJsonPathExpressions("[0:3]");
         processor.setRefNames("varname");
@@ -142,7 +141,6 @@ public class TestJMESExtractor {
         processor.setThreadContext(context);
         processor.setRefNames(VAR_NAME);
         processor.setMatchNumbers(matchNumbers);
-        processor.setComputeConcatenation(computeConcatenation);
         return processor;
     }
 }

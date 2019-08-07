@@ -49,8 +49,7 @@ public class JMESExtractorGui extends AbstractPostProcessorGui {
     private JLabeledTextField jsonPathExpressionsField;
     private JLabeledTextField refNamesField;
     private JLabeledTextField matchNumbersField;
-    private JCheckBox computeConcatenationField;
-
+    
     public JMESExtractorGui() {
         super();
         init();
@@ -71,7 +70,6 @@ public class JMESExtractorGui extends AbstractPostProcessorGui {
         jsonPathExpressionsField.setText(config.getJsonPathExpressions());
         matchNumbersField.setText(config.getMatchNumbers());
         defaultValuesField.setText(config.getDefaultValues());
-        computeConcatenationField.setSelected(config.getComputeConcatenation());
     }
 
     /**
@@ -99,7 +97,6 @@ public class JMESExtractorGui extends AbstractPostProcessorGui {
             config.setJsonPathExpressions(jsonPathExpressionsField.getText());
             config.setDefaultValues(defaultValuesField.getText());
             config.setMatchNumbers(matchNumbersField.getText());
-            config.setComputeConcatenation(computeConcatenationField.isSelected());
         }
     }
 
@@ -113,7 +110,6 @@ public class JMESExtractorGui extends AbstractPostProcessorGui {
         jsonPathExpressionsField.setText(""); //$NON-NLS-1$
         matchNumbersField.setText(""); //$NON-NLS-1$
         defaultValuesField.setText(""); //$NON-NLS-1$
-        computeConcatenationField.setSelected(JMESExtractor.COMPUTE_CONCATENATION_DEFAULT_VALUE);
     }
 
     private void init() { // WARNING: called from ctor so must not be overridden (i.e. must be private or final)
@@ -134,7 +130,6 @@ public class JMESExtractorGui extends AbstractPostProcessorGui {
         jsonPathExpressionsField = new JLabeledTextField(JMeterUtils.getResString("jsonpp_json_path_expressions"));//$NON-NLS-1$
         matchNumbersField = new JLabeledTextField(JMeterUtils.getResString("jsonpp_match_numbers"));//$NON-NLS-1$
         defaultValuesField = new JLabeledTextField(JMeterUtils.getResString("jsonpp_default_values"));//$NON-NLS-1$
-        computeConcatenationField = new JCheckBox();//$NON-NLS-1$
         JPanel panel = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
         initConstraints(gbc);
@@ -144,7 +139,6 @@ public class JMESExtractorGui extends AbstractPostProcessorGui {
         nextLine(gbc);
         addField(panel, matchNumbersField, gbc);
         nextLine(gbc);
-        addField(panel, new JLabel(JMeterUtils.getResString("jsonpp_compute_concat")) ,computeConcatenationField, gbc);
         nextLine(gbc);
         gbc.weighty = 1;
         addField(panel, defaultValuesField, gbc);

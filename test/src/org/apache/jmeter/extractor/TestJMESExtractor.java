@@ -49,7 +49,7 @@ public class TestJMESExtractor {
         JMESExtractor processor = setupProcessor(context, "-1", true);
         JMeterVariables vars = new JMeterVariables();
         processor.setDefaultValue("NONE");
-        processor.setJsonPathExpressions("a.b.c.d");
+        processor.setJsonPathExpression("a.b.c.d");
         processor.setRefName("varname");
         processor.setScopeVariable("contentvar");
         context.setVariables(vars);
@@ -63,12 +63,12 @@ public class TestJMESExtractor {
         vars = new JMeterVariables();
         vars.put("contentvar", "[\"a\", \"b\", \"c\", \"d\", \"e\", \"f\"]");
         context.setVariables(vars);
-        processor.setJsonPathExpressions("[0:3]");
+        processor.setJsonPathExpression("[0:3]");
         processor.process();
         assertThat(vars.get("varname_1"), CoreMatchers.is("[\"a\",\"b\",\"c\"]"));
         assertThat(vars.get("varname_matchNr"), CoreMatchers.is("1"));
         // test3
-        processor.setJsonPathExpressions("people[:2].first");
+        processor.setJsonPathExpression("people[:2].first");
         context.setVariables(vars);
         vars = new JMeterVariables();
         vars.put("contentvar",
@@ -81,7 +81,7 @@ public class TestJMESExtractor {
         assertThat(vars.get("varname_1"), CoreMatchers.is("[\"James\",\"Jacob\"]"));
         // test4
         vars = new JMeterVariables();
-        processor.setJsonPathExpressions("people[2]");
+        processor.setJsonPathExpression("people[2]");
         context.setVariables(vars);
         vars.put("contentvar",
                 "{\r\n" + "  \"people\": [\r\n" + "    {\"first\": \"James\", \"last\": \"d\"},\r\n"
@@ -98,7 +98,7 @@ public class TestJMESExtractor {
         JMeterVariables vars = new JMeterVariables();
         processor.setMatchNumbers("1");
         processor.setDefaultValue("NONE");
-        processor.setJsonPathExpressions("a.b.c.d");
+        processor.setJsonPathExpression("a.b.c.d");
         processor.setRefName("varname");
         processor.setScopeVariable("contentvar");
         context.setVariables(vars);
@@ -115,7 +115,7 @@ public class TestJMESExtractor {
         JMeterVariables vars = new JMeterVariables();
         processor.setMatchNumbers("0");
         processor.setDefaultValue("NONE");
-        processor.setJsonPathExpressions("a.b.c.d");
+        processor.setJsonPathExpression("a.b.c.d");
         processor.setRefName("varname");
         processor.setScopeVariable("contentvar");
         context.setVariables(vars);
@@ -131,7 +131,7 @@ public class TestJMESExtractor {
         JMeterVariables vars = new JMeterVariables();
         processor.setMatchNumbers("2");
         processor.setDefaultValue("NONE");
-        processor.setJsonPathExpressions("a.b.c.d");
+        processor.setJsonPathExpression("a.b.c.d");
         processor.setRefName("varname");
         processor.setScopeVariable("contentvar");
         context.setVariables(vars);
@@ -147,7 +147,7 @@ public class TestJMESExtractor {
         JMESExtractor processor = setupProcessor(context, "-1", true);
         JMeterVariables vars = new JMeterVariables();
         processor.setDefaultValue("NONE");
-        processor.setJsonPathExpressions("[*]");
+        processor.setJsonPathExpression("[*]");
         processor.setRefName("varname");
         processor.setScopeVariable("contentvar");
         context.setVariables(vars);
@@ -165,7 +165,7 @@ public class TestJMESExtractor {
         JMESExtractor processor = setupProcessor(context, "-1", true);
         JMeterVariables vars = new JMeterVariables();
         processor.setDefaultValue("NONE");
-        processor.setJsonPathExpressions("k");
+        processor.setJsonPathExpression("k");
         processor.setRefName("varname");
         processor.setScopeVariable("contentvar");
         context.setVariables(vars);
@@ -181,7 +181,7 @@ public class TestJMESExtractor {
         JMeterVariables vars = new JMeterVariables();
         processor.setMatchNumbers("0");
         processor.setDefaultValue("NONE");
-        processor.setJsonPathExpressions("a.b.c.e");
+        processor.setJsonPathExpression("a.b.c.e");
         processor.setRefName("varname");
         processor.setScopeVariable("contentvar");
         context.setVariables(vars);

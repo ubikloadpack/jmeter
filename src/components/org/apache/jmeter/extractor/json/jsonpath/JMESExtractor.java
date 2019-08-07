@@ -84,7 +84,7 @@ public class JMESExtractor extends AbstractScopedTestElement implements Serializ
             }
         }
         String refName = getRefName();
-        String jsonPathExpression = getJsonPathExpressions().trim();
+        String jsonPathExpression = getJsonPathExpression().trim();
         String defaultValue = getDefaultValue();
         int matchNumber = Integer.parseInt(getMatchNumber());
         clearOldRefVars(vars, refName);
@@ -164,11 +164,11 @@ public class JMESExtractor extends AbstractScopedTestElement implements Serializ
         return obj == null ? "" : obj.toString(); //$NON-NLS-1$
     }
 
-    public String getJsonPathExpressions() {
+    public String getJsonPathExpression() {
         return getPropertyAsString(JSON_PATH_EXPRESSION);
     }
 
-    public void setJsonPathExpressions(String jsonPath) {
+    public void setJsonPathExpression(String jsonPath) {
         setProperty(JSON_PATH_EXPRESSION, jsonPath);
     }
 

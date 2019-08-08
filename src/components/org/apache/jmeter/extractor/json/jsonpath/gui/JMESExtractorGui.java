@@ -37,25 +37,23 @@ import org.apache.jmeter.util.JMeterUtils;
 import org.apache.jorphan.gui.JLabeledTextField;
 
 /**
- * GUI for {@link JSON2PostProcessor}
- * @since 3.0
+ * GUI for {@link JMESExtractor}
+ * @since 5.0
  */
 @GUIMenuSortOrder(2)
 public class JMESExtractorGui extends AbstractPostProcessorGui {
 
     private static final long serialVersionUID = -2845056031828291476L;
 
-    private JLabeledTextField defaultValuesField;
-    private JLabeledTextField jsonPathExpressionsField;
-    private JLabeledTextField refNamesField;
-    private JLabeledTextField matchNumbersField;
+    private JLabeledTextField defaultValueField;
+    private JLabeledTextField jsonPathExpressionField;
+    private JLabeledTextField refNameField;
+    private JLabeledTextField matchNumberField;
     
     public JMESExtractorGui() {
         super();
         init();
     }
-
-
     @Override
     public String getLabelResource() {
         return "jmes_extractor_title";//$NON-NLS-1$
@@ -66,10 +64,10 @@ public class JMESExtractorGui extends AbstractPostProcessorGui {
         super.configure(element);
         JMESExtractor config = (JMESExtractor) element;
         showScopeSettings(config, true);
-        refNamesField.setText(config.getRefName());
-        jsonPathExpressionsField.setText(config.getJsonPathExpression());
-        matchNumbersField.setText(config.getMatchNumber());
-        defaultValuesField.setText(config.getDefaultValue());
+        refNameField.setText(config.getRefName());
+        jsonPathExpressionField.setText(config.getJsonPathExpression());
+        matchNumberField.setText(config.getMatchNumber());
+        defaultValueField.setText(config.getDefaultValue());
     }
 
     /**
@@ -93,10 +91,10 @@ public class JMESExtractorGui extends AbstractPostProcessorGui {
         if (c instanceof JMESExtractor) {
             JMESExtractor config = (JMESExtractor) c;
             saveScopeSettings(config);
-            config.setRefName(refNamesField.getText());
-            config.setJsonPathExpression(jsonPathExpressionsField.getText());
-            config.setDefaultValue(defaultValuesField.getText());
-            config.setMatchNumbers(matchNumbersField.getText());
+            config.setRefName(refNameField.getText());
+            config.setJsonPathExpression(jsonPathExpressionField.getText());
+            config.setDefaultValue(defaultValueField.getText());
+            config.setMatchNumbers(matchNumberField.getText());
         }
     }
 
@@ -106,10 +104,10 @@ public class JMESExtractorGui extends AbstractPostProcessorGui {
     @Override
     public void clearGui() {
         super.clearGui();
-        refNamesField.setText(""); //$NON-NLS-1$
-        jsonPathExpressionsField.setText(""); //$NON-NLS-1$
-        matchNumbersField.setText(""); //$NON-NLS-1$
-        defaultValuesField.setText(""); //$NON-NLS-1$
+        refNameField.setText(""); //$NON-NLS-1$
+        jsonPathExpressionField.setText(""); //$NON-NLS-1$
+        matchNumberField.setText(""); //$NON-NLS-1$
+        defaultValueField.setText(""); //$NON-NLS-1$
     }
 
     private void init() { // WARNING: called from ctor so must not be overridden (i.e. must be private or final)
@@ -126,22 +124,22 @@ public class JMESExtractorGui extends AbstractPostProcessorGui {
     }
 
     private JPanel makeParameterPanel() {
-        refNamesField = new JLabeledTextField(JMeterUtils.getResString("jsonpp_variable_names"));//$NON-NLS-1$
-        jsonPathExpressionsField = new JLabeledTextField(JMeterUtils.getResString("jsonpp_json_path_expressions"));//$NON-NLS-1$
-        matchNumbersField = new JLabeledTextField(JMeterUtils.getResString("jsonpp_match_numbers"));//$NON-NLS-1$
-        defaultValuesField = new JLabeledTextField(JMeterUtils.getResString("jsonpp_default_values"));//$NON-NLS-1$
+        refNameField = new JLabeledTextField(JMeterUtils.getResString("jsonpp_variable_names"));//$NON-NLS-1$
+        jsonPathExpressionField = new JLabeledTextField(JMeterUtils.getResString("jsonpp_json_path_expressions"));//$NON-NLS-1$
+        matchNumberField = new JLabeledTextField(JMeterUtils.getResString("jsonpp_match_numbers"));//$NON-NLS-1$
+        defaultValueField = new JLabeledTextField(JMeterUtils.getResString("jsonpp_default_values"));//$NON-NLS-1$
         JPanel panel = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
         initConstraints(gbc);
-        addField(panel, refNamesField, gbc);
+        addField(panel, refNameField, gbc);
         nextLine(gbc);
-        addField(panel, jsonPathExpressionsField, gbc);
+        addField(panel, jsonPathExpressionField, gbc);
         nextLine(gbc);
-        addField(panel, matchNumbersField, gbc);
+        addField(panel, matchNumberField, gbc);
         nextLine(gbc);
         nextLine(gbc);
         gbc.weighty = 1;
-        addField(panel, defaultValuesField, gbc);
+        addField(panel, defaultValueField, gbc);
         return panel;
     }
 

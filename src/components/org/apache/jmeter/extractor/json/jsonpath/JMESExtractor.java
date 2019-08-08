@@ -42,9 +42,9 @@ import io.burt.jmespath.JmesPath;
 import io.burt.jmespath.jackson.JacksonRuntime;
 
 /**
- * JSON-PATH based extractor
+ * JMESPATH based extractor
  * 
- * @since 3.0
+ * @since 5.0
  */
 public class JMESExtractor extends AbstractScopedTestElement implements Serializable, PostProcessor, ThreadListener {
     private static final long serialVersionUID = 1L;

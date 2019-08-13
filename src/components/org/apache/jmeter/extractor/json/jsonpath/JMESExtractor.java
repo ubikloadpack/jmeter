@@ -32,10 +32,13 @@ import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.benmanes.caffeine.cache.CacheLoader;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 
 import io.burt.jmespath.Expression;
+import io.burt.jmespath.JmesPath;
+import io.burt.jmespath.jackson.JacksonRuntime;
 
 /**
  * JMESPATH based extractor
@@ -185,5 +188,13 @@ public class JMESExtractor extends AbstractScopedTestElement implements Serializ
 
     public String getMatchNumber() {
         return getPropertyAsString(MATCH_NUMBER);
+    }
+}
+
+class JMESCacheLoader implements CacheLoader<String, Expression<JsonNode>> {
+    @Override
+    public Expression<JsonNode> load(String jsonPathExpression) throws Exception {
+        final JmesPath<JsonNode> jmespath = new JacksonRuntime();
+        return jmespath.compile(jsonPathExpression);
     }
 }

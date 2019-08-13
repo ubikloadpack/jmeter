@@ -20,6 +20,8 @@ package org.apache.jmeter.extractor.json.jsonpath;
 import java.io.Serializable;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.ImmutableTriple;
+import org.apache.commons.lang3.tuple.Triple;
 import org.apache.jmeter.processor.PostProcessor;
 import org.apache.jmeter.samplers.SampleResult;
 import org.apache.jmeter.testelement.AbstractScopedTestElement;
@@ -30,14 +32,10 @@ import org.apache.jmeter.util.JMeterUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 
-import io.burt.jmespath.Expression;
 import io.burt.jmespath.JmesPath;
 import io.burt.jmespath.jackson.JacksonRuntime;
 
@@ -54,16 +52,14 @@ public class JMESExtractor extends AbstractScopedTestElement implements Serializ
     private static final String DEFAULT_VALUE = "JMESExtractor.defaultValue"; // $NON-NLS-1$
     private static final String MATCH_NUMBER = "JMESExtractor.match_number"; // $NON-NLS-1$
     private static final String REF_MATCH_NR = "_matchNr"; // $NON-NLS-1$
-    private static final LoadingCache<JsonPath, JsonNode> JMES_EXTRACTOR_CACHE;
+    private static final LoadingCache<Triple<JmesPath<JsonNode>, String, String>, JsonNode> JMES_EXTRACTOR_CACHE;
     static {
         final int cacheSize = JMeterUtils.getPropDefault("JMESExtractor.parser.cache.size", 400);
-        JMES_EXTRACTOR_CACHE = Caffeine.newBuilder().maximumSize(cacheSize)
-                .build(jmes -> jmes.expression.search(jmes.actualObj));
+        JMES_EXTRACTOR_CACHE = Caffeine.newBuilder().maximumSize(cacheSize).build(new JMESCacheLoader());
     }
 
     @Override
     public void process() {
-        JmesPath<JsonNode> jmespath = new JacksonRuntime();
         JMeterContext context = getThreadContext();
         JMeterVariables vars = context.getVariables();
         String jsonResponse;
@@ -84,9 +80,10 @@ public class JMESExtractor extends AbstractScopedTestElement implements Serializ
             }
         }
         String refName = getRefName();
-        String jsonPathExpression = getJsonPathExpression().trim();
         String defaultValue = getDefaultValue();
         int matchNumber = Integer.parseInt(getMatchNumber());
+        final JmesPath<JsonNode> jmespath = new JacksonRuntime();
+        final String jsonPathExpression = getJsonPathExpression().trim();
         clearOldRefVars(vars, refName);
         try {
             if (StringUtils.isEmpty(jsonResponse)) {
@@ -95,47 +92,34 @@ public class JMESExtractor extends AbstractScopedTestElement implements Serializ
                 }
                 vars.put(refName, defaultValue);
             } else {
-                ObjectMapper mapper = new ObjectMapper();
-                JsonNode actualObj;
                 JsonNode result = null;
-                try {
-                    actualObj = mapper.readValue(jsonResponse, JsonNode.class);
-                    Expression<JsonNode> expression = jmespath.compile(jsonPathExpression);
-                    JsonPath jsonPath = new JsonPath();
-                    jsonPath.setActualObj(actualObj);
-                    jsonPath.setExpression(expression);
-                    result = JMES_EXTRACTOR_CACHE.get(jsonPath);
-                    if (result.isNull()) {
-                        vars.put(refName, defaultValue);
-                        vars.put(refName + REF_MATCH_NR, "0"); //$NON-NLS-1$
-                    } else {
-                        if (matchNumber < 0) {
-                            String extractedString = stringify(result);
-                            vars.put(refName + "_" + 1, extractedString); // $NON-NLS-1$
-                        } else if (matchNumber == 0) {
-                            placeObjectIntoVars(vars, refName, result);
-                        } else {
-                            if (matchNumber > 1) {
-                                if (log.isDebugEnabled()) {
-                                    log.debug(
-                                            "matchNumber({}) exceeds number of items found({}), default value will be used",
-                                            matchNumber, 1);
-                                }
-                                vars.put(refName, defaultValue);
-                            } else {
-                                placeObjectIntoVars(vars, refName, result);
-                            }
-                        }
-                        if (matchNumber != 0) {
-                            vars.put(refName + REF_MATCH_NR, Integer.toString(1));
-                        }
-                    }
-                } catch (JsonParseException | JsonMappingException e) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("Could not find JSON Path {} in [{}]: {}", jsonPathExpression, jsonResponse,
-                                e.getLocalizedMessage());
-                    }
+                final Triple<JmesPath<JsonNode>, String, String> triple = ImmutableTriple.of(jmespath, jsonResponse,
+                        jsonPathExpression);
+                result = JMES_EXTRACTOR_CACHE.get(triple);
+                if (result.isNull()) {
                     vars.put(refName, defaultValue);
+                    vars.put(refName + REF_MATCH_NR, "0"); //$NON-NLS-1$
+                } else {
+                    if (matchNumber < 0) {
+                        String extractedString = stringify(result);
+                        vars.put(refName + "_" + 1, extractedString); // $NON-NLS-1$
+                    } else if (matchNumber == 0) {
+                        placeObjectIntoVars(vars, refName, result);
+                    } else {
+                        if (matchNumber > 1) {
+                            if (log.isDebugEnabled()) {
+                                log.debug(
+                                        "matchNumber({}) exceeds number of items found({}), default value will be used",
+                                        matchNumber, 1);
+                            }
+                            vars.put(refName, defaultValue);
+                        } else {
+                            placeObjectIntoVars(vars, refName, result);
+                        }
+                    }
+                    if (matchNumber != 0) {
+                        vars.put(refName + REF_MATCH_NR, Integer.toString(1));
+                    }
                 }
             }
         } catch (Exception e) {
@@ -204,38 +188,5 @@ public class JMESExtractor extends AbstractScopedTestElement implements Serializ
 
     public String getMatchNumber() {
         return getPropertyAsString(MATCH_NUMBER);
-    }
-
-    class JsonPath {
-        /**
-         * @return the expression
-         */
-        public Expression<JsonNode> getExpression() {
-            return expression;
-        }
-
-        /**
-         * @param expression the expression to set
-         */
-        public void setExpression(Expression<JsonNode> expression) {
-            this.expression = expression;
-        }
-
-        /**
-         * @return the actualObj
-         */
-        public JsonNode getActualObj() {
-            return actualObj;
-        }
-
-        /**
-         * @param actualObj the actualObj to set
-         */
-        public void setActualObj(JsonNode actualObj) {
-            this.actualObj = actualObj;
-        }
-
-        Expression<JsonNode> expression;
-        JsonNode actualObj;
     }
 }

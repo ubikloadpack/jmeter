@@ -17,25 +17,17 @@
  */
 package org.apache.jmeter.extractor.json.jsonpath;
 
-import org.apache.commons.lang3.tuple.Triple;
-
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.benmanes.caffeine.cache.CacheLoader;
 
 import io.burt.jmespath.Expression;
 import io.burt.jmespath.JmesPath;
+import io.burt.jmespath.jackson.JacksonRuntime;
 
-public class JMESCacheLoader implements CacheLoader<Triple<JmesPath<JsonNode>, String, String>, JsonNode> {
+public class JMESCacheLoader implements CacheLoader<String, Expression<JsonNode>> {
     @Override
-    public JsonNode load(Triple<JmesPath<JsonNode>, String, String> triple) throws Exception {
-        ObjectMapper mapper = new ObjectMapper();
-        JsonNode actualObj;
-        String jsonResponse = triple.getMiddle();
-        actualObj = mapper.readValue(jsonResponse, JsonNode.class);
-        JmesPath<JsonNode> jmespath = triple.getLeft();
-        String jsonPathExpression = triple.getRight();
-        Expression<JsonNode> expression = jmespath.compile(jsonPathExpression);
-        return expression.search(actualObj);
+    public Expression<JsonNode> load(String jsonPathExpression) throws Exception {
+        final JmesPath<JsonNode> jmespath = new JacksonRuntime();
+        return jmespath.compile(jsonPathExpression);
     }
 }

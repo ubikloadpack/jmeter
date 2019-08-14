@@ -23,6 +23,7 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
@@ -41,6 +42,8 @@ import org.apache.jmeter.threads.PostThreadGroup;
 import org.apache.jmeter.threads.SetupThreadGroup;
 import org.apache.jmeter.threads.TestCompiler;
 import org.apache.jmeter.util.JMeterUtils;
+import org.apache.jmeter.visualizers.NfrListner;
+import org.apache.jmeter.visualizers.SamplingStatCalculator;
 import org.apache.jorphan.collections.HashTree;
 import org.apache.jorphan.collections.ListedHashTree;
 import org.apache.jorphan.collections.SearchByClass;
@@ -488,9 +491,15 @@ public class StandardJMeterEngine implements JMeterEngine, Runnable {
             }
             waitThreadsStopped(); // wait for Post threads to stop
         }
-
+        
         notifyTestListenersOfEnd(testListeners);
         JMeterContextService.endTest();
+        
+        for (Map.Entry<String, SamplingStatCalculator> entry : NfrListner.tableRows.entrySet()) {
+         
+            System.out.println("Key = " + entry.getKey() + ", Value = " + entry.getValue());
+         
+        }
         if (JMeter.isNonGUI() && SYSTEM_EXIT_FORCED) {
             log.info("Forced JVM shutdown requested at end of test");
             System.exit(0); // NOSONAR Intentional

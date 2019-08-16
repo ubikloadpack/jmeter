@@ -43,40 +43,6 @@ public class NfrArgument extends AbstractTestElement implements Serializable {
     /** Name used to store the argument's value. */
     public static final String SYMBOL = "NfrArgument.symbol"; // $NON-NLS-1$
 
-
-    /**
-     * Create a new Argument without a name, value, or metadata.
-     */
-    public NfrArgument() {
-        this(null, null, null, null);
-    }
-
-    /**
-     * Create a new Argument with the specified name and value, and no metadata.
-     *
-     * @param name
-     *            the argument name
-     * @param value
-     *            the argument value
-     */
-    public NfrArgument(String name, String value) {
-        this(name, value, null, null);
-    }
-
-    /**
-     * Create a new Argument with the specified name, value, and metadata.
-     *
-     * @param name
-     *            the argument name
-     * @param value
-     *            the argument value
-     * @param metadata
-     *            the argument metadata
-     */
-    public NfrArgument(String name, String value, String metadata) {
-        this(name, value, metadata, null);
-    }
-
     /**
      * Create a new Argument with the specified name, value, and metadata.
      *

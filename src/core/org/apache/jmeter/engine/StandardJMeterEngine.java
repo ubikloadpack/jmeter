@@ -29,6 +29,10 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.jmeter.JMeter;
+import org.apache.jmeter.config.NfrArguments;
+import org.apache.jmeter.gui.GuiPackage;
+import org.apache.jmeter.gui.tree.JMeterTreeModel;
+import org.apache.jmeter.gui.tree.JMeterTreeNode;
 import org.apache.jmeter.samplers.SampleEvent;
 import org.apache.jmeter.testbeans.TestBean;
 import org.apache.jmeter.testbeans.TestBeanHelper;
@@ -491,7 +495,11 @@ public class StandardJMeterEngine implements JMeterEngine, Runnable {
             }
             waitThreadsStopped(); // wait for Post threads to stop
         }
-        
+        JMeterTreeNode treeNode = findFirstNodeOfType(NfrArguments.class);
+        if (treeNode == null) {
+           System.out.println("null");
+        }
+        else {System.out.println("not null");}
         notifyTestListenersOfEnd(testListeners);
         JMeterContextService.endTest();
         
@@ -505,7 +513,10 @@ public class StandardJMeterEngine implements JMeterEngine, Runnable {
             System.exit(0); // NOSONAR Intentional
         }
     }
-
+    private JMeterTreeNode findFirstNodeOfType(Class<?> type) {
+        JMeterTreeModel treeModel = GuiPackage.getInstance().getTreeModel();
+        return treeModel.getNodesOfType(type).stream().filter(JMeterTreeNode::isEnabled).findFirst().orElse(null);
+    }
     private void startThreadGroup(AbstractThreadGroup group, int groupCount, SearchByClass<?> searcher, List<?> testLevelElements, ListenerNotifier notifier)
     {
         try {

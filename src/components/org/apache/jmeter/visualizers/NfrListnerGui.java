@@ -22,6 +22,7 @@ import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.Deque;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
@@ -34,11 +35,11 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
-import javax.swing.Timer;
 import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
 
 import org.apache.jmeter.config.NfrArgument;
+import org.apache.jmeter.config.NfrArguments;
 import org.apache.jmeter.gui.GUIMenuSortOrder;
 import org.apache.jmeter.gui.util.HeaderAsPropertyRenderer;
 import org.apache.jmeter.gui.util.TextAreaCellRenderer;
@@ -46,6 +47,7 @@ import org.apache.jmeter.gui.util.TextAreaTableCellEditor;
 import org.apache.jmeter.samplers.Clearable;
 import org.apache.jmeter.samplers.SampleResult;
 import org.apache.jmeter.testelement.TestElement;
+import org.apache.jmeter.testelement.property.JMeterProperty;
 import org.apache.jmeter.util.JMeterUtils;
 import org.apache.jmeter.visualizers.gui.AbstractVisualizer;
 import org.apache.jorphan.gui.GuiUtils;
@@ -58,20 +60,13 @@ import org.apache.jorphan.reflect.Functor;
 @GUIMenuSortOrder(3)
 public class NfrListnerGui extends AbstractVisualizer implements Clearable, ActionListener {
     private static final long serialVersionUID = 242L;
-    private static final String USE_GROUP_NAME = "useGroupName"; //$NON-NLS-1$
-    private static final String SAVE_HEADERS = "saveHeaders"; //$NON-NLS-1$
     private static final String TOTAL_ROW_LABEL = JMeterUtils.getResString("aggregate_report_total_label"); //$NON-NLS-1$
-    private static final int REFRESH_PERIOD = JMeterUtils.getPropDefault("jmeter.gui.refresh_period", 500); // $NON-NLS-1$
-    private final JButton saveTable = new JButton(JMeterUtils.getResString("aggregate_graph_save_table")); //$NON-NLS-1$
-    private final JCheckBox saveHeaders = new JCheckBox(JMeterUtils.getResString("aggregate_graph_save_table_header"), //$NON-NLS-1$
-            true);
     private final JCheckBox useGroupName = new JCheckBox(JMeterUtils.getResString("aggregate_graph_use_group_name")); //$NON-NLS-1$
     private transient ObjectTableModel model;
     /** Lock used to protect tableRows update + model update */
     private final transient Object lock = new Object();
     public static Map<String, SamplingStatCalculator> tableRows = new ConcurrentHashMap<>();
     private Deque<SamplingStatCalculator> newRows = new ConcurrentLinkedDeque<>();
-    private volatile boolean dataChanged;
     private final JButton add = new JButton("add"); //$NON-NLS-1$
     private final JButton delete = new JButton("delete"); //$NON-NLS-1$
 
@@ -80,16 +75,6 @@ public class NfrListnerGui extends AbstractVisualizer implements Clearable, Acti
         model = StatGraphVisualizer.createObjectTableModel();
         clearData();
         init();
-    }
-
-    /**
-     * @return <code>true</code> iff all functors can be found
-     * @deprecated - only for use in testing
-     */
-    @Deprecated
-    public static boolean testFunctors() {
-        NfrListnerGui instance = new NfrListnerGui();
-        return instance.model.checkFunctors(null, instance.getClass());
     }
 
     @Override
@@ -114,7 +99,6 @@ public class NfrListnerGui extends AbstractVisualizer implements Clearable, Acti
         synchronized (lock) {
             tot.addSample(res);
         }
-        dataChanged = true;
     }
 
     /**
@@ -145,7 +129,6 @@ public class NfrListnerGui extends AbstractVisualizer implements Clearable, Acti
         mainPanel.add(makeTitlePanel());
         this.add(mainPanel, BorderLayout.NORTH);
         this.add(createStringPanel(), BorderLayout.CENTER);
-////////////////////////////////////////////////////////////////        
         JPanel buttonPanel = new JPanel();
         buttonPanel.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 10));
         add.addActionListener(new AddPatternListener());
@@ -154,19 +137,6 @@ public class NfrListnerGui extends AbstractVisualizer implements Clearable, Acti
         buttonPanel.add(delete);
         add.setEnabled(true);
         this.add(buttonPanel, BorderLayout.SOUTH);
-//////////////////////////////////////////////////////////////// 
-        new Timer(REFRESH_PERIOD, e -> {
-            if (!dataChanged) {
-                return;
-            }
-            dataChanged = false;
-            synchronized (lock) {
-                while (!newRows.isEmpty()) {
-                    model.insertRow(newRows.pop(), model.getRowCount() - 1);
-                }
-            }
-            model.fireTableDataChanged();
-        }).start();
     }
     /**
      * An ActionListener for deleting a pattern.
@@ -225,19 +195,55 @@ public class NfrListnerGui extends AbstractVisualizer implements Clearable, Acti
         }
     }
     @Override
-    public void modifyTestElement(TestElement c) {
-        super.modifyTestElement(c);
+    public void modifyTestElement(TestElement args) {
+        GuiUtils.stopTableEditing(stringTable);
+        if (args instanceof NfrArguments) {
+            NfrArguments arguments = (NfrArguments) args;
+            arguments.clear();
+            @SuppressWarnings("unchecked") // only contains Argument (or HTTPArgument)
+            Iterator<NfrArgument> modelData = (Iterator<NfrArgument>) tableModel.iterator();
+            while (modelData.hasNext()) {
+                NfrArgument arg = modelData.next();
+                arguments.addNfrArgument(arg);
+            }
+        }
+        configureTestElement(args);
+        super.modifyTestElement(args);
+    }
+    @Override
+    public TestElement createTestElement() {
+        NfrArguments args = new NfrArguments();
+        modifyTestElement(args);
+        configureTestElement(args);
+        return args;
     }
 
     @Override
     public void configure(TestElement el) {
         super.configure(el);
+        if (el instanceof NfrArguments) {
+            tableModel.clearData();
+            for (JMeterProperty jMeterProperty : ((NfrArguments) el).getNfrArguments()) {
+                NfrArgument arg = (NfrArgument) jMeterProperty.getObjectValue();
+                tableModel.addRow(arg);
+            }
+        }
+        checkButtonsStatus();
     }
-
     @Override
-    public void actionPerformed(ActionEvent ev) {
-
+    public void clearGui(){
+        super.clearGui();
+        clear();
     }
+
+    /**
+     * Clear all rows from the table. T.Elanjchezhiyan(chezhiyan@siptech.co.in)
+     */
+    public void clear() {
+        GuiUtils.stopTableEditing(stringTable);
+        tableModel.clearData();
+    }
+
     /**
      * Create a panel allowing the user to supply a list of string patterns to
      * test against.
@@ -276,6 +282,12 @@ public class NfrListnerGui extends AbstractVisualizer implements Clearable, Acti
         stringTable.setPreferredScrollableViewportSize(new Dimension(100, 70));
         return new JScrollPane(stringTable);
 
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        // TODO Auto-generated method stub
+        
     }
 
 

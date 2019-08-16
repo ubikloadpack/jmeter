@@ -42,7 +42,7 @@ import org.apache.jmeter.threads.PostThreadGroup;
 import org.apache.jmeter.threads.SetupThreadGroup;
 import org.apache.jmeter.threads.TestCompiler;
 import org.apache.jmeter.util.JMeterUtils;
-import org.apache.jmeter.visualizers.NfrListner;
+import org.apache.jmeter.visualizers.NfrListnerGui;
 import org.apache.jmeter.visualizers.SamplingStatCalculator;
 import org.apache.jorphan.collections.HashTree;
 import org.apache.jorphan.collections.ListedHashTree;
@@ -495,7 +495,7 @@ public class StandardJMeterEngine implements JMeterEngine, Runnable {
         notifyTestListenersOfEnd(testListeners);
         JMeterContextService.endTest();
         
-        for (Map.Entry<String, SamplingStatCalculator> entry : NfrListner.tableRows.entrySet()) {
+        for (Map.Entry<String, SamplingStatCalculator> entry : NfrListnerGui.tableRows.entrySet()) {
          
             System.out.println("Key = " + entry.getKey() + ", Value = " + entry.getValue());
          

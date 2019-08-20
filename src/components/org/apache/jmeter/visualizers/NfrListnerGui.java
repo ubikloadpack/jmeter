@@ -39,18 +39,16 @@ import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
 
 import org.apache.jmeter.config.NfrArgument;
-import org.apache.jmeter.config.NfrArguments;
 import org.apache.jmeter.gui.GUIMenuSortOrder;
 import org.apache.jmeter.gui.util.HeaderAsPropertyRenderer;
 import org.apache.jmeter.gui.util.TextAreaCellRenderer;
 import org.apache.jmeter.gui.util.TextAreaTableCellEditor;
-import org.apache.jmeter.reporters.ResultCollector;
+import org.apache.jmeter.reporters.NfrResultCollector;
 import org.apache.jmeter.samplers.Clearable;
 import org.apache.jmeter.samplers.SampleResult;
 import org.apache.jmeter.testelement.TestElement;
-import org.apache.jmeter.testelement.property.JMeterProperty;
 import org.apache.jmeter.util.JMeterUtils;
-import org.apache.jmeter.visualizers.gui.AbstractVisualizer;
+import org.apache.jmeter.visualizers.gui.NfrAbstractVisualizer;
 import org.apache.jorphan.gui.GuiUtils;
 import org.apache.jorphan.gui.ObjectTableModel;
 import org.apache.jorphan.reflect.Functor;
@@ -59,7 +57,7 @@ import org.apache.jorphan.reflect.Functor;
  * Aggregate Table-Based Reporting Visualizer for JMeter.
  */
 @GUIMenuSortOrder(3)
-public class NfrListnerGui extends AbstractVisualizer implements Clearable, ActionListener {
+public class NfrListnerGui extends NfrAbstractVisualizer implements Clearable, ActionListener {
     private static final long serialVersionUID = 242L;
     private static final String TOTAL_ROW_LABEL = JMeterUtils.getResString("aggregate_report_total_label"); //$NON-NLS-1$
     private final JCheckBox useGroupName = new JCheckBox(JMeterUtils.getResString("aggregate_graph_use_group_name")); //$NON-NLS-1$
@@ -70,7 +68,6 @@ public class NfrListnerGui extends AbstractVisualizer implements Clearable, Acti
     private final JButton add = new JButton("add"); //$NON-NLS-1$
     private final JButton delete = new JButton("delete"); //$NON-NLS-1$
     private JTable stringTable;
-    protected ResultCollector collector = new ResultCollector();
     /** Table model for the pattern table. */
     private ObjectTableModel tableModel;
 
@@ -217,36 +214,37 @@ public class NfrListnerGui extends AbstractVisualizer implements Clearable, Acti
         }
     }
 
+//    @Override
+//    public void modifyTestElement(TestElement c) {
+//        NfrResultCollector args = new NfrResultCollector();
+//        GuiUtils.stopTableEditing(stringTable);
+//        @SuppressWarnings("unchecked") // only contains Argument (or HTTPArgument)
+//        Iterator<NfrArgument> modelData = (Iterator<NfrArgument>) tableModel.iterator();
+//        while (modelData.hasNext()) {
+//            NfrArgument arg = modelData.next();
+//            args.addNfrArgument(arg);
+//        }
+//       // super.configureTestElement(args);
+//        
+//        super.modifyTestElement(c);
+//    }
     @Override
-    public TestElement createTestElement() {
-        System.out.println("test1");
-        NfrArguments args = new NfrArguments();
-        GuiUtils.stopTableEditing(stringTable);
-        if (args instanceof NfrArguments) {
-            NfrArguments arguments = (NfrArguments) args;
-            arguments.clear();
-            @SuppressWarnings("unchecked") // only contains Argument (or HTTPArgument)
+    public void configure(TestElement el) {
+        super.configure(el);
+        NfrResultCollector args = new NfrResultCollector();
+        if (el instanceof NfrResultCollector) {
+            @SuppressWarnings("unchecked")
             Iterator<NfrArgument> modelData = (Iterator<NfrArgument>) tableModel.iterator();
             while (modelData.hasNext()) {
                 NfrArgument arg = modelData.next();
-                arguments.addNfrArgument(arg);
-            }
-        }
-        configureTestElement(args);
-        return (TestElement) args.clone();
-    }
-
-    @Override
-    public void configure(TestElement el) {
-        // super.configure(el);
-        if (el instanceof NfrArguments) {
-            System.out.println(el);
-            for (JMeterProperty jMeterProperty : ((NfrArguments) el).getNfrArguments()) {
-                NfrArgument arg = (NfrArgument) jMeterProperty.getObjectValue();
-                tableModel.addRow(arg);
+                if (arg.getName() != null) {
+                    args.addNfrArgument(arg);
+                    System.out.println(arg);
+                }
             }
         }
         checkButtonsStatus();
+        super.modifyTestElement(el);
     }
 
     /**

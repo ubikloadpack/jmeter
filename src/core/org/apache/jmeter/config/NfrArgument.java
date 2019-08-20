@@ -29,6 +29,12 @@ import org.apache.jmeter.testelement.property.StringProperty;
  *
  */
 public class NfrArgument extends AbstractTestElement implements Serializable {
+    @Override
+    public String toString() {
+        return "NfrArgument [getName()=" + getName() + ", getValue()=" + getValue() + ", getCriteria()=" + getCriteria()
+                + ", getSymbol()=" + getSymbol() + "]";
+    }
+
     private static final long serialVersionUID = 240L;
 
      /** Name used to store the argument's name. */

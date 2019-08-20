@@ -280,8 +280,6 @@ For details, please see the files under: licenses/bin
 * jodd-props-5.0.6.jar (Simplified BSD)
 * jtidy-r938.jar (?)
 * junit-4.12.jar (BSD)
-* jmespath-core-0.3.0.jar (BSD)
-* jmespath-jackson-0.3.0.jar (BSD)
 * rhino-1.7.10.jar (MPL 2.0)
 * rsyntaxtextarea-3.0.2.jar (BSD)
 * slf4j-api-1.7.25.jar (MIT)

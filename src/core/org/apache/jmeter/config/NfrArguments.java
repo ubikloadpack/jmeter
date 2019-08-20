@@ -17,7 +17,7 @@
  */
 package org.apache.jmeter.config;
 
-import java.io.Serializable;
+ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -28,7 +28,7 @@ import org.apache.jmeter.testelement.property.JMeterProperty;
 import org.apache.jmeter.testelement.property.PropertyIterator;
 import org.apache.jmeter.testelement.property.TestElementProperty;
 
-/**
+ /**
  * A set of NfrArgument objects.
  *
  */
@@ -37,14 +37,14 @@ public class NfrArguments extends ConfigTestElement implements Serializable, Ite
     /** The name of the property used to store the nfrarguments. */
     public static final String NFRARGUMENTS = "NfrArguments.nfrarguments"; //$NON-NLS-1$
 
-    /**
+     /**
      * Create a new NfrArguments object with no arguments.
      */
     public NfrArguments() {
         setProperty(new CollectionProperty(NFRARGUMENTS, new ArrayList<NfrArgument>()));
     }
 
-    /**
+     /**
      * Get the nfrarguments.
      *
      * @return the nfrarguments
@@ -53,7 +53,7 @@ public class NfrArguments extends ConfigTestElement implements Serializable, Ite
         return (CollectionProperty) getProperty(NFRARGUMENTS);
     }
 
-    /**
+     /**
      * Clear the nfrarguments.
      */
     @Override
@@ -62,7 +62,7 @@ public class NfrArguments extends ConfigTestElement implements Serializable, Ite
         setProperty(new CollectionProperty(NFRARGUMENTS, new ArrayList<NfrArgument>()));
     }
 
-    /**
+     /**
      * Set the list of nfrarguments. Any existing arguments will be lost.
      *
      * @param arguments the new arguments
@@ -71,7 +71,7 @@ public class NfrArguments extends ConfigTestElement implements Serializable, Ite
         setProperty(new CollectionProperty(NFRARGUMENTS, arguments));
     }
 
-    /**
+     /**
      * Get the arguments as a Map. Each argument name is used as the key, and its
      * value as the value.
      *
@@ -94,7 +94,7 @@ public class NfrArguments extends ConfigTestElement implements Serializable, Ite
         return argMap;
     }
 
-    /**
+     /**
      * Add a new argument.
      *
      * @param arg the new argument
@@ -107,7 +107,7 @@ public class NfrArguments extends ConfigTestElement implements Serializable, Ite
         getNfrArguments().addItem(newArg);
     }
 
-    /**
+     /**
      * Add a new argument with the given name, value, metadata and description
      * 
      * @param name
@@ -119,7 +119,7 @@ public class NfrArguments extends ConfigTestElement implements Serializable, Ite
         addNfrArgument(new NfrArgument(name, criteria, symbol, value));
     }
 
-    /**
+     /**
      * Get a PropertyIterator of the nfrarguments.
      *
      * @return an iteration of the nfrarguments
@@ -129,7 +129,7 @@ public class NfrArguments extends ConfigTestElement implements Serializable, Ite
         return getNfrArguments().iterator();
     }
 
-    /**
+     /**
      * Create a string representation of the nfrarguments.
      *
      * @return the string representation of the nfrarguments
@@ -161,7 +161,7 @@ public class NfrArguments extends ConfigTestElement implements Serializable, Ite
         return str.toString();
     }
 
-    /**
+     /**
      * Remove the specified argument from the list.
      *
      * @param row the index of the argument to remove
@@ -172,7 +172,7 @@ public class NfrArguments extends ConfigTestElement implements Serializable, Ite
         }
     }
 
-    /**
+     /**
      * Remove the specified argument from the list.
      *
      * @param arg the argument to remove
@@ -187,7 +187,7 @@ public class NfrArguments extends ConfigTestElement implements Serializable, Ite
         }
     }
 
-    /**
+     /**
      * Remove the argument with the specified name.
      *
      * @param argName the name of the argument to remove
@@ -202,7 +202,7 @@ public class NfrArguments extends ConfigTestElement implements Serializable, Ite
         }
     }
 
-    /**
+     /**
      * Remove the argument with the specified name and value.
      *
      * @param argName  the name of the argument to remove
@@ -218,14 +218,14 @@ public class NfrArguments extends ConfigTestElement implements Serializable, Ite
         }
     }
 
-    /**
+     /**
      * Remove all arguments from the list.
      */
     public void removeAllNfrArguments() {
         getNfrArguments().clear();
     }
 
-    /**
+     /**
      * Add a new empty argument to the list. The new argument will have the empty
      * string as its name and value, and null metadata.
      */
@@ -233,7 +233,7 @@ public class NfrArguments extends ConfigTestElement implements Serializable, Ite
         addNfrArgument(new NfrArgument("", "", "", ""));
     }
 
-    /**
+     /**
      * Get the number of arguments in the list.
      *
      * @return the number of arguments
@@ -242,7 +242,7 @@ public class NfrArguments extends ConfigTestElement implements Serializable, Ite
         return getNfrArguments().size();
     }
 
-    /**
+     /**
      * Get a single argument.
      *
      * @param row the index of the argument to return.

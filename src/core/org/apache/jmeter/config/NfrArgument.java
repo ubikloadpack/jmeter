@@ -16,14 +16,14 @@
  *
  */
 
-package org.apache.jmeter.config;
+ package org.apache.jmeter.config;
 
-import java.io.Serializable;
+ import java.io.Serializable;
 
 import org.apache.jmeter.testelement.AbstractTestElement;
 import org.apache.jmeter.testelement.property.StringProperty;
 
-/**
+ /**
  * Class representing an argument. Each argument consists of a name/value pair,
  * as well as (optional) metadata.
  *
@@ -31,19 +31,19 @@ import org.apache.jmeter.testelement.property.StringProperty;
 public class NfrArgument extends AbstractTestElement implements Serializable {
     private static final long serialVersionUID = 240L;
 
-    /** Name used to store the argument's name. */
+     /** Name used to store the argument's name. */
     public static final String ARG_NAME = "NfrArgument.name"; // $NON-NLS-1$
 
-    /** Name used to store the argument's value. */
+     /** Name used to store the argument's value. */
     public static final String VALUE = "NfrArgument.value"; // $NON-NLS-1$
-    
-    /** Name used to store the argument's value. */
+
+     /** Name used to store the argument's value. */
     public static final String CRITERIA = "NfrArgument.criteria"; // $NON-NLS-1$
-    
-    /** Name used to store the argument's value. */
+
+     /** Name used to store the argument's value. */
     public static final String SYMBOL = "NfrArgument.symbol"; // $NON-NLS-1$
 
-    /**
+     /**
      * Create a new Argument with the specified name, value, and metadata.
      *
      * @param name
@@ -70,7 +70,7 @@ public class NfrArgument extends AbstractTestElement implements Serializable {
         }
     }
 
-    /**
+     /**
      * Set the name of the Argument.
      *
      * @param newName
@@ -81,7 +81,7 @@ public class NfrArgument extends AbstractTestElement implements Serializable {
         setProperty(new StringProperty(ARG_NAME, newName));
     }
 
-    /**
+     /**
      * Get the name of the Argument.
      *
      * @return the attribute's name
@@ -91,7 +91,7 @@ public class NfrArgument extends AbstractTestElement implements Serializable {
         return getPropertyAsString(ARG_NAME);
     }
 
-    /**
+     /**
      * Sets the value of the Argument.
      *
      * @param newValue
@@ -101,7 +101,7 @@ public class NfrArgument extends AbstractTestElement implements Serializable {
         setProperty(new StringProperty(VALUE, newValue));
     }
 
-    /**
+     /**
      * Gets the value of the Argument object.
      *
      * @return the attribute's value
@@ -110,10 +110,10 @@ public class NfrArgument extends AbstractTestElement implements Serializable {
         return getPropertyAsString(VALUE);
     }
     public void setCriteria(String criteria) {
-        setProperty(new StringProperty(VALUE, criteria));
+        setProperty(new StringProperty(CRITERIA, criteria));
     }
 
-    /**
+     /**
      * Gets the Meta Data attribute of the Argument.
      *
      * @return the MetaData value
@@ -122,7 +122,7 @@ public class NfrArgument extends AbstractTestElement implements Serializable {
         return getPropertyAsString(CRITERIA);
     }
 
-    /**
+     /**
      * Sets the Meta Data attribute of the Argument.
      *
      * @param newMetaData
@@ -132,7 +132,7 @@ public class NfrArgument extends AbstractTestElement implements Serializable {
         setProperty(new StringProperty(SYMBOL, symbol));
     }
 
-    /**
+     /**
      * the signe of nfr test
      * @return
      */
@@ -140,4 +140,4 @@ public class NfrArgument extends AbstractTestElement implements Serializable {
         return getPropertyAsString(SYMBOL);
     }
 
-}
+ }

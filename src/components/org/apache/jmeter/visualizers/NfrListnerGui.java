@@ -44,6 +44,7 @@ import org.apache.jmeter.gui.GUIMenuSortOrder;
 import org.apache.jmeter.gui.util.HeaderAsPropertyRenderer;
 import org.apache.jmeter.gui.util.TextAreaCellRenderer;
 import org.apache.jmeter.gui.util.TextAreaTableCellEditor;
+import org.apache.jmeter.reporters.ResultCollector;
 import org.apache.jmeter.samplers.Clearable;
 import org.apache.jmeter.samplers.SampleResult;
 import org.apache.jmeter.testelement.TestElement;
@@ -62,18 +63,19 @@ public class NfrListnerGui extends AbstractVisualizer implements Clearable, Acti
     private static final long serialVersionUID = 242L;
     private static final String TOTAL_ROW_LABEL = JMeterUtils.getResString("aggregate_report_total_label"); //$NON-NLS-1$
     private final JCheckBox useGroupName = new JCheckBox(JMeterUtils.getResString("aggregate_graph_use_group_name")); //$NON-NLS-1$
-    private transient ObjectTableModel model;
     /** Lock used to protect tableRows update + model update */
     private final transient Object lock = new Object();
     public static Map<String, SamplingStatCalculator> tableRows = new ConcurrentHashMap<>();
     private Deque<SamplingStatCalculator> newRows = new ConcurrentLinkedDeque<>();
     private final JButton add = new JButton("add"); //$NON-NLS-1$
     private final JButton delete = new JButton("delete"); //$NON-NLS-1$
+    private JTable stringTable;
+    protected ResultCollector collector = new ResultCollector();
+    /** Table model for the pattern table. */
+    private ObjectTableModel tableModel;
 
     public NfrListnerGui() {
         super();
-        model = StatGraphVisualizer.createObjectTableModel();
-        clearData();
         init();
     }
 
@@ -95,10 +97,6 @@ public class NfrListnerGui extends AbstractVisualizer implements Clearable, Acti
              */
             row.addSample(res);
         }
-        SamplingStatCalculator tot = tableRows.get(TOTAL_ROW_LABEL);
-        synchronized (lock) {
-            tot.addSample(res);
-        }
     }
 
     /**
@@ -107,12 +105,38 @@ public class NfrListnerGui extends AbstractVisualizer implements Clearable, Acti
     @Override
     public void clearData() {
         synchronized (lock) {
-            model.clearData();
+            tableModel.clearData();
             tableRows.clear();
             newRows.clear();
             tableRows.put(TOTAL_ROW_LABEL, new SamplingStatCalculator(TOTAL_ROW_LABEL));
-            model.addRow(tableRows.get(TOTAL_ROW_LABEL));
+            tableModel.addRow(tableRows.get(TOTAL_ROW_LABEL));
         }
+    }
+
+    /**
+     * Create a panel allowing the user to supply a list of string patterns to test
+     * against.
+     *
+     * @return a new panel for adding string patterns
+     */
+    /** A table of patterns to test against. */
+    private JScrollPane createStringPanel() {
+        tableModel = new ObjectTableModel(new String[] { "Name", "Criteria", "Symbol", "Value" }, NfrArgument.class,
+                new Functor[] { new Functor("getName"), // $NON-NLS-1$
+                        new Functor("getCriteria"), new Functor("getSymbol"), new Functor("getValue") }, // $NON-NLS-1$
+                new Functor[] { new Functor("setName"), // $NON-NLS-1$
+                        new Functor("setCriteria"), new Functor("setSymbol"), new Functor("setValue") }, // $NON-NLS-1$
+                new Class[] { String.class, String.class, String.class, String.class });
+        stringTable = new JTable(tableModel);
+        stringTable.getTableHeader().setDefaultRenderer(new HeaderAsPropertyRenderer());
+        stringTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+        JMeterUtils.applyHiDPI(stringTable);
+        TextAreaCellRenderer renderer = new TextAreaCellRenderer();
+        stringTable.setRowHeight(renderer.getPreferredHeight());
+        stringTable.setDefaultRenderer(String.class, renderer);
+        stringTable.setDefaultEditor(String.class, new TextAreaTableCellEditor());
+        stringTable.setPreferredScrollableViewportSize(new Dimension(100, 70));
+        return new JScrollPane(stringTable);
     }
 
     /**
@@ -138,6 +162,7 @@ public class NfrListnerGui extends AbstractVisualizer implements Clearable, Acti
         add.setEnabled(true);
         this.add(buttonPanel, BorderLayout.SOUTH);
     }
+
     /**
      * An ActionListener for deleting a pattern.
      *
@@ -146,7 +171,6 @@ public class NfrListnerGui extends AbstractVisualizer implements Clearable, Acti
         @Override
         public void actionPerformed(ActionEvent e) {
             GuiUtils.cancelEditing(stringTable);
-
             int[] rowsSelected = stringTable.getSelectedRows();
             stringTable.clearSelection();
             if (rowsSelected.length > 0) {
@@ -155,17 +179,17 @@ public class NfrListnerGui extends AbstractVisualizer implements Clearable, Acti
                 }
                 tableModel.fireTableDataChanged();
             } else {
-                if(tableModel.getRowCount()>0) {
+                if (tableModel.getRowCount() > 0) {
                     tableModel.removeRow(0);
                     tableModel.fireTableDataChanged();
                 }
             }
-
             if (stringTable.getModel().getRowCount() == 0) {
                 delete.setEnabled(false);
             }
         }
     }
+
     /**
      * An ActionListener for adding a pattern.
      */
@@ -175,17 +199,15 @@ public class NfrListnerGui extends AbstractVisualizer implements Clearable, Acti
             // If a table cell is being edited, we should accept the current value
             // and stop the editing before adding a new row.
             GuiUtils.stopTableEditing(stringTable);
-
-            tableModel.addRow( new NfrArgument("", "","",""));
-
+            tableModel.addRow(new NfrArgument("", "", "", ""));
             checkButtonsStatus();
-
             // Highlight (select) and scroll to the appropriate row.
             int rowToSelect = tableModel.getRowCount() - 1;
             stringTable.setRowSelectionInterval(rowToSelect, rowToSelect);
             stringTable.scrollRectToVisible(stringTable.getCellRect(rowToSelect, 0, true));
         }
     }
+
     protected void checkButtonsStatus() {
         // Disable DELETE if there are no rows in the table to delete.
         if (tableModel.getRowCount() == 0) {
@@ -194,8 +216,11 @@ public class NfrListnerGui extends AbstractVisualizer implements Clearable, Acti
             delete.setEnabled(true);
         }
     }
+
     @Override
-    public void modifyTestElement(TestElement args) {
+    public TestElement createTestElement() {
+        System.out.println("test1");
+        NfrArguments args = new NfrArguments();
         GuiUtils.stopTableEditing(stringTable);
         if (args instanceof NfrArguments) {
             NfrArguments arguments = (NfrArguments) args;
@@ -208,32 +233,20 @@ public class NfrListnerGui extends AbstractVisualizer implements Clearable, Acti
             }
         }
         configureTestElement(args);
-        super.modifyTestElement(args);
-    }
-    @Override
-    public TestElement createTestElement() {
-        NfrArguments args = new NfrArguments();
-        modifyTestElement(args);
-        configureTestElement(args);
-        return args;
+        return (TestElement) args.clone();
     }
 
     @Override
     public void configure(TestElement el) {
-        super.configure(el);
+        // super.configure(el);
         if (el instanceof NfrArguments) {
-            tableModel.clearData();
+            System.out.println(el);
             for (JMeterProperty jMeterProperty : ((NfrArguments) el).getNfrArguments()) {
                 NfrArgument arg = (NfrArgument) jMeterProperty.getObjectValue();
                 tableModel.addRow(arg);
             }
         }
         checkButtonsStatus();
-    }
-    @Override
-    public void clearGui(){
-        super.clearGui();
-        clear();
     }
 
     /**
@@ -244,51 +257,7 @@ public class NfrListnerGui extends AbstractVisualizer implements Clearable, Acti
         tableModel.clearData();
     }
 
-    /**
-     * Create a panel allowing the user to supply a list of string patterns to
-     * test against.
-     *
-     * @return a new panel for adding string patterns
-     */
-    /** A table of patterns to test against. */
-    private JTable stringTable;
-
-    /** Table model for the pattern table. */
-    private ObjectTableModel tableModel;
-    private JScrollPane createStringPanel() {
-        tableModel = new ObjectTableModel(new String[] { "Name", "Criteria" ,"Symbol","Value"},
-                NfrArgument.class,
-                new Functor[] {
-                new Functor("getName"), // $NON-NLS-1$
-                new Functor("getCriteria"),
-                new Functor("getSymbol"),
-                new Functor("getValue")},  // $NON-NLS-1$
-                new Functor[] {
-                new Functor("setName"), // $NON-NLS-1$
-                new Functor("setCriteria"),
-                new Functor("setSymbol"),
-                new Functor("setValue") }, // $NON-NLS-1$
-                new Class[] { String.class, String.class , String.class , String.class });
-        stringTable = new JTable(tableModel);
-        stringTable.getTableHeader().setDefaultRenderer(new HeaderAsPropertyRenderer());
-        stringTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-        JMeterUtils.applyHiDPI(stringTable);
-
-
-        TextAreaCellRenderer renderer = new TextAreaCellRenderer();
-        stringTable.setRowHeight(renderer.getPreferredHeight());
-        stringTable.setDefaultRenderer(String.class, renderer);
-        stringTable.setDefaultEditor(String.class, new TextAreaTableCellEditor());
-        stringTable.setPreferredScrollableViewportSize(new Dimension(100, 70));
-        return new JScrollPane(stringTable);
-
-    }
-
     @Override
     public void actionPerformed(ActionEvent e) {
-        // TODO Auto-generated method stub
-        
     }
-
-
 }

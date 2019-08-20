@@ -277,7 +277,7 @@ public abstract class NfrAbstractVisualizer
             rc.setErrorLogging(errorLogging.isSelected());
             rc.setSuccessOnlyLogging(successOnlyLogging.isSelected());
             rc.setFilename(getFile());
-            System.out.println(rc.getNfrArguments());
+//            System.out.println(rc.getNfrArguments());
             collector = rc;
         }
     }

@@ -18,6 +18,7 @@
 package org.apache.jmeter.visualizers;
 
 import java.awt.BorderLayout;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -31,15 +32,20 @@ import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
+import javax.swing.event.ChangeEvent;
 
 import org.apache.jmeter.config.NfrArgument;
 import org.apache.jmeter.gui.GUIMenuSortOrder;
+import org.apache.jmeter.gui.GuiPackage;
+import org.apache.jmeter.gui.SavePropertyDialog;
+import org.apache.jmeter.gui.util.FilePanel;
 import org.apache.jmeter.gui.util.HeaderAsPropertyRenderer;
 import org.apache.jmeter.gui.util.TextAreaCellRenderer;
 import org.apache.jmeter.gui.util.TextAreaTableCellEditor;
@@ -49,9 +55,12 @@ import org.apache.jmeter.samplers.SampleResult;
 import org.apache.jmeter.testelement.TestElement;
 import org.apache.jmeter.util.JMeterUtils;
 import org.apache.jmeter.visualizers.gui.NfrAbstractVisualizer;
+import org.apache.jorphan.gui.ComponentUtil;
 import org.apache.jorphan.gui.GuiUtils;
 import org.apache.jorphan.gui.ObjectTableModel;
 import org.apache.jorphan.reflect.Functor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Aggregate Table-Based Reporting Visualizer for JMeter.
@@ -71,8 +80,66 @@ public class NfrListnerGui extends NfrAbstractVisualizer implements Clearable, A
     /** Table model for the pattern table. */
     private ObjectTableModel tableModel;
 
+    /** Logging. */
+    private static final Logger log = LoggerFactory.getLogger(NfrAbstractVisualizer.class);
+
+    /** File Extensions */
+    private static final String[] EXTS = { ".xml", ".jtl", ".csv" }; // $NON-NLS-1$ $NON-NLS-2$ $NON-NLS-3$
+
+    /** A panel allowing results to be saved. */
+    private final FilePanel filePanel;
+
+    /** A checkbox choosing whether or not only errors should be logged. */
+    private final JCheckBox errorLogging;
+
+    /* A checkbox choosing whether or not only successes should be logged. */
+    private final JCheckBox successOnlyLogging;
+
+    protected NfrResultCollector collector = new NfrResultCollector();
+
+    protected boolean isStats = false;
     public NfrListnerGui() {
         super();
+        // errorLogging and successOnlyLogging are mutually exclusive
+        errorLogging = new JCheckBox(JMeterUtils.getResString("log_errors_only")); // $NON-NLS-1$
+        errorLogging.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (errorLogging.isSelected()) {
+                    successOnlyLogging.setSelected(false);
+                }
+            }
+        });
+        successOnlyLogging = new JCheckBox(JMeterUtils.getResString("log_success_only")); // $NON-NLS-1$
+        successOnlyLogging.addActionListener(new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (successOnlyLogging.isSelected()) {
+                    errorLogging.setSelected(false);
+                }
+            }
+        });
+        JButton saveConfigButton = new JButton(JMeterUtils.getResString("config_save_settings")); // $NON-NLS-1$
+        saveConfigButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                SavePropertyDialog d = new SavePropertyDialog(
+                        GuiPackage.getInstance().getMainFrame(),
+                        JMeterUtils.getResString("sample_result_save_configuration"), // $NON-NLS-1$
+                        true, collector.getSaveConfig());
+                d.pack();
+                ComponentUtil.centerComponentInComponent(GuiPackage.getInstance().getMainFrame(), d);
+                d.setVisible(true);
+            }
+        });
+
+        filePanel = new FilePanel(JMeterUtils.getResString("file_visualizer_output_file"), EXTS); // $NON-NLS-1$
+        filePanel.addChangeListener(this);
+        filePanel.add(new JLabel(JMeterUtils.getResString("log_only"))); // $NON-NLS-1$
+        filePanel.add(errorLogging);
+        filePanel.add(successOnlyLogging);
+        filePanel.add(saveConfigButton);
+
         init();
     }
 
@@ -80,6 +147,7 @@ public class NfrListnerGui extends NfrAbstractVisualizer implements Clearable, A
     public String getLabelResource() {
         return "non_function_test"; //$NON-NLS-1$
     }
+
 
     @Override
     public void add(final SampleResult res) {
@@ -244,7 +312,7 @@ public class NfrListnerGui extends NfrAbstractVisualizer implements Clearable, A
             }
         }
         checkButtonsStatus();
-        super.modifyTestElement(el);
+        //super.modifyTestElement(el);
     }
 
     /**

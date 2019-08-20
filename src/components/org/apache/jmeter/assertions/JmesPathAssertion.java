@@ -30,8 +30,9 @@ import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.CacheLoader;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 
 import io.burt.jmespath.Expression;
 import io.burt.jmespath.JmesPath;
@@ -59,21 +60,26 @@ public class JmesPathAssertion extends AbstractTestElement implements Serializab
     private static final String RESULT_VALUE_EMPTY_SUCCESS = "Result is empty and expected to be null or empty.";
     private static final String RESULT_VALUE_EMPTY_INVERT_SUCCESS = "Assertion has been successfully inverted. Expected value and result are both null or empty.";
     private static final String RESULT_VALUE_EQUALS_SUCCESS = "Query went well, result %s and expected value %s are matching.";
-    private static final String RESULT_VALUE_EQUALS_INVERT_SUCCESS = "Assertion has been successfully inverted. Expected value %s matches with result %s";
+    private static final String RESULT_VALUE_EQUALS_INVERT_SUCCESS = "Assertion has been successfully inverted. Result %s matches with expected value %s";
     private static final String RESULT_VALUE_DIFFERENT_FAIL = "Expected value %s does not match with the result data %s.";
     private static final String RESULT_VALUE_DIFFERENT_INVERT_SUCCESS = "Invert went well, result %s and expected value %s are different.";
     private static final String RESULT_EMPTY_FAIL = "The result data should not be null or empty.";
     private static final String VALUE_EMPTY_FAIL = "Value expected to be null, but found %s.";
     private static final String REGEX_SUCCESS = "Result %s and expected value %s pattern are matching.";
     private static final String REGEX_FAIL = "Result %s and expected value %s pattern are different.";
+    private static final JMESCacheLoader CACHE;
     /**
      * Initialize error message
      */
     private String errorMessage;
-    private static final Cache<String, Expression<JsonNode>> JSON_EXPRESSION_CACHE;
+    /**
+     * initialize cache for compiled JMESPath expression
+     */
+    private static final LoadingCache<String, Expression<JsonNode>> JSON_EXPRESSION_CACHE;
     static {
-        final int cacheSize = JMeterUtils.getPropDefault("cssselector.parser.cache.size", 400);
-        JSON_EXPRESSION_CACHE = Caffeine.newBuilder().maximumSize(cacheSize).build();
+        CACHE = new JMESCacheLoader();
+        final int cacheSize = JMeterUtils.getPropDefault("JmesAssertion.parser.cache.size", 400);
+        JSON_EXPRESSION_CACHE = Caffeine.newBuilder().maximumSize(cacheSize).build(CACHE);
     }
 
     /**
@@ -117,14 +123,13 @@ public class JmesPathAssertion extends AbstractTestElement implements Serializab
      * @throws Exception
      */
     private boolean doAssert(String responseDataAsJsonString) throws Exception {
-        // instantiate the jmesPath API
-        JmesPath<JsonNode> jmespath = new JacksonRuntime();
-        // cast the query as a jmesPath expression
-        Expression<JsonNode> expression = jmespath.compile(getJmesPath());
-        JSON_EXPRESSION_CACHE.put("JmesPath query", expression);
         ObjectMapper mapper = new ObjectMapper();
         // cast the response data to JsonNode
         JsonNode input = mapper.readValue(responseDataAsJsonString, JsonNode.class);
+        // get the JmesPath expression from the cache
+        // if it does not exist, compile it
+        Expression<JsonNode> expression = JSON_EXPRESSION_CACHE.get(getJmesPath(),
+                jmesPathExpression -> CACHE.load(jmesPathExpression));
         // get the result from the JmesPath query
         JsonNode currentValue = expression.search(input);
         // cast JsonNode as String, and remove the extra ' " ' in the String
@@ -150,6 +155,7 @@ public class JmesPathAssertion extends AbstractTestElement implements Serializab
         boolean isResultEmpty = StringUtils.isEmpty(result) || result == null || result.equals("null");
         String expectedValue = "";
         if (isResultEmpty && isExpectNull() && !isInvert()) {
+            setIsRegex(false);
             return setBooleanResult(true, RESULT_VALUE_EMPTY_SUCCESS);
         } else {
             if (!isExpectNull()) {
@@ -159,19 +165,29 @@ public class JmesPathAssertion extends AbstractTestElement implements Serializab
             // ======================= CHECK REGEX ================================
             if (isUseRegex()) {
                 if (checkIfRegexIsValid(result, expectedValue)) {
-                    return setBooleanResult(true, String.format(REGEX_SUCCESS, result, expectedValue));
+                    if (isInvert()) {
+                        return setBooleanResult(false, String.format(REGEX_FAIL, result, expectedValue));
+                    } else {
+                        return setBooleanResult(true, String.format(REGEX_SUCCESS, result, expectedValue));
+                    }
                 } else {
-                    return setBooleanResult(false, String.format(REGEX_FAIL, result, expectedValue));
+                    if (isInvert()) {
+                        return setBooleanResult(true, String.format(REGEX_SUCCESS, result, expectedValue));
+                    } else {
+                        return setBooleanResult(false, String.format(REGEX_FAIL, result, expectedValue));
+                    }
                 }
                 // ======================= CHECK INVERT ================================
-            } else if (isExpectedValueEmpty && isResultEmpty && isInvert()) {
-                return setBooleanResult(false, RESULT_VALUE_EMPTY_INVERT_SUCCESS);
-            } else if (result.equals(expectedValue) && isInvert()) {
-                return setBooleanResult(false,
-                        String.format(RESULT_VALUE_EQUALS_INVERT_SUCCESS, expectedValue, result));
-            } else if (!result.equals(expectedValue) && isInvert()) {
-                return setBooleanResult(true,
-                        String.format(RESULT_VALUE_DIFFERENT_INVERT_SUCCESS, result, expectedValue));
+            } else if (isInvert()) {
+                if (isExpectedValueEmpty && isResultEmpty) {
+                    return setBooleanResult(false, RESULT_VALUE_EMPTY_INVERT_SUCCESS);
+                } else if (result.equals(expectedValue)) {
+                    return setBooleanResult(false,
+                            String.format(RESULT_VALUE_EQUALS_INVERT_SUCCESS, result, expectedValue));
+                } else if (!result.equals(expectedValue)) {
+                    return setBooleanResult(true,
+                            String.format(RESULT_VALUE_DIFFERENT_INVERT_SUCCESS, result, expectedValue));
+                }
                 // ======================= CHECK EMPTY =================================
                 /*
                  * if result data is empty and if the expected value is empty but isExpectNull
@@ -179,8 +195,8 @@ public class JmesPathAssertion extends AbstractTestElement implements Serializab
                  * 
                  * TODO Uncomment below if yes.
                  */
-//			} else if (isResultEmpty && isExpectedValueEmpty){
-//				return setBooleanResult(true, String.format("Result %s and expected Value %s are both empty or null.", result, expectedValue));
+//                      } else if (isResultEmpty && isExpectedValueEmpty){
+//                              return setBooleanResult(true, String.format("Result %s and expected Value %s are both empty or null.", result, expectedValue));
             } else if (isResultEmpty) {
                 return setBooleanResult(false, RESULT_EMPTY_FAIL);
             } else if (isExpectedValueEmpty) {
@@ -273,5 +289,20 @@ public class JmesPathAssertion extends AbstractTestElement implements Serializab
 
     public boolean isUseRegex() {
         return getPropertyAsBoolean(ISREGEX, true);
+    }
+}
+
+/**
+ * 
+ * Provide cache implementation
+ * Call {@link JMESCacheLoader#load(String)} when an expression
+ * does not exist in the cache
+ *
+ */
+class JMESCacheLoader implements CacheLoader<String, Expression<JsonNode>> {
+    @Override
+    public Expression<JsonNode> load(String jsonPathExpression) {
+        final JmesPath<JsonNode> jmespath = new JacksonRuntime();
+        return jmespath.compile(jsonPathExpression);
     }
 }

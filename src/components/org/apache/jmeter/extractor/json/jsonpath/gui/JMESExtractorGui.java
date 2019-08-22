@@ -125,7 +125,7 @@ public class JMESExtractorGui extends AbstractPostProcessorGui {
 
     private JPanel makeParameterPanel() {
         refNameField = new JLabeledTextField(JMeterUtils.getResString("jsonpp_variable_names"));//$NON-NLS-1$
-        jsonPathExpressionField = new JLabeledTextField(JMeterUtils.getResString("jsonpp_json_path_expressions"));//$NON-NLS-1$
+        jsonPathExpressionField = new JLabeledTextField(JMeterUtils.getResString("jmes_path_expressions"));//$NON-NLS-1$
         matchNumberField = new JLabeledTextField(JMeterUtils.getResString("jsonpp_match_numbers"));//$NON-NLS-1$
         defaultValueField = new JLabeledTextField(JMeterUtils.getResString("jsonpp_default_values"));//$NON-NLS-1$
         JPanel panel = new JPanel(new GridBagLayout());

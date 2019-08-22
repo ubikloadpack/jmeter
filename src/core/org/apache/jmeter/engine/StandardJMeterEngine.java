@@ -29,10 +29,10 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.jmeter.JMeter;
-import org.apache.jmeter.config.NfrArguments;
 import org.apache.jmeter.gui.GuiPackage;
 import org.apache.jmeter.gui.tree.JMeterTreeModel;
 import org.apache.jmeter.gui.tree.JMeterTreeNode;
+import org.apache.jmeter.reporters.NfrResultCollector;
 import org.apache.jmeter.samplers.SampleEvent;
 import org.apache.jmeter.testbeans.TestBean;
 import org.apache.jmeter.testbeans.TestBeanHelper;
@@ -495,11 +495,14 @@ public class StandardJMeterEngine implements JMeterEngine, Runnable {
             }
             waitThreadsStopped(); // wait for Post threads to stop
         }
-        JMeterTreeNode treeNode = findFirstNodeOfType(NfrArguments.class);
+        JMeterTreeNode treeNode = findFirstNodeOfType(NfrResultCollector.class);
         if (treeNode == null) {
            System.out.println("null");
         }
-        else {System.out.println("not null");}
+        else {System.out.println("not null");
+        NfrResultCollector nfrResultCollector = (NfrResultCollector) treeNode.getTestElement();
+        System.out.println("count"+nfrResultCollector.getNfrArguments());
+        }
         notifyTestListenersOfEnd(testListeners);
         JMeterContextService.endTest();
         

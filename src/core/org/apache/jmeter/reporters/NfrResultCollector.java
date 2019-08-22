@@ -177,7 +177,9 @@ public class NfrResultCollector extends AbstractListenerElement implements Sampl
     @Override
     public Object clone(){
         NfrResultCollector clone = (NfrResultCollector) super.clone();
+        System.out.println("before");
         clone.setSaveConfig((SampleSaveConfiguration)clone.getSaveConfig().clone());
+        System.out.println("after");
         // Unfortunately AbstractTestElement does not call super.clone()
         clone.summariser = this.summariser;
         return clone;
@@ -369,32 +371,8 @@ public class NfrResultCollector extends AbstractListenerElement implements Sampl
      *
      * @return the string representation of the nfrarguments
      */
-    @Override
-    public String toString() {
-        StringBuilder str = new StringBuilder();
-        PropertyIterator iter = getNfrArguments().iterator();
-        while (iter.hasNext()) {
-            NfrArgument arg = (NfrArgument) iter.next().getObjectValue();
-            final String criteria = arg.getCriteria();
-            str.append(arg.getName());
-            if (criteria == null) {
-                str.append("="); //$NON-NLS-1$
-            } else {
-                str.append(criteria);
-            }
-            str.append(arg.getValue());
-            final String symbol = arg.getSymbol();
-            if (symbol != null) {
-                str.append("(");
-                str.append(symbol);
-                str.append(")");
-            }
-            if (iter.hasNext()) {
-                str.append("&"); //$NON-NLS-1$
-            }
-        }
-        return str.toString();
-    }
+
+
 
      /**
      * Remove the specified argument from the list.
@@ -842,6 +820,5 @@ public class NfrResultCollector extends AbstractListenerElement implements Sampl
     @Override
     public void clearData() {
         super.clear();
-        setProperty(new CollectionProperty(NFRARGUMENTS, new ArrayList<NfrArgument>()));
     }
 }

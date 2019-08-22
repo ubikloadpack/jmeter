@@ -19,8 +19,13 @@
  package org.apache.jmeter.config;
 
  import java.io.Serializable;
+import java.util.LinkedList;
+import java.util.List;
 
+import org.apache.jmeter.protocol.http.util.HTTPArgument;
+import org.apache.jmeter.reporters.NfrResultCollector;
 import org.apache.jmeter.testelement.AbstractTestElement;
+import org.apache.jmeter.testelement.property.JMeterProperty;
 import org.apache.jmeter.testelement.property.StringProperty;
 
  /**
@@ -144,6 +149,24 @@ public class NfrArgument extends AbstractTestElement implements Serializable {
      */
     public String getSymbol() {
         return getPropertyAsString(SYMBOL);
+    }
+    /**
+     * Converts all {@link Argument} entries in the collection to {@link HTTPArgument} entries.
+     *
+     * @param args collection of {@link Argument} and/or {@link HTTPArgument} entries
+     */
+    public static void convertNfrArgumentsToHTTP(NfrResultCollector args) {
+        List<NfrArgument> newArguments = new LinkedList<>();
+        System.out.println(args.getNfrArguments());
+        for (JMeterProperty jMeterProperty : args.getNfrArguments()) {
+            Object arg = jMeterProperty.getObjectValue();
+            if (arg instanceof NfrArgument) {
+                System.out.println("adds");
+                newArguments.add((NfrArgument) arg);
+            } 
+        }
+        args.removeAllNfrArguments();
+        args.setNfrArguments(newArguments);
     }
 
  }

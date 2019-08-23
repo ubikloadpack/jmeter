@@ -314,8 +314,6 @@ public class NfrListnerGui extends NfrAbstractVisualizer implements Clearable, A
     @Override
     public void configure(TestElement el) {
         super.configure(el);
-
-        System.out.println("nfrSet" + ((NfrResultCollector) el).getNfrlist());
         if (el instanceof NfrResultCollector) {
             tableModel.clearData();
             for (NfrArgument nfrArgument :((NfrResultCollector) el).getNfrlist()) {

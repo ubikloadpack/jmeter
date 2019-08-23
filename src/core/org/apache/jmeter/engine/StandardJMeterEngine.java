@@ -46,6 +46,8 @@ import org.apache.jmeter.threads.PostThreadGroup;
 import org.apache.jmeter.threads.SetupThreadGroup;
 import org.apache.jmeter.threads.TestCompiler;
 import org.apache.jmeter.util.JMeterUtils;
+import org.apache.jmeter.visualizers.NfrListnerGui;
+import org.apache.jmeter.visualizers.SamplingStatCalculator;
 import org.apache.jorphan.collections.HashTree;
 import org.apache.jorphan.collections.ListedHashTree;
 import org.apache.jorphan.collections.SearchByClass;
@@ -493,13 +495,7 @@ public class StandardJMeterEngine implements JMeterEngine, Runnable {
             }
             waitThreadsStopped(); // wait for Post threads to stop
         }
-        JMeterTreeNode treeNode = findFirstNodeOfType(NfrResultCollector.class);
-        if (treeNode != null) {
-            NfrResultCollector nfrResultCollector = (NfrResultCollector) treeNode.getTestElement();
-            for (NfrArgument nfrArgument:nfrResultCollector.getNfrlist()) {                
-                System.out.println(nfrArgument);
-            }
-        }        
+        nfr();
         notifyTestListenersOfEnd(testListeners);
         JMeterContextService.endTest();
         if (JMeter.isNonGUI() && SYSTEM_EXIT_FORCED) {
@@ -507,6 +503,69 @@ public class StandardJMeterEngine implements JMeterEngine, Runnable {
             System.exit(0); // NOSONAR Intentional
         }
     }
+
+    private boolean nfr() {
+        JMeterTreeNode treeNode = findFirstNodeOfType(NfrResultCollector.class);
+        if (treeNode != null) {
+            NfrResultCollector nfrResultCollector = (NfrResultCollector) treeNode.getTestElement();
+            for (NfrArgument nfrArgument : nfrResultCollector.getNfrlist()) {
+                SamplingStatCalculator samplingStatCalculator = NfrListnerGui.tableRows.get(nfrArgument.getName());
+                if (samplingStatCalculator != null) {
+                    System.out.println("Key = " + nfrArgument.getName() + ", Value = " + samplingStatCalculator);
+                    boolean result=getResultNfrTest(nfrArgument, samplingStatCalculator);
+                    System.out.println(result);
+                }
+                
+            }
+            
+        }
+        return false;
+    }
+
+    private boolean getResultNfrTest(NfrArgument nfrArgument, SamplingStatCalculator samplingStatCalculator) {
+        double valueOfsampler = getCriteria(nfrArgument, samplingStatCalculator);
+        double valueOfUser = Double.parseDouble(nfrArgument.getValue());
+        switch (nfrArgument.getSymbol()) {
+        case "=":
+            return valueOfsampler == valueOfUser;
+        case "<":
+            return valueOfsampler < valueOfUser;
+        case "<=":
+            return valueOfsampler <= valueOfUser;
+        case ">=":
+            return valueOfsampler >= valueOfUser;
+        case ">":
+            return valueOfsampler > valueOfUser;
+        default:
+            break;
+        }
+        return false;
+    }
+
+    private double getCriteria(NfrArgument nfrArgument, SamplingStatCalculator samplingStatCalculator) {
+        double value = 0;
+        switch (nfrArgument.getCriteria()) {
+        case "Avg":
+            value = samplingStatCalculator.getMedian().doubleValue();
+            break;
+        case "Min":
+            value = samplingStatCalculator.getMin().doubleValue();
+            break;
+        case "Max":
+            value = samplingStatCalculator.getMax().doubleValue();
+            break;
+        case "Error Rate":
+            value = samplingStatCalculator.getErrorPercentage();
+            break;
+        case "Sample Rate":
+            value = samplingStatCalculator.getRate();
+            break;
+        default:
+            break;
+        }
+        return value;
+    }
+
     private JMeterTreeNode findFirstNodeOfType(Class<?> type) {
         JMeterTreeModel treeModel = GuiPackage.getInstance().getTreeModel();
         return treeModel.getNodesOfType(type).stream().filter(JMeterTreeNode::isEnabled).findFirst().orElse(null);

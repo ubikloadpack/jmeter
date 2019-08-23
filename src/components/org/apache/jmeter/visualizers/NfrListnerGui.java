@@ -52,7 +52,6 @@ import org.apache.jmeter.reporters.NfrResultCollector;
 import org.apache.jmeter.samplers.Clearable;
 import org.apache.jmeter.samplers.SampleResult;
 import org.apache.jmeter.testelement.TestElement;
-import org.apache.jmeter.testelement.property.JMeterProperty;
 import org.apache.jmeter.util.JMeterUtils;
 import org.apache.jmeter.visualizers.gui.NfrAbstractVisualizer;
 import org.apache.jorphan.gui.ComponentUtil;
@@ -64,6 +63,10 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Aggregate Table-Based Reporting Visualizer for JMeter.
+ */
+/**
+ * @author sqq94
+ *
  */
 @GUIMenuSortOrder(3)
 public class NfrListnerGui extends NfrAbstractVisualizer implements Clearable, ActionListener {
@@ -91,6 +94,7 @@ public class NfrListnerGui extends NfrAbstractVisualizer implements Clearable, A
     private final JCheckBox successOnlyLogging;
     protected NfrResultCollector collector = new NfrResultCollector();
     protected boolean isStats = false;
+
 
     public NfrListnerGui() {
         super();
@@ -257,9 +261,10 @@ public class NfrListnerGui extends NfrAbstractVisualizer implements Clearable, A
             // Highlight (select) and scroll to the appropriate row.
             int rowToSelect = tableModel.getRowCount() - 1;
             stringTable.setRowSelectionInterval(rowToSelect, rowToSelect);
-         stringTable.scrollRectToVisible(stringTable.getCellRect(rowToSelect, 0, true));
+            stringTable.scrollRectToVisible(stringTable.getCellRect(rowToSelect, 0, true));
         }
     }
+
     protected void checkButtonsStatus() {
         // Disable DELETE if there are no rows in the table to delete.
         if (tableModel.getRowCount() == 0) {
@@ -268,11 +273,13 @@ public class NfrListnerGui extends NfrAbstractVisualizer implements Clearable, A
             delete.setEnabled(true);
         }
     }
+
     @Override
     public TestElement createTestElement() {
         NfrResultCollector args = getUnclonedParameters();
         super.configureTestElement(args);
-        return (TestElement) args.clone();
+        TestElement newTestElement = (TestElement) args.clone();
+        return newTestElement;
     }
 
     private NfrResultCollector getUnclonedParameters() {
@@ -285,62 +292,39 @@ public class NfrListnerGui extends NfrAbstractVisualizer implements Clearable, A
         }
         return args;
     }
-//
-//    @Override
-//    public void modifyTestElement(TestElement c) {
-//        GuiUtils.stopTableEditing(stringTable);
-//        if (c instanceof NfrResultCollector) {
-//            NfrResultCollector rc = (NfrResultCollector) c;
-//            NfrArgument nfrArgument=new NfrArgument("test", "", "", "hhhhh");
-//            rc.removeAllNfrArguments();
-        //    rc.addNfrArgument(nfrArgument);
-//            System.out.println(rc.getNfrArguments());
-//            collector = rc;
-//            configureTestElement((AbstractListenerElement) c);
-//        }
-//        NfrResultCollector nfrResultCollector = (NfrResultCollector) c;
-//        Iterator<NfrArgument> modelData = (Iterator<NfrArgument>) tableModel.iterator();
-//        while (modelData.hasNext()) {
-//            NfrArgument arg = modelData.next();
-//            if (arg.getName() != null) {
-//                nfrResultCollector.addNfrArgument(arg);
-//                System.out.println(arg);
-//            }
-//        }
-     
-    //}
-//    @Override
-//    public void modifyTestElement(TestElement args) {
-//        GuiUtils.stopTableEditing(stringTable);
-//        if (args instanceof NfrResultCollector) {
-//            NfrResultCollector arguments = (NfrResultCollector) args;
-//            arguments.clear();
-//            @SuppressWarnings("unchecked") // only contains Argument (or HTTPArgument)
-//            Iterator<NfrArgument> modelData = (Iterator<NfrArgument>) tableModel.iterator();
-//            while (modelData.hasNext()) {
-//                NfrArgument arg = modelData.next();
-//                if(arg.getName()!=null&&!arg.getName().isEmpty())
-//                {arguments.addNfrArgument(arg);}
-//            }
-//            NfrArgument.convertNfrArgumentsToHTTP(arguments);
-//        }
-//       // super.configureTestElement(args);
-//    }
+
+    @Override
+    public void modifyTestElement(TestElement args) {
+        GuiUtils.stopTableEditing(stringTable);
+        super.modifyTestElement(args);
+        if (args instanceof NfrResultCollector) {
+            Iterator<NfrArgument> modelData = (Iterator<NfrArgument>) tableModel.iterator();
+            ((NfrResultCollector) args).getNfrlist().clear();
+            while (modelData.hasNext()) {
+                NfrArgument arg = modelData.next();
+                if (arg.getName() != null && !arg.getName().isEmpty()) {
+                    ((NfrResultCollector) args).getNfrlist().add(arg);
+                }
+            }
+        }
+        
+         super.configureTestElement(args);
+    }
 
     @Override
     public void configure(TestElement el) {
-        super.configure(el);   
+        super.configure(el);
+
+        System.out.println("nfrSet" + ((NfrResultCollector) el).getNfrlist());
         if (el instanceof NfrResultCollector) {
             tableModel.clearData();
-            System.out.println(((NfrResultCollector) el).getNfrArguments());
-            NfrArgument.convertNfrArgumentsToHTTP((NfrResultCollector) el);
-            for (JMeterProperty jMeterProperty : ((NfrResultCollector) el).getNfrArguments()) {
-                NfrArgument arg = (NfrArgument) jMeterProperty.getObjectValue();
-                tableModel.addRow(arg);
+            for (NfrArgument nfrArgument :((NfrResultCollector) el).getNfrlist()) {
+                tableModel.addRow(nfrArgument);
             }
         }
         checkButtonsStatus();
     }
+
     /**
      * Clear all rows from the table.
      */

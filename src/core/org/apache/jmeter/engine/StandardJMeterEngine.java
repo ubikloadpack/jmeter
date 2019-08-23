@@ -23,12 +23,12 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.jmeter.JMeter;
+import org.apache.jmeter.config.NfrArgument;
 import org.apache.jmeter.gui.GuiPackage;
 import org.apache.jmeter.gui.tree.JMeterTreeModel;
 import org.apache.jmeter.gui.tree.JMeterTreeNode;
@@ -46,8 +46,6 @@ import org.apache.jmeter.threads.PostThreadGroup;
 import org.apache.jmeter.threads.SetupThreadGroup;
 import org.apache.jmeter.threads.TestCompiler;
 import org.apache.jmeter.util.JMeterUtils;
-import org.apache.jmeter.visualizers.NfrListnerGui;
-import org.apache.jmeter.visualizers.SamplingStatCalculator;
 import org.apache.jorphan.collections.HashTree;
 import org.apache.jorphan.collections.ListedHashTree;
 import org.apache.jorphan.collections.SearchByClass;
@@ -496,21 +494,14 @@ public class StandardJMeterEngine implements JMeterEngine, Runnable {
             waitThreadsStopped(); // wait for Post threads to stop
         }
         JMeterTreeNode treeNode = findFirstNodeOfType(NfrResultCollector.class);
-        if (treeNode == null) {
-           System.out.println("null");
-        }
-        else {System.out.println("not null");
-        NfrResultCollector nfrResultCollector = (NfrResultCollector) treeNode.getTestElement();
-        System.out.println("count"+nfrResultCollector.getNfrArguments());
-        }
+        if (treeNode != null) {
+            NfrResultCollector nfrResultCollector = (NfrResultCollector) treeNode.getTestElement();
+            for (NfrArgument nfrArgument:nfrResultCollector.getNfrlist()) {                
+                System.out.println(nfrArgument);
+            }
+        }        
         notifyTestListenersOfEnd(testListeners);
         JMeterContextService.endTest();
-        
-        for (Map.Entry<String, SamplingStatCalculator> entry : NfrListnerGui.tableRows.entrySet()) {
-         
-            System.out.println("Key = " + entry.getKey() + ", Value = " + entry.getValue());
-         
-        }
         if (JMeter.isNonGUI() && SYSTEM_EXIT_FORCED) {
             log.info("Forced JVM shutdown requested at end of test");
             System.exit(0); // NOSONAR Intentional

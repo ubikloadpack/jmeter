@@ -62,6 +62,20 @@ import org.slf4j.LoggerFactory;
 public class NfrResultCollector extends AbstractListenerElement implements SampleListener, Clearable, Serializable,
         TestStateListener, Remoteable, NoThreadClone {
     /**
+     * @return the nfrlist
+     */
+    public List<NfrArgument> getNfrlist() {
+        return nfrlist;
+    }
+
+    /**
+     * @param nfrlist the nfrlist to set
+     */
+    public void setNfrlist(List<NfrArgument> nfrlist) {
+        this.nfrlist = nfrlist;
+    }
+
+    /**
      * Keep track of the file writer and the configuration,
      * as the instance used to close them is not the same as the instance that creates
      * them. This means one cannot use the saved PrintWriter or use getSaveConfig()
@@ -159,7 +173,7 @@ public class NfrResultCollector extends AbstractListenerElement implements Sampl
         this(null);
         setProperty(new CollectionProperty(NFRARGUMENTS, new ArrayList<NfrArgument>()));
     }
-
+    List<NfrArgument> nfrlist = new ArrayList<NfrArgument>();
     /**
      * Constructor which sets the used {@link Summariser}
      * @param summer The {@link Summariser} to use
@@ -177,9 +191,7 @@ public class NfrResultCollector extends AbstractListenerElement implements Sampl
     @Override
     public Object clone(){
         NfrResultCollector clone = (NfrResultCollector) super.clone();
-        System.out.println("before");
         clone.setSaveConfig((SampleSaveConfiguration)clone.getSaveConfig().clone());
-        System.out.println("after");
         // Unfortunately AbstractTestElement does not call super.clone()
         clone.summariser = this.summariser;
         return clone;
@@ -435,7 +447,8 @@ public class NfrResultCollector extends AbstractListenerElement implements Sampl
      * Remove all arguments from the list.
      */
     public void removeAllNfrArguments() {
-        getNfrArguments().clear();
+        setProperty(new CollectionProperty(NFRARGUMENTS, new ArrayList<NfrArgument
+                >()));
     }
 
      /**

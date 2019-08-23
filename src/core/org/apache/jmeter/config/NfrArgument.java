@@ -19,13 +19,8 @@
  package org.apache.jmeter.config;
 
  import java.io.Serializable;
-import java.util.LinkedList;
-import java.util.List;
 
-import org.apache.jmeter.protocol.http.util.HTTPArgument;
-import org.apache.jmeter.reporters.NfrResultCollector;
 import org.apache.jmeter.testelement.AbstractTestElement;
-import org.apache.jmeter.testelement.property.JMeterProperty;
 import org.apache.jmeter.testelement.property.StringProperty;
 
  /**
@@ -53,34 +48,6 @@ public class NfrArgument extends AbstractTestElement implements Serializable {
 
      /** Name used to store the argument's value. */
     public static final String SYMBOL = "NfrArgument.symbol"; // $NON-NLS-1$
-
-     /**
-     * Create a new Argument with the specified name, value, and metadata.
-     *
-     * @param name
-     *            the argument name
-     * @param value
-     *            the argument value
-     * @param metadata
-     *            the argument metadata
-     * @param description
-     *            the argument description
-     */
-    public NfrArgument(String name,  String criteria, String symbol, String value) {
-        if(name != null) {
-            setProperty(new StringProperty(ARG_NAME, name));
-        }
-        if(value != null) {
-            setProperty(new StringProperty(VALUE, value));
-        }
-        if(symbol != null) {
-            setProperty(new StringProperty(SYMBOL, symbol));
-        }
-        if(criteria != null) {
-            setProperty(new StringProperty(CRITERIA, criteria));
-        }
-    }
-
      /**
      * Set the name of the Argument.
      *
@@ -119,9 +86,10 @@ public class NfrArgument extends AbstractTestElement implements Serializable {
      */
     public String getValue() {
         return getPropertyAsString(VALUE);
+       
     }
-    public void setCriteria(String criteria) {
-        setProperty(new StringProperty(CRITERIA, criteria));
+    public void setCriteria(String newCriteria) {
+        setProperty(new StringProperty(CRITERIA, newCriteria));
     }
 
      /**
@@ -151,22 +119,30 @@ public class NfrArgument extends AbstractTestElement implements Serializable {
         return getPropertyAsString(SYMBOL);
     }
     /**
-     * Converts all {@link Argument} entries in the collection to {@link HTTPArgument} entries.
-     *
-     * @param args collection of {@link Argument} and/or {@link HTTPArgument} entries
-     */
-    public static void convertNfrArgumentsToHTTP(NfrResultCollector args) {
-        List<NfrArgument> newArguments = new LinkedList<>();
-        System.out.println(args.getNfrArguments());
-        for (JMeterProperty jMeterProperty : args.getNfrArguments()) {
-            Object arg = jMeterProperty.getObjectValue();
-            if (arg instanceof NfrArgument) {
-                System.out.println("adds");
-                newArguments.add((NfrArgument) arg);
-            } 
-        }
-        args.removeAllNfrArguments();
-        args.setNfrArguments(newArguments);
-    }
+    * Create a new Argument with the specified name, value, and metadata.
+    *
+    * @param name
+    *            the argument name
+    * @param value
+    *            the argument value
+    * @param metadata
+    *            the argument metadata
+    * @param description
+    *            the argument description
+    */
+   public NfrArgument(String name,  String criteria, String symbol, String value) {
+       if(name != null) {
+           setProperty(new StringProperty(ARG_NAME, name));
+       }
+       if(value != null) {
+           setProperty(new StringProperty(VALUE, value));
+       }
+       if(symbol != null) {
+           setProperty(new StringProperty(SYMBOL, symbol));
+       }
+       if(criteria != null) {
+           setProperty(new StringProperty(CRITERIA, criteria));
+       }
+   }
 
  }

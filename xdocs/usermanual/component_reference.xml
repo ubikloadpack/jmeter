@@ -4901,6 +4901,15 @@ please ensure that you select "<code>Store the message using MIME (raw)</code>" 
     </properties>
 </component>
 
+<component name="JSON JmesPath Assertion" index="&sect-num;.5.15" anchor="JSON_JmesPath_Assertion" width="1095" height="307">
+    <description>
+        <p>
+            This component works the same way as <a href="#JSON_Assertion">JSON Assertion</a> except that it uses syntax from <a href="https://github.com/burtcorp/jmespath-java" target="blank">Burtcorp jmespath 0.3.0</a> instead.
+            You can see JmesPath documentation <a href="http://jmespath.org/" target="blank">here</a>.
+        </p>
+    </description>
+</component>
+
 <a href="#">^</a>
 
 </section>

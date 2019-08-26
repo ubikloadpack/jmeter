@@ -505,7 +505,8 @@ public class StandardJMeterEngine implements JMeterEngine, Runnable {
     }
 
     private void runNFRTest() {
-        JMeterTreeNode treeNode = findFirstNodeOfType(NfrResultCollector.class);
+        JMeterTreeModel treeModel = GuiPackage.getInstance().getTreeModel();
+        JMeterTreeNode treeNode = treeModel.getNodesOfType(NfrResultCollector.class).stream().filter(JMeterTreeNode::isEnabled).findFirst().orElse(null);
         if (treeNode != null) {
             NfrResultCollector nfrResultCollector = (NfrResultCollector) treeNode.getTestElement();
             for (NfrArgument nfrArgument : nfrResultCollector.getNfrlist()) {
@@ -565,10 +566,6 @@ public class StandardJMeterEngine implements JMeterEngine, Runnable {
         return value;
     }
 
-    private JMeterTreeNode findFirstNodeOfType(Class<?> type) {
-        JMeterTreeModel treeModel = GuiPackage.getInstance().getTreeModel();
-        return treeModel.getNodesOfType(type).stream().filter(JMeterTreeNode::isEnabled).findFirst().orElse(null);
-    }
     
     private void startThreadGroup(AbstractThreadGroup group, int groupCount, SearchByClass<?> searcher, List<?> testLevelElements, ListenerNotifier notifier)
     {

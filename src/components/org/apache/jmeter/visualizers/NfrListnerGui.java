@@ -46,7 +46,6 @@ import javax.swing.event.ChangeListener;
 
 import org.apache.jmeter.config.NfrArgument;
 import org.apache.jmeter.gui.GuiPackage;
-import org.apache.jmeter.gui.SavePropertyDialog;
 import org.apache.jmeter.gui.tree.JMeterTreeModel;
 import org.apache.jmeter.gui.tree.JMeterTreeNode;
 import org.apache.jmeter.gui.util.HeaderAsPropertyRenderer;
@@ -54,15 +53,13 @@ import org.apache.jmeter.gui.util.TextAreaCellRenderer;
 import org.apache.jmeter.gui.util.TextAreaTableCellEditor;
 import org.apache.jmeter.protocol.http.sampler.HTTPSamplerProxy;
 import org.apache.jmeter.reporters.AbstractListenerElement;
-import org.apache.jmeter.reporters.NfrResultCollector;
+import org.apache.jmeter.reporters.NfrArguments;
 import org.apache.jmeter.samplers.Clearable;
 import org.apache.jmeter.samplers.SampleResult;
-import org.apache.jmeter.samplers.SampleSaveConfiguration;
 import org.apache.jmeter.testelement.TestElement;
 import org.apache.jmeter.testelement.property.JMeterProperty;
 import org.apache.jmeter.util.JMeterUtils;
 import org.apache.jmeter.visualizers.gui.AbstractListenerGui;
-import org.apache.jorphan.gui.ComponentUtil;
 import org.apache.jorphan.gui.GuiUtils;
 import org.apache.jorphan.gui.ObjectTableModel;
 import org.apache.jorphan.reflect.Functor;
@@ -88,7 +85,7 @@ public class NfrListnerGui extends AbstractListenerGui
     private JTable stringTable;
     /** Table model for the pattern table. */
     private ObjectTableModel tableModel;
-    protected NfrResultCollector collector = new NfrResultCollector();
+    protected NfrArguments collector = new NfrArguments();
     protected boolean isStats = false;
     /** Logging. */
     private static final Logger log = LoggerFactory.getLogger(NfrListnerGui.class);
@@ -98,7 +95,7 @@ public class NfrListnerGui extends AbstractListenerGui
         return isStats;
     }
 
-    protected NfrResultCollector getModel() {
+    protected NfrArguments getModel() {
         return collector;
     }
 
@@ -112,14 +109,14 @@ public class NfrListnerGui extends AbstractListenerGui
     @Override
     public void stateChanged(ChangeEvent e) {
         log.debug("getting new collector");
-        collector = (NfrResultCollector) createTestElement();
+        collector = (NfrArguments) createTestElement();
     }
 
     /* Implements JMeterGUIComponent.createTestElement() */
     @Override
     public TestElement createTestElement() {
         if (collector == null) {
-            collector = new NfrResultCollector();
+            collector = new NfrArguments();
         }
         modifyTestElement(collector);
         return (TestElement) collector.clone();
@@ -127,18 +124,6 @@ public class NfrListnerGui extends AbstractListenerGui
 
     public NfrListnerGui() {
         super();
-        JButton saveConfigButton = new JButton(JMeterUtils.getResString("config_save_settings")); // $NON-NLS-1$
-        saveConfigButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                SavePropertyDialog d = new SavePropertyDialog(GuiPackage.getInstance().getMainFrame(),
-                        JMeterUtils.getResString("sample_result_save_configuration"), // $NON-NLS-1$
-                        true, collector.getSaveConfig());
-                d.pack();
-                ComponentUtil.centerComponentInComponent(GuiPackage.getInstance().getMainFrame(), d);
-                d.setVisible(true);
-            }
-        });
         this.setLayout(new BorderLayout());
         // MAIN PANEL
         JPanel mainPanel = new JPanel();
@@ -264,15 +249,15 @@ public class NfrListnerGui extends AbstractListenerGui
     public void modifyTestElement(TestElement args) {
         GuiUtils.stopTableEditing(stringTable);
         configureTestElement((AbstractListenerElement) args);
-        if (args instanceof NfrResultCollector) {
-            NfrResultCollector rc = (NfrResultCollector) args;
+        if (args instanceof NfrArguments) {
+            NfrArguments rc = (NfrArguments) args;
             collector = rc;
             @SuppressWarnings("unchecked")
             Iterator<NfrArgument> modelData = (Iterator<NfrArgument>) tableModel.iterator();
-            ((NfrResultCollector) args).removeAllNfrArguments();
+            rc.removeAllNfrArguments();
             while (modelData.hasNext()) {
                 NfrArgument arg = modelData.next();
-                ((NfrResultCollector) args).addNfrArgument(arg);
+                rc.addNfrArgument(arg);
             }
         }
         super.configureTestElement(args);
@@ -281,14 +266,13 @@ public class NfrListnerGui extends AbstractListenerGui
     @Override
     public void configure(TestElement el) {
         super.configure(el);
-        if (el instanceof NfrResultCollector) {
-            NfrResultCollector rc = (NfrResultCollector) el;
+        if (el instanceof NfrArguments) {
+            NfrArguments rc = (NfrArguments) el;
             if (collector == null) {
-                collector = new NfrResultCollector();
+                collector = new NfrArguments();
             }
-            collector.setSaveConfig((SampleSaveConfiguration) rc.getSaveConfig().clone());
             tableModel.clearData();
-            for (JMeterProperty jMeterProperty : ((NfrResultCollector) el).getNfrArguments()) {
+            for (JMeterProperty jMeterProperty : rc.getNfrArguments()) {
                 NfrArgument arg = (NfrArgument) jMeterProperty.getObjectValue();
                 tableModel.addRow(arg);
             }
@@ -309,7 +293,7 @@ public class NfrListnerGui extends AbstractListenerGui
         return panel;
     }
 
-    protected void setModel(NfrResultCollector collector) {
+    protected void setModel(NfrArguments collector) {
         this.collector = collector;
     }
 

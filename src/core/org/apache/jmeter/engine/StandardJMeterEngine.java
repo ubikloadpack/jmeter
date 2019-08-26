@@ -32,7 +32,7 @@ import org.apache.jmeter.config.NfrArgument;
 import org.apache.jmeter.gui.GuiPackage;
 import org.apache.jmeter.gui.tree.JMeterTreeModel;
 import org.apache.jmeter.gui.tree.JMeterTreeNode;
-import org.apache.jmeter.reporters.NfrResultCollector;
+import org.apache.jmeter.reporters.NfrArguments;
 import org.apache.jmeter.samplers.SampleEvent;
 import org.apache.jmeter.testbeans.TestBean;
 import org.apache.jmeter.testbeans.TestBeanHelper;
@@ -506,10 +506,10 @@ public class StandardJMeterEngine implements JMeterEngine, Runnable {
 
     private void runNFRTest() {
         JMeterTreeModel treeModel = GuiPackage.getInstance().getTreeModel();
-        JMeterTreeNode treeNode = treeModel.getNodesOfType(NfrResultCollector.class).stream()
+        JMeterTreeNode treeNode = treeModel.getNodesOfType(NfrArguments.class).stream()
                 .filter(JMeterTreeNode::isEnabled).findFirst().orElse(null);
         if (treeNode != null) {
-            NfrResultCollector nfrResultCollector = (NfrResultCollector) treeNode.getTestElement();
+            NfrArguments nfrResultCollector = (NfrArguments) treeNode.getTestElement();
             for (JMeterProperty jMeterProperty : nfrResultCollector.getNfrArguments()) {
                 NfrArgument nfrArgument = (NfrArgument) jMeterProperty.getObjectValue();
                 SamplingStatCalculator samplingStatCalculator = nfrResultCollector

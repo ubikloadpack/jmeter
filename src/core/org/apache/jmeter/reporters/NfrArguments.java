@@ -31,10 +31,8 @@ import org.apache.jmeter.samplers.Remoteable;
 import org.apache.jmeter.samplers.SampleEvent;
 import org.apache.jmeter.samplers.SampleListener;
 import org.apache.jmeter.samplers.SampleResult;
-import org.apache.jmeter.samplers.SampleSaveConfiguration;
 import org.apache.jmeter.testelement.TestStateListener;
 import org.apache.jmeter.testelement.property.CollectionProperty;
-import org.apache.jmeter.testelement.property.ObjectProperty;
 import org.apache.jmeter.testelement.property.PropertyIterator;
 import org.apache.jmeter.testelement.property.TestElementProperty;
 import org.apache.jmeter.visualizers.SamplingStatCalculator;
@@ -45,7 +43,7 @@ import org.slf4j.LoggerFactory;
  * This class handles all saving of samples. The class must be thread-safe
  * because it is shared between threads (NoThreadClone).
  */
-public class NfrResultCollector extends AbstractListenerElement
+public class NfrArguments extends AbstractListenerElement
         implements SampleListener, Clearable, Serializable, TestStateListener, Remoteable, NoThreadClone {
     private static Map<String, SamplingStatCalculator> tableRows = new ConcurrentHashMap<>();
     /**
@@ -74,12 +72,11 @@ public class NfrResultCollector extends AbstractListenerElement
             log.info("Shutdown hook ended");
         }
     }
-    private static final Logger log = LoggerFactory.getLogger(NfrResultCollector.class);
+    private static final Logger log = LoggerFactory.getLogger(NfrArguments.class);
     private static final long serialVersionUID = 234L;
     // This string is used to identify local test runs, so must not be a valid host
     // name
     private static final String TEST_IS_LOCAL = "*local*"; // $NON-NLS-1$
-    private static final String SAVE_CONFIG = "saveConfig"; // $NON-NLS-1$
     // Static variables
     // Lock used to guard static mutable variables
     private static final Object LOCK = new Object();
@@ -102,11 +99,11 @@ public class NfrResultCollector extends AbstractListenerElement
     private volatile boolean isStats = false;
     /** the summarizer to which this result collector will forward the samples */
     private volatile Summariser summariser;
-    public static final String NFRARGUMENTS = "NfrResultCollector.nfrarguments"; //$NON-NLS-1$
+    public static final String NFRARGUMENTS = "NfrArguments.nfrarguments"; //$NON-NLS-1$
     /**
      * No-arg constructor.
      */
-    public NfrResultCollector() {
+    public NfrArguments() {
         this(null);
     }
 
@@ -115,8 +112,7 @@ public class NfrResultCollector extends AbstractListenerElement
      * 
      * @param summer The {@link Summariser} to use
      */
-    public NfrResultCollector(Summariser summer) {
-        setProperty(new ObjectProperty(SAVE_CONFIG, new SampleSaveConfiguration()));
+    public NfrArguments(Summariser summer) {
         setProperty(new CollectionProperty(NFRARGUMENTS, new ArrayList<NfrArgument>()));
         summariser = summer;
     }
@@ -125,9 +121,7 @@ public class NfrResultCollector extends AbstractListenerElement
     // N.B. clone only seems to be used for client-server tests
     @Override
     public Object clone() {
-        NfrResultCollector clone = (NfrResultCollector) super.clone();
-        clone.setSaveConfig((SampleSaveConfiguration) clone.getSaveConfig().clone());
-        // Unfortunately AbstractTestElement does not call super.clone()
+        NfrArguments clone = (NfrArguments) super.clone();
         clone.summariser = this.summariser;
         return clone;
     }
@@ -378,10 +372,6 @@ public class NfrResultCollector extends AbstractListenerElement
     public void sampleOccurred(SampleEvent event) {
         SampleResult result = event.getResult();
         sendToVisualizer(result);
-        if (!this.isStats) {
-            SampleSaveConfiguration config = getSaveConfig();
-            result.setSaveConfig(config);
-        }
         if (summariser != null) {
             summariser.sampleOccurred(event);
         }
@@ -392,24 +382,7 @@ public class NfrResultCollector extends AbstractListenerElement
             getVisualizer().add(r);
         }
     }
-    /**
-     * @return Returns the saveConfig.
-     */
-    public SampleSaveConfiguration getSaveConfig() {
-        try {
-            return (SampleSaveConfiguration) getProperty(SAVE_CONFIG).getObjectValue();
-        } catch (ClassCastException e) {
-            setSaveConfig(new SampleSaveConfiguration());
-            return getSaveConfig();
-        }
-    }
 
-    /**
-     * @param saveConfig The saveConfig to set.
-     */
-    public void setSaveConfig(SampleSaveConfiguration saveConfig) {
-        getProperty(SAVE_CONFIG).setObjectValue(saveConfig);
-    }
 
     // This is required so that
     // @see org.apache.jmeter.gui.tree.JMeterTreeModel.getNodesOfType()

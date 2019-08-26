@@ -15,7 +15,6 @@
  * limitations under the License.
  *
  */
-
 package org.apache.jmeter.visualizers;
 
 import java.util.Map;
@@ -31,16 +30,12 @@ import org.apache.jorphan.math.StatCalculatorLong;
  */
 public class SamplingStatCalculator {
     private final StatCalculatorLong calculator = new StatCalculatorLong();
-
     private double maxThroughput;
-
     private long firstTime;
-
     private String label;
-
     private volatile Sample currentSample;
 
-    public SamplingStatCalculator(){ // Only for use by test code
+    public SamplingStatCalculator() { // Only for use by test code
         this("");
     }
 
@@ -49,7 +44,8 @@ public class SamplingStatCalculator {
         init();
     }
 
-    private void init() { // WARNING: called from ctor so must not be overridden (i.e. must be private or final)
+    private void init() { // WARNING: called from ctor so must not be overridden (i.e. must be private or
+                          // final)
         firstTime = Long.MAX_VALUE;
         calculator.clear();
         maxThroughput = Double.MIN_VALUE;
@@ -81,10 +77,10 @@ public class SamplingStatCalculator {
     }
 
     /**
-     * Returns the throughput associated to this sampler in requests per second.
-     * May be slightly skewed because it takes the timestamps of the first and
-     * last samples as the total time passed, and the test may actually have
-     * started before that start time and ended after that end time.
+     * Returns the throughput associated to this sampler in requests per second. May
+     * be slightly skewed because it takes the timestamps of the first and last
+     * samples as the total time passed, and the test may actually have started
+     * before that start time and ended after that end time.
      *
      * @return throughput associated with this sampler per second
      */
@@ -92,7 +88,6 @@ public class SamplingStatCalculator {
         if (calculator.getCount() == 0) {
             return 0.0; // Better behaviour when howLong=0 or lastTime=0
         }
-
         return getCurrentSample().getThroughput();
     }
 
@@ -148,8 +143,8 @@ public class SamplingStatCalculator {
     }
 
     /**
-     * calculates the average page size, which means divide the bytes by number
-     * of samples.
+     * calculates the average page size, which means divide the bytes by number of
+     * samples.
      *
      * @return average page size in bytes (0 if sample count is zero)
      */
@@ -171,8 +166,7 @@ public class SamplingStatCalculator {
     /**
      * Records a sample.
      *
-     * @param res
-     *            the sample to record
+     * @param res the sample to record
      * @return newly created sample with current statistics
      *
      */
@@ -199,19 +193,16 @@ public class SamplingStatCalculator {
             if (throughput > maxThroughput) {
                 maxThroughput = throughput;
             }
-
             rtime = res.getTime();
-            cmean = (long)calculator.getMean();
-            cstdv = (long)calculator.getStandardDeviation();
+            cmean = (long) calculator.getMean();
+            cstdv = (long) calculator.getStandardDeviation();
             cmedian = calculator.getMedian().longValue();
-            cpercent = calculator.getPercentPoint( 0.500 ).longValue();
+            cpercent = calculator.getPercentPoint(0.500).longValue();
 // TODO cpercent is the same as cmedian here - why? and why pass it to "distributionLine"?
             rbool = res.isSuccessful();
         }
-
         long count = calculator.getCount();
-        Sample s =
-            new Sample( null, rtime, cmean, cstdv, cmedian, cpercent, throughput, eCount, rbool, count, endTime );
+        Sample s = new Sample(null, rtime, cmean, cstdv, cmedian, cpercent, throughput, eCount, rbool, count, endTime);
         currentSample = s;
         return s;
     }
@@ -237,15 +228,14 @@ public class SamplingStatCalculator {
     }
 
     /**
-     * Returns the raw double value of the percentage of samples with errors
-     * that were recorded. (Between 0.0 and 1.0)
+     * Returns the raw double value of the percentage of samples with errors that
+     * were recorded. (Between 0.0 and 1.0)
      *
-     * @return the raw double value of the percentage of samples with errors
-     *         that were recorded.
+     * @return the raw double value of the percentage of samples with errors that
+     *         were recorded.
      */
     public double getErrorPercentage() {
         double rval = 0.0;
-
         if (calculator.getCount() == 0) {
             return rval;
         }
@@ -259,7 +249,6 @@ public class SamplingStatCalculator {
     @Override
     public String toString() {
         StringBuilder mySB = new StringBuilder();
-
         mySB.append("Samples: " + this.getCount() + "  ");
         mySB.append("Avg: " + this.getMean() + "  ");
         mySB.append("Min: " + this.getMin() + "  ");

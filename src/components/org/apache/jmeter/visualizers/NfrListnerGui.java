@@ -24,12 +24,9 @@ import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
 import javax.swing.BorderFactory;
@@ -79,12 +76,12 @@ import org.slf4j.LoggerFactory;
  * @author sqq94
  *
  */
-public class NfrListnerGui extends AbstractListenerGui implements Clearable, ActionListener,Visualizer,ChangeListener{
+public class NfrListnerGui extends AbstractListenerGui
+        implements Clearable, ActionListener, Visualizer, ChangeListener {
     private static final long serialVersionUID = 242L;
     private final JCheckBox useGroupName = new JCheckBox(JMeterUtils.getResString("aggregate_graph_use_group_name")); //$NON-NLS-1$
     /** Lock used to protect tableRows update + model update */
     private final transient Object lock = new Object();
-    private static Map<String, SamplingStatCalculator> tableRows = new ConcurrentHashMap<>();
     private Deque<SamplingStatCalculator> newRows = new ConcurrentLinkedDeque<>();
     private final JButton add = new JButton("add"); //$NON-NLS-1$
     private final JButton delete = new JButton("delete"); //$NON-NLS-1$
@@ -95,26 +92,29 @@ public class NfrListnerGui extends AbstractListenerGui implements Clearable, Act
     protected boolean isStats = false;
     /** Logging. */
     private static final Logger log = LoggerFactory.getLogger(NfrListnerGui.class);
+
     @Override
     public boolean isStats() {
         return isStats;
     }
+
     protected NfrResultCollector getModel() {
         return collector;
     }
+
     /**
      * Invoked when the target of the listener has changed its state. This
-     * implementation assumes that the target is the FilePanel, and will update
-     * the result collector for the new filename.
+     * implementation assumes that the target is the FilePanel, and will update the
+     * result collector for the new filename.
      *
-     * @param e
-     *            the event that has occurred
+     * @param e the event that has occurred
      */
     @Override
     public void stateChanged(ChangeEvent e) {
         log.debug("getting new collector");
         collector = (NfrResultCollector) createTestElement();
     }
+
     /* Implements JMeterGUIComponent.createTestElement() */
     @Override
     public TestElement createTestElement() {
@@ -124,6 +124,7 @@ public class NfrListnerGui extends AbstractListenerGui implements Clearable, Act
         modifyTestElement(collector);
         return (TestElement) collector.clone();
     }
+
     public NfrListnerGui() {
         super();
         JButton saveConfigButton = new JButton(JMeterUtils.getResString("config_save_settings")); // $NON-NLS-1$
@@ -159,10 +160,6 @@ public class NfrListnerGui extends AbstractListenerGui implements Clearable, Act
         this.add(buttonPanel, BorderLayout.SOUTH);
     }
 
-    public static Map<String, SamplingStatCalculator> getResult() {
-        return Collections.unmodifiableMap(tableRows);
-    }
-
     @Override
     public String getLabelResource() {
         return "non_function_test"; //$NON-NLS-1$
@@ -170,11 +167,12 @@ public class NfrListnerGui extends AbstractListenerGui implements Clearable, Act
 
     @Override
     public void add(final SampleResult res) {
-        SamplingStatCalculator row = tableRows.computeIfAbsent(res.getSampleLabel(useGroupName.isSelected()), label -> {
-            SamplingStatCalculator newRow = new SamplingStatCalculator(label);
-            newRows.add(newRow);
-            return newRow;
-        });
+        SamplingStatCalculator row = collector.getNfrResult()
+                .computeIfAbsent(res.getSampleLabel(useGroupName.isSelected()), label -> {
+                    SamplingStatCalculator newRow = new SamplingStatCalculator(label);
+                    newRows.add(newRow);
+                    return newRow;
+                });
         synchronized (row) {
             /*
              * Synch is needed because multiple threads can update the counts.
@@ -190,7 +188,7 @@ public class NfrListnerGui extends AbstractListenerGui implements Clearable, Act
     public void clearData() {
         synchronized (lock) {
             tableModel.clearData();
-            tableRows.clear();
+            collector.clearNfrResult();
             newRows.clear();
         }
     }
@@ -297,10 +295,12 @@ public class NfrListnerGui extends AbstractListenerGui implements Clearable, Act
         }
         checkButtonsStatus();
     }
+
     protected void configureTestElement(AbstractListenerElement mc) {
         super.configureTestElement(mc);
         mc.setListener(this);
     }
+
     @Override
     protected Container makeTitlePanel() {
         Container panel = super.makeTitlePanel();
@@ -308,9 +308,11 @@ public class NfrListnerGui extends AbstractListenerGui implements Clearable, Act
         // so we don't have to add it explicitly.
         return panel;
     }
+
     protected void setModel(NfrResultCollector collector) {
         this.collector = collector;
     }
+
     /**
      * Clear all rows from the table.
      */

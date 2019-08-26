@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.jmeter.config.NfrArgument;
 import org.apache.jmeter.engine.util.NoThreadClone;
@@ -36,6 +37,7 @@ import org.apache.jmeter.testelement.property.CollectionProperty;
 import org.apache.jmeter.testelement.property.ObjectProperty;
 import org.apache.jmeter.testelement.property.PropertyIterator;
 import org.apache.jmeter.testelement.property.TestElementProperty;
+import org.apache.jmeter.visualizers.SamplingStatCalculator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,6 +47,25 @@ import org.slf4j.LoggerFactory;
  */
 public class NfrResultCollector extends AbstractListenerElement
         implements SampleListener, Clearable, Serializable, TestStateListener, Remoteable, NoThreadClone {
+    private static Map<String, SamplingStatCalculator> tableRows = new ConcurrentHashMap<>();
+    /**
+     * @return the tableRows
+     */
+    public Map<String, SamplingStatCalculator> getNfrResult() {
+        return tableRows;
+    }
+    /**
+     * @return the tableRows
+     */
+    public SamplingStatCalculator getNfrResultBySamplerName(String name) {
+        return tableRows.get(name);
+    }
+    /**
+     * @return the tableRows
+     */
+    public void clearNfrResult() {
+        tableRows.clear();
+    }
 
     private static final class ShutdownHook implements Runnable {
         @Override
@@ -53,7 +74,6 @@ public class NfrResultCollector extends AbstractListenerElement
             log.info("Shutdown hook ended");
         }
     }
-
     private static final Logger log = LoggerFactory.getLogger(NfrResultCollector.class);
     private static final long serialVersionUID = 234L;
     // This string is used to identify local test runs, so must not be a valid host
@@ -83,7 +103,6 @@ public class NfrResultCollector extends AbstractListenerElement
     /** the summarizer to which this result collector will forward the samples */
     private volatile Summariser summariser;
     public static final String NFRARGUMENTS = "NfrResultCollector.nfrarguments"; //$NON-NLS-1$
-
     /**
      * No-arg constructor.
      */
@@ -328,7 +347,7 @@ public class NfrResultCollector extends AbstractListenerElement
         if (summariser != null) {
             summariser.testStarted(host);
         }
-    }
+    }  
 
     @Override
     public void testEnded() {
@@ -399,4 +418,5 @@ public class NfrResultCollector extends AbstractListenerElement
     public void clearData() {
         super.clear();
     }
+    
 }

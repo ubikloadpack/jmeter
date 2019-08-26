@@ -47,7 +47,6 @@ import org.apache.jmeter.threads.PostThreadGroup;
 import org.apache.jmeter.threads.SetupThreadGroup;
 import org.apache.jmeter.threads.TestCompiler;
 import org.apache.jmeter.util.JMeterUtils;
-import org.apache.jmeter.visualizers.NfrListnerGui;
 import org.apache.jmeter.visualizers.SamplingStatCalculator;
 import org.apache.jorphan.collections.HashTree;
 import org.apache.jorphan.collections.ListedHashTree;
@@ -507,20 +506,20 @@ public class StandardJMeterEngine implements JMeterEngine, Runnable {
 
     private void runNFRTest() {
         JMeterTreeModel treeModel = GuiPackage.getInstance().getTreeModel();
-        JMeterTreeNode treeNode = treeModel.getNodesOfType(NfrResultCollector.class).stream().filter(JMeterTreeNode::isEnabled).findFirst().orElse(null);
+        JMeterTreeNode treeNode = treeModel.getNodesOfType(NfrResultCollector.class).stream()
+                .filter(JMeterTreeNode::isEnabled).findFirst().orElse(null);
         if (treeNode != null) {
             NfrResultCollector nfrResultCollector = (NfrResultCollector) treeNode.getTestElement();
             for (JMeterProperty jMeterProperty : nfrResultCollector.getNfrArguments()) {
                 NfrArgument nfrArgument = (NfrArgument) jMeterProperty.getObjectValue();
-                SamplingStatCalculator samplingStatCalculator = NfrListnerGui.getResult().get(nfrArgument.getName());
+                SamplingStatCalculator samplingStatCalculator = nfrResultCollector
+                        .getNfrResultBySamplerName(nfrArgument.getName());
                 if (samplingStatCalculator != null) {
                     System.out.println("Key = " + nfrArgument.getName() + ", Value = " + samplingStatCalculator);
-                    boolean result=getResultNfrTest(nfrArgument, samplingStatCalculator);
+                    boolean result = getResultNfrTest(nfrArgument, samplingStatCalculator);
                     System.out.println(result);
                 }
-                
             }
-            
         }
     }
 
@@ -568,7 +567,6 @@ public class StandardJMeterEngine implements JMeterEngine, Runnable {
         return value;
     }
 
-    
     private void startThreadGroup(AbstractThreadGroup group, int groupCount, SearchByClass<?> searcher, List<?> testLevelElements, ListenerNotifier notifier)
     {
         try {

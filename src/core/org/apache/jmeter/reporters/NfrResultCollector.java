@@ -15,7 +15,6 @@
  * limitations under the License.
  *
  */
-
 package org.apache.jmeter.reporters;
 
 import java.io.BufferedOutputStream;
@@ -46,7 +45,6 @@ import org.apache.jmeter.save.CSVSaveService;
 import org.apache.jmeter.save.SaveService;
 import org.apache.jmeter.services.FileServer;
 import org.apache.jmeter.testelement.TestStateListener;
-import org.apache.jmeter.testelement.property.BooleanProperty;
 import org.apache.jmeter.testelement.property.CollectionProperty;
 import org.apache.jmeter.testelement.property.ObjectProperty;
 import org.apache.jmeter.testelement.property.PropertyIterator;
@@ -56,11 +54,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * This class handles all saving of samples.
- * The class must be thread-safe because it is shared between threads (NoThreadClone).
+ * This class handles all saving of samples. The class must be thread-safe
+ * because it is shared between threads (NoThreadClone).
  */
-public class NfrResultCollector extends AbstractListenerElement implements SampleListener, Clearable, Serializable,
-        TestStateListener, Remoteable, NoThreadClone {
+public class NfrResultCollector extends AbstractListenerElement
+        implements SampleListener, Clearable, Serializable, TestStateListener, Remoteable, NoThreadClone {
     /**
      * @return the nfrlist
      */
@@ -76,21 +74,21 @@ public class NfrResultCollector extends AbstractListenerElement implements Sampl
     }
 
     /**
-     * Keep track of the file writer and the configuration,
-     * as the instance used to close them is not the same as the instance that creates
-     * them. This means one cannot use the saved PrintWriter or use getSaveConfig()
+     * Keep track of the file writer and the configuration, as the instance used to
+     * close them is not the same as the instance that creates them. This means one
+     * cannot use the saved PrintWriter or use getSaveConfig()
      */
-    private static class FileEntry{
+    private static class FileEntry {
         final PrintWriter pw;
         final SampleSaveConfiguration config;
-        FileEntry(PrintWriter printWriter, SampleSaveConfiguration sampleSaveConfiguration){
+
+        FileEntry(PrintWriter printWriter, SampleSaveConfiguration sampleSaveConfiguration) {
             this.pw = printWriter;
             this.config = sampleSaveConfiguration;
         }
     }
 
     private static final class ShutdownHook implements Runnable {
-
         @Override
         public void run() {
             log.info("Shutdown hook started");
@@ -100,72 +98,52 @@ public class NfrResultCollector extends AbstractListenerElement implements Sampl
             log.info("Shutdown hook ended");
         }
     }
+
     private static final Logger log = LoggerFactory.getLogger(NfrResultCollector.class);
-
     private static final long serialVersionUID = 234L;
-
-    // This string is used to identify local test runs, so must not be a valid host name
+    // This string is used to identify local test runs, so must not be a valid host
+    // name
     private static final String TEST_IS_LOCAL = "*local*"; // $NON-NLS-1$
-
     private static final String TESTRESULTS_START = "<testResults>"; // $NON-NLS-1$
-
-    private static final String TESTRESULTS_START_V1_1_PREVER = "<testResults version=\"";  // $NON-NLS-1$
-
-    private static final String TESTRESULTS_START_V1_1_POSTVER="\">"; // $NON-NLS-1$
-
+    private static final String TESTRESULTS_START_V1_1_PREVER = "<testResults version=\""; // $NON-NLS-1$
+    private static final String TESTRESULTS_START_V1_1_POSTVER = "\">"; // $NON-NLS-1$
     private static final String TESTRESULTS_END = "</testResults>"; // $NON-NLS-1$
-
     // we have to use version 1.0, see bug 59973
     private static final String XML_HEADER = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"; // $NON-NLS-1$
-
     private static final int MIN_XML_FILE_LEN = XML_HEADER.length() + TESTRESULTS_START.length()
             + TESTRESULTS_END.length();
-
     public static final String FILENAME = "filename"; // $NON-NLS-1$
-
     private static final String SAVE_CONFIG = "saveConfig"; // $NON-NLS-1$
-
-    private static final String ERROR_LOGGING = "NfrResultCollector.error_logging"; // $NON-NLS-1$
-
-    private static final String SUCCESS_ONLY_LOGGING = "NfrResultCollector.success_only_logging"; // $NON-NLS-1$
-
     /** AutoFlush on each line */
-    private static final boolean SAVING_AUTOFLUSH = JMeterUtils.getPropDefault("jmeter.save.saveservice.autoflush", false); //$NON-NLS-1$
-
+    private static final boolean SAVING_AUTOFLUSH = JMeterUtils.getPropDefault("jmeter.save.saveservice.autoflush", //$NON-NLS-1$
+            false);
     // Static variables
-
     // Lock used to guard static mutable variables
     private static final Object LOCK = new Object();
-
     private static final Map<String, FileEntry> files = new HashMap<>();
-
     /**
-     * Shutdown Hook that ensures PrintWriter is flushed is CTRL+C or kill is called during a test
+     * Shutdown Hook that ensures PrintWriter is flushed is CTRL+C or kill is called
+     * during a test
      */
     private static Thread shutdownHook;
-
     /**
-     * The instance count is used to keep track of whether any tests are currently running.
-     * It's not possible to use the constructor or threadStarted etc as tests may overlap
-     * e.g. a remote test may be started,
-     * and then a local test started whilst the remote test is still running.
+     * The instance count is used to keep track of whether any tests are currently
+     * running. It's not possible to use the constructor or threadStarted etc as
+     * tests may overlap e.g. a remote test may be started, and then a local test
+     * started whilst the remote test is still running.
      */
     private static int instanceCount; // Keep track of how many instances are active
-
     // Instance variables (guarded by volatile)
     private transient volatile PrintWriter out;
-
     /**
      * Is a test running ?
      */
     private volatile boolean inTest = false;
-
     private volatile boolean isStats = false;
-
     /** the summarizer to which this result collector will forward the samples */
     private volatile Summariser summariser;
-    
     public static final String NFRARGUMENTS = "NfrResultCollector.nfrarguments"; //$NON-NLS-1$
+
     /**
      * No-arg constructor.
      */
@@ -173,14 +151,15 @@ public class NfrResultCollector extends AbstractListenerElement implements Sampl
         this(null);
         setProperty(new CollectionProperty(NFRARGUMENTS, new ArrayList<NfrArgument>()));
     }
+
     List<NfrArgument> nfrlist = new ArrayList<NfrArgument>();
+
     /**
      * Constructor which sets the used {@link Summariser}
+     * 
      * @param summer The {@link Summariser} to use
      */
     public NfrResultCollector(Summariser summer) {
-        setErrorLogging(false);
-        setSuccessOnlyLogging(false);
         setProperty(new ObjectProperty(SAVE_CONFIG, new SampleSaveConfiguration()));
         setProperty(new CollectionProperty(NFRARGUMENTS, new ArrayList<NfrArgument>()));
         summariser = summer;
@@ -189,9 +168,9 @@ public class NfrResultCollector extends AbstractListenerElement implements Sampl
     // Ensure that the sample save config is not shared between copied nodes
     // N.B. clone only seems to be used for client-server tests
     @Override
-    public Object clone(){
+    public Object clone() {
         NfrResultCollector clone = (NfrResultCollector) super.clone();
-        clone.setSaveConfig((SampleSaveConfiguration)clone.getSaveConfig().clone());
+        clone.setSaveConfig((SampleSaveConfiguration) clone.getSaveConfig().clone());
         // Unfortunately AbstractTestElement does not call super.clone()
         clone.summariser = this.summariser;
         return clone;
@@ -211,66 +190,6 @@ public class NfrResultCollector extends AbstractListenerElement implements Sampl
     }
 
     /**
-     * Get the state of error logging
-     *
-     * @return Flag whether errors should be logged
-     */
-    public boolean isErrorLogging() {
-        return getPropertyAsBoolean(ERROR_LOGGING);
-    }
-
-    /**
-     * Sets error logging flag
-     *
-     * @param errorLogging
-     *            The flag whether errors should be logged
-     */
-    public final void setErrorLogging(boolean errorLogging) {
-        setProperty(new BooleanProperty(ERROR_LOGGING, errorLogging));
-    }
-
-    /**
-     * Sets the flag whether only successful samples should be logged
-     *
-     * @param value
-     *            The flag whether only successful samples should be logged
-     */
-    public final void setSuccessOnlyLogging(boolean value) {
-        if (value) {
-            setProperty(new BooleanProperty(SUCCESS_ONLY_LOGGING, true));
-        } else {
-            removeProperty(SUCCESS_ONLY_LOGGING);
-        }
-    }
-
-    /**
-     * Get the state of successful only logging
-     *
-     * @return Flag whether only successful samples should be logged
-     */
-    public boolean isSuccessOnlyLogging() {
-        return getPropertyAsBoolean(SUCCESS_ONLY_LOGGING,false);
-    }
-
-    /**
-     * Decides whether or not to a sample is wanted based on:
-     * <ul>
-     * <li>errorOnly</li>
-     * <li>successOnly</li>
-     * <li>sample success</li>
-     * </ul>
-     * Should only be called for single samples.
-     *
-     * @param success is sample successful
-     * @return whether to log/display the sample
-     */
-    public boolean isSampleWanted(boolean success){
-        boolean errorOnly = isErrorLogging();
-        boolean successOnly = isSuccessOnlyLogging();
-        return isSampleWanted(success, errorOnly, successOnly);
-    }
-
-    /**
      * Decides whether or not to a sample is wanted based on:
      * <ul>
      * <li>errorOnly</li>
@@ -279,23 +198,21 @@ public class NfrResultCollector extends AbstractListenerElement implements Sampl
      * </ul>
      * This version is intended to be called by code that loops over many samples;
      * it is cheaper than fetching the settings each time.
-     * @param success status of sample
-     * @param errorOnly if errors only wanted
+     * 
+     * @param success     status of sample
+     * @param errorOnly   if errors only wanted
      * @param successOnly if success only wanted
      * @return whether to log/display the sample
      */
-    public static boolean isSampleWanted(boolean success, boolean errorOnly,
-            boolean successOnly) {
-        return (!errorOnly && !successOnly) ||
-               (success && successOnly) ||
-               (!success && errorOnly);
+    public static boolean isSampleWanted(boolean success, boolean errorOnly, boolean successOnly) {
+        return (!errorOnly && !successOnly) || (success && successOnly) || (!success && errorOnly);
         // successOnly and errorOnly cannot both be set
     }
+
     /**
      * Sets the filename attribute of the ResultCollector object.
      *
-     * @param f
-     *            the new filename value
+     * @param f the new filename value
      */
     public void setFilename(String f) {
         if (inTest) {
@@ -303,6 +220,7 @@ public class NfrResultCollector extends AbstractListenerElement implements Sampl
         }
         setFilenameProperty(f);
     }
+
     /**
      * Get the nfrarguments.
      *
@@ -311,6 +229,7 @@ public class NfrResultCollector extends AbstractListenerElement implements Sampl
     public CollectionProperty getNfrArguments() {
         return (CollectionProperty) getProperty(NFRARGUMENTS);
     }
+
     /**
      * Set the list of nfrarguments. Any existing arguments will be lost.
      *
@@ -320,7 +239,7 @@ public class NfrResultCollector extends AbstractListenerElement implements Sampl
         setProperty(new CollectionProperty(NFRARGUMENTS, arguments));
     }
 
-     /**
+    /**
      * Get the arguments as a Map. Each argument name is used as the key, and its
      * value as the value.
      *
@@ -343,7 +262,7 @@ public class NfrResultCollector extends AbstractListenerElement implements Sampl
         return argMap;
     }
 
-     /**
+    /**
      * Add a new argument.
      *
      * @param arg the new argument
@@ -356,8 +275,8 @@ public class NfrResultCollector extends AbstractListenerElement implements Sampl
         getNfrArguments().addItem(newArg);
     }
 
-     /**
-     * Add a new argument with the given name, value, metadata and description
+    /**
+     * Add a new argument with the given name, value, criteria and symbol
      * 
      * @param name
      * @param criteria
@@ -368,25 +287,21 @@ public class NfrResultCollector extends AbstractListenerElement implements Sampl
         addNfrArgument(new NfrArgument(name, criteria, symbol, value));
     }
 
-     /**
+    /**
      * Get a PropertyIterator of the nfrarguments.
      *
      * @return an iteration of the nfrarguments
      */
-  
     public PropertyIterator iterator() {
         return getNfrArguments().iterator();
     }
 
-     /**
+    /**
      * Create a string representation of the nfrarguments.
      *
      * @return the string representation of the nfrarguments
      */
-
-
-
-     /**
+    /**
      * Remove the specified argument from the list.
      *
      * @param row the index of the argument to remove
@@ -397,7 +312,7 @@ public class NfrResultCollector extends AbstractListenerElement implements Sampl
         }
     }
 
-     /**
+    /**
      * Remove the specified argument from the list.
      *
      * @param arg the argument to remove
@@ -412,7 +327,7 @@ public class NfrResultCollector extends AbstractListenerElement implements Sampl
         }
     }
 
-     /**
+    /**
      * Remove the argument with the specified name.
      *
      * @param argName the name of the argument to remove
@@ -427,7 +342,7 @@ public class NfrResultCollector extends AbstractListenerElement implements Sampl
         }
     }
 
-     /**
+    /**
      * Remove the argument with the specified name and value.
      *
      * @param argName  the name of the argument to remove
@@ -443,15 +358,14 @@ public class NfrResultCollector extends AbstractListenerElement implements Sampl
         }
     }
 
-     /**
+    /**
      * Remove all arguments from the list.
      */
     public void removeAllNfrArguments() {
-        setProperty(new CollectionProperty(NFRARGUMENTS, new ArrayList<NfrArgument
-                >()));
+        setProperty(new CollectionProperty(NFRARGUMENTS, new ArrayList<NfrArgument>()));
     }
 
-     /**
+    /**
      * Add a new empty argument to the list. The new argument will have the empty
      * string as its name and value, and null metadata.
      */
@@ -459,7 +373,7 @@ public class NfrResultCollector extends AbstractListenerElement implements Sampl
         addNfrArgument(new NfrArgument("", "", "", ""));
     }
 
-     /**
+    /**
      * Get the number of arguments in the list.
      *
      * @return the number of arguments
@@ -468,7 +382,7 @@ public class NfrResultCollector extends AbstractListenerElement implements Sampl
         return getNfrArguments().size();
     }
 
-     /**
+    /**
      * Get a single argument.
      *
      * @param row the index of the argument to return.
@@ -485,7 +399,7 @@ public class NfrResultCollector extends AbstractListenerElement implements Sampl
 
     @Override
     public void testEnded(String host) {
-        synchronized(LOCK){
+        synchronized (LOCK) {
             instanceCount--;
             if (instanceCount <= 0) {
                 // No need for the hook now
@@ -500,15 +414,14 @@ public class NfrResultCollector extends AbstractListenerElement implements Sampl
                 inTest = false;
             }
         }
-
-        if(summariser != null) {
+        if (summariser != null) {
             summariser.testEnded(host);
         }
     }
 
     @Override
     public void testStarted(String host) {
-        synchronized(LOCK){
+        synchronized (LOCK) {
             if (instanceCount == 0) { // Only add the hook once
                 shutdownHook = new Thread(new ShutdownHook());
                 Runtime.getRuntime().addShutdownHook(shutdownHook);
@@ -531,8 +444,7 @@ public class NfrResultCollector extends AbstractListenerElement implements Sampl
             }
         }
         inTest = true;
-
-        if(summariser != null) {
+        if (summariser != null) {
             summariser.testStarted(host);
         }
     }
@@ -546,72 +458,13 @@ public class NfrResultCollector extends AbstractListenerElement implements Sampl
     public void testStarted() {
         testStarted(TEST_IS_LOCAL);
     }
-    
-
-    /**
-     * Loads an existing sample data (JTL) file.
-     * This can be one of:
-     * <ul>
-     *   <li>XStream format</li>
-     *   <li>CSV format</li>
-     * </ul>
-     *
-     */
-//    public void loadExistingFile() {
-//        final Visualizer visualizer = getVisualizer();
-//        if (visualizer == null) {
-//            return; // No point reading the file if there's no visualiser
-//        }
-//        boolean parsedOK = false;
-//        String filename = getFilename();
-//        File file = new File(filename);
-//        if (file.exists()) {
-//            try ( FileReader fr = new FileReader(file);
-//                    BufferedReader dataReader = new BufferedReader(fr, 300)){
-//                // Get the first line, and see if it is XML
-//                String line = dataReader.readLine();
-//                dataReader.close();
-//                if (line == null) {
-//                    log.warn("{} is empty", filename);
-//                } else {
-//                    if (!line.startsWith("<?xml ")){// No, must be CSV //$NON-NLS-1$
-//                        CSVSaveService.processSamples(filename, visualizer, this);
-//                        parsedOK = true;
-//                    } else { // We are processing XML
-//                        try ( FileInputStream fis = new FileInputStream(file);
-//                                BufferedInputStream bufferedInputStream = new BufferedInputStream(fis); ){ // Assume XStream
-//                            SaveService.loadTestResults(bufferedInputStream,
-//                                    new ResultCollectorHelper(this, visualizer));
-//                            parsedOK = true;
-//                        } catch (Exception e) {
-//                            if (log.isWarnEnabled()) {
-//                                log.warn("Failed to load {} using XStream. Error was: {}", filename, e.toString());
-//                            }
-//                        }
-//                    }
-//                }
-//            } catch (IOException | JMeterError | RuntimeException e) {
-//                log.warn("Problem reading JTL file: {}", file, e);
-//            } finally {
-//                if (!parsedOK) {
-//                    GuiPackage.showErrorMessage(
-//                                "Error loading results file - see log file",
-//                                "Result file loader");
-//                }
-//            }
-//        } else {
-//            GuiPackage.showErrorMessage(
-//                    "Error loading results file - could not open file",
-//                    "Result file loader");
-//        }
-//    }
 
     private static void writeFileStart(PrintWriter writer, SampleSaveConfiguration saveConfig) {
         if (saveConfig.saveAsXml()) {
             writer.print(XML_HEADER);
             // Write the EOL separately so we generate LF line ends on Unix and Windows
             writer.print("\n"); // $NON-NLS-1$
-            String pi=saveConfig.getXmlPi();
+            String pi = saveConfig.getXmlPi();
             if (pi.length() > 0) {
                 writer.println(pi);
             }
@@ -640,7 +493,7 @@ public class NfrResultCollector extends AbstractListenerElement implements Sampl
         if (pFilename == null || pFilename.length() == 0) {
             return null;
         }
-        if(log.isDebugEnabled()) {
+        if (log.isDebugEnabled()) {
             log.debug("Getting file: {} in thread {}", pFilename, Thread.currentThread().getName());
         }
         String filename = FileServer.resolveBaseRelativeName(pFilename);
@@ -648,7 +501,6 @@ public class NfrResultCollector extends AbstractListenerElement implements Sampl
         FileEntry fe = files.get(filename);
         PrintWriter writer = null;
         boolean trimmed = true;
-
         if (fe == null) {
             if (saveConfig.saveAsXml()) {
                 trimmed = trimLastLine(filename);
@@ -660,18 +512,20 @@ public class NfrResultCollector extends AbstractListenerElement implements Sampl
             File pdir = new File(filename).getParentFile();
             if (pdir != null) {
                 // returns false if directory already exists, so need to check again
-                if(pdir.mkdirs()){
+                if (pdir.mkdirs()) {
                     if (log.isInfoEnabled()) {
                         log.info("Folder at {} was created", pdir.getAbsolutePath());
                     }
                 } // else if might have been created by another process so not a problem
-                if (!pdir.exists()){
+                if (!pdir.exists()) {
                     log.warn("Error creating directories for {}", pdir);
                 }
             }
-            writer = new PrintWriter(new OutputStreamWriter(new BufferedOutputStream(new FileOutputStream(filename,
-                    trimmed)), SaveService.getFileEncoding(StandardCharsets.UTF_8.name())), SAVING_AUTOFLUSH);
-            if(log.isDebugEnabled()) {
+            writer = new PrintWriter(
+                    new OutputStreamWriter(new BufferedOutputStream(new FileOutputStream(filename, trimmed)),
+                            SaveService.getFileEncoding(StandardCharsets.UTF_8.name())),
+                    SAVING_AUTOFLUSH);
+            if (log.isDebugEnabled()) {
                 log.debug("Opened file: {} in thread {}", filename, Thread.currentThread().getName());
             }
             files.put(filename, new FileEntry(writer, saveConfig));
@@ -687,7 +541,7 @@ public class NfrResultCollector extends AbstractListenerElement implements Sampl
 
     // returns false if the file did not contain the terminator
     private static boolean trimLastLine(String filename) {
-        try (RandomAccessFile raf = new RandomAccessFile(filename, "rw")){ // $NON-NLS-1$
+        try (RandomAccessFile raf = new RandomAccessFile(filename, "rw")) { // $NON-NLS-1$
             long len = raf.length();
             if (len < MIN_XML_FILE_LEN) {
                 return false;
@@ -734,31 +588,26 @@ public class NfrResultCollector extends AbstractListenerElement implements Sampl
     /**
      * When a test result is received, display it and save it.
      *
-     * @param event
-     *            the sample event that was received
+     * @param event the sample event that was received
      */
     @Override
     public void sampleOccurred(SampleEvent event) {
         SampleResult result = event.getResult();
-
-        if (isSampleWanted(result.isSuccessful())) {
-            sendToVisualizer(result);
-            if (out != null && !isResultMarked(result) && !this.isStats) {
-                SampleSaveConfiguration config = getSaveConfig();
-                result.setSaveConfig(config);
-                try {
-                    if (config.saveAsXml()) {
-                        SaveService.saveSampleResult(event, out);
-                    } else { // !saveAsXml
-                        CSVSaveService.saveSampleResult(event, out);
-                    }
-                } catch (Exception err) {
-                    log.error("Error trying to record a sample", err); // should throw exception back to caller
+        sendToVisualizer(result);
+        if (out != null && !isResultMarked(result) && !this.isStats) {
+            SampleSaveConfiguration config = getSaveConfig();
+            result.setSaveConfig(config);
+            try {
+                if (config.saveAsXml()) {
+                    SaveService.saveSampleResult(event, out);
+                } else { // !saveAsXml
+                    CSVSaveService.saveSampleResult(event, out);
                 }
+            } catch (Exception err) {
+                log.error("Error trying to record a sample", err); // should throw exception back to caller
             }
         }
-
-        if(summariser != null) {
+        if (summariser != null) {
             summariser.sampleOccurred(event);
         }
     }
@@ -771,6 +620,7 @@ public class NfrResultCollector extends AbstractListenerElement implements Sampl
 
     /**
      * Checks if the sample result is marked or not, and marks it
+     * 
      * @param res - the sample result to check
      * @return <code>true</code> if the result was marked
      */
@@ -790,17 +640,17 @@ public class NfrResultCollector extends AbstractListenerElement implements Sampl
     }
 
     private static void finalizeFileOutput() {
-        for(Map.Entry<String, NfrResultCollector.FileEntry> me : files.entrySet()) {
+        for (Map.Entry<String, NfrResultCollector.FileEntry> me : files.entrySet()) {
             String key = me.getKey();
             NfrResultCollector.FileEntry value = me.getValue();
             try {
                 log.debug("Closing: {}", key);
                 writeFileEnd(value.pw, value.config);
                 value.pw.close();
-                if (value.pw.checkError()){
+                if (value.pw.checkError()) {
                     log.warn("Problem detected during use of {}", key);
                 }
-            } catch(Exception ex) {
+            } catch (Exception ex) {
                 log.error("Error closing file {}", key, ex);
             }
         }
@@ -820,8 +670,7 @@ public class NfrResultCollector extends AbstractListenerElement implements Sampl
     }
 
     /**
-     * @param saveConfig
-     *            The saveConfig to set.
+     * @param saveConfig The saveConfig to set.
      */
     public void setSaveConfig(SampleSaveConfiguration saveConfig) {
         getProperty(SAVE_CONFIG).setObjectValue(saveConfig);

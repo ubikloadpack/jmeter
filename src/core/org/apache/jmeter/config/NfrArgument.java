@@ -23,11 +23,6 @@
 import org.apache.jmeter.testelement.AbstractTestElement;
 import org.apache.jmeter.testelement.property.StringProperty;
 
- /**
- * Class representing an argument. Each argument consists of a name/value pair,
- * as well as (optional) metadata.
- *
- */
 public class NfrArgument extends AbstractTestElement implements Serializable {
     @Override
     public String toString() {
@@ -38,15 +33,15 @@ public class NfrArgument extends AbstractTestElement implements Serializable {
     private static final long serialVersionUID = 240L;
 
      /** Name used to store the argument's name. */
-    public static final String ARG_NAME = "NfrArgument.name"; // $NON-NLS-1$
+    public static final String NAME = "NfrArgument.name"; // $NON-NLS-1$
 
      /** Name used to store the argument's value. */
     public static final String VALUE = "NfrArgument.value"; // $NON-NLS-1$
 
-     /** Name used to store the argument's value. */
+     /** Name used to store the argument's criteria. */
     public static final String CRITERIA = "NfrArgument.criteria"; // $NON-NLS-1$
 
-     /** Name used to store the argument's value. */
+     /** Name used to store the argument's symbol. */
     public static final String SYMBOL = "NfrArgument.symbol"; // $NON-NLS-1$
      /**
      * Set the name of the Argument.
@@ -56,7 +51,7 @@ public class NfrArgument extends AbstractTestElement implements Serializable {
      */
     @Override
     public void setName(String newName) {
-        setProperty(new StringProperty(ARG_NAME, newName));
+        setProperty(new StringProperty(NAME, newName));
     }
 
      /**
@@ -66,7 +61,7 @@ public class NfrArgument extends AbstractTestElement implements Serializable {
      */
     @Override
     public String getName() {
-        return getPropertyAsString(ARG_NAME);
+        return getPropertyAsString(NAME);
     }
 
      /**
@@ -88,51 +83,58 @@ public class NfrArgument extends AbstractTestElement implements Serializable {
         return getPropertyAsString(VALUE);
        
     }
+    
+    /**
+     * Sets the criteria of the Argument.
+     * 
+     * @param newCriteria
+     */
     public void setCriteria(String newCriteria) {
         setProperty(new StringProperty(CRITERIA, newCriteria));
     }
 
      /**
-     * Gets the Meta Data attribute of the Argument.
+     * Gets the criteria attribute of the Argument.
      *
-     * @return the MetaData value
+     * @return the criteria value
      */
     public String getCriteria() {
         return getPropertyAsString(CRITERIA);
     }
 
      /**
-     * Sets the Meta Data attribute of the Argument.
+     * Sets the Symbol attribute of the Argument.
      *
-     * @param newMetaData
-     *            the new metadata
+     * @param newSymbol
+     *            the new symbol
      */
     public void setSymbol(String symbol) {
         setProperty(new StringProperty(SYMBOL, symbol));
     }
 
      /**
-     * the signe of nfr test
-     * @return
+     * Gets the symbol of NFR test
+     * 
+     * @return the attribute's symbol
      */
     public String getSymbol() {
         return getPropertyAsString(SYMBOL);
     }
     /**
-    * Create a new Argument with the specified name, value, and metadata.
+    * Create a new Argument with the specified name, value, symbol, criteria.
     *
     * @param name
     *            the argument name
     * @param value
     *            the argument value
-    * @param metadata
-    *            the argument metadata
-    * @param description
-    *            the argument description
+    * @param symbol
+    *            the argument symbol
+    * @param criteria
+    *            the argument criteria
     */
    public NfrArgument(String name,  String criteria, String symbol, String value) {
        if(name != null) {
-           setProperty(new StringProperty(ARG_NAME, name));
+           setProperty(new StringProperty(NAME, name));
        }
        if(value != null) {
            setProperty(new StringProperty(VALUE, value));

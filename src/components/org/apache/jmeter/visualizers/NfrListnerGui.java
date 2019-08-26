@@ -22,16 +22,21 @@ import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
+import javax.swing.DefaultCellEditor;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -44,10 +49,13 @@ import org.apache.jmeter.config.NfrArgument;
 import org.apache.jmeter.gui.GUIMenuSortOrder;
 import org.apache.jmeter.gui.GuiPackage;
 import org.apache.jmeter.gui.SavePropertyDialog;
+import org.apache.jmeter.gui.tree.JMeterTreeModel;
+import org.apache.jmeter.gui.tree.JMeterTreeNode;
 import org.apache.jmeter.gui.util.FilePanel;
 import org.apache.jmeter.gui.util.HeaderAsPropertyRenderer;
 import org.apache.jmeter.gui.util.TextAreaCellRenderer;
 import org.apache.jmeter.gui.util.TextAreaTableCellEditor;
+import org.apache.jmeter.protocol.http.sampler.HTTPSamplerProxy;
 import org.apache.jmeter.reporters.NfrResultCollector;
 import org.apache.jmeter.samplers.Clearable;
 import org.apache.jmeter.samplers.SampleResult;
@@ -58,11 +66,9 @@ import org.apache.jorphan.gui.ComponentUtil;
 import org.apache.jorphan.gui.GuiUtils;
 import org.apache.jorphan.gui.ObjectTableModel;
 import org.apache.jorphan.reflect.Functor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
- * Aggregate Table-Based Reporting Visualizer for JMeter.
+ * Interface for Non-function-requirement Test.
  */
 /**
  * @author sqq94
@@ -71,52 +77,23 @@ import org.slf4j.LoggerFactory;
 @GUIMenuSortOrder(3)
 public class NfrListnerGui extends NfrAbstractVisualizer implements Clearable, ActionListener {
     private static final long serialVersionUID = 242L;
-    private static final String TOTAL_ROW_LABEL = JMeterUtils.getResString("aggregate_report_total_label"); //$NON-NLS-1$
     private final JCheckBox useGroupName = new JCheckBox(JMeterUtils.getResString("aggregate_graph_use_group_name")); //$NON-NLS-1$
     /** Lock used to protect tableRows update + model update */
     private final transient Object lock = new Object();
-    public static Map<String, SamplingStatCalculator> tableRows = new ConcurrentHashMap<>();
+    private static Map<String, SamplingStatCalculator> tableRows = new ConcurrentHashMap<>();
     private Deque<SamplingStatCalculator> newRows = new ConcurrentLinkedDeque<>();
     private final JButton add = new JButton("add"); //$NON-NLS-1$
     private final JButton delete = new JButton("delete"); //$NON-NLS-1$
     private JTable stringTable;
     /** Table model for the pattern table. */
     private ObjectTableModel tableModel;
-    /** Logging. */
-    private static final Logger log = LoggerFactory.getLogger(NfrAbstractVisualizer.class);
     /** File Extensions */
     private static final String[] EXTS = { ".xml", ".jtl", ".csv" }; // $NON-NLS-1$ $NON-NLS-2$ $NON-NLS-3$
     /** A panel allowing results to be saved. */
     private final FilePanel filePanel;
-    /** A checkbox choosing whether or not only errors should be logged. */
-    private final JCheckBox errorLogging;
-    /* A checkbox choosing whether or not only successes should be logged. */
-    private final JCheckBox successOnlyLogging;
-    protected NfrResultCollector collector = new NfrResultCollector();
-    protected boolean isStats = false;
-
 
     public NfrListnerGui() {
         super();
-        // errorLogging and successOnlyLogging are mutually exclusive
-        errorLogging = new JCheckBox(JMeterUtils.getResString("log_errors_only")); // $NON-NLS-1$
-        errorLogging.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (errorLogging.isSelected()) {
-                    successOnlyLogging.setSelected(false);
-                }
-            }
-        });
-        successOnlyLogging = new JCheckBox(JMeterUtils.getResString("log_success_only")); // $NON-NLS-1$
-        successOnlyLogging.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (successOnlyLogging.isSelected()) {
-                    errorLogging.setSelected(false);
-                }
-            }
-        });
         JButton saveConfigButton = new JButton(JMeterUtils.getResString("config_save_settings")); // $NON-NLS-1$
         saveConfigButton.addActionListener(new ActionListener() {
             @Override
@@ -129,15 +106,35 @@ public class NfrListnerGui extends NfrAbstractVisualizer implements Clearable, A
                 d.setVisible(true);
             }
         });
+        // FILE PANEL
         filePanel = new FilePanel(JMeterUtils.getResString("file_visualizer_output_file"), EXTS); // $NON-NLS-1$
         filePanel.addChangeListener(this);
         filePanel.add(new JLabel(JMeterUtils.getResString("log_only"))); // $NON-NLS-1$
-        filePanel.add(errorLogging);
-        filePanel.add(successOnlyLogging);
         filePanel.add(saveConfigButton);
-        init();
+        this.setLayout(new BorderLayout());
+        // MAIN PANEL
+        JPanel mainPanel = new JPanel();
+        Border margin = new EmptyBorder(10, 10, 5, 10);
+        mainPanel.setBorder(margin);
+        mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
+        mainPanel.add(makeTitlePanel());
+        this.add(mainPanel, BorderLayout.NORTH);
+        this.add(createStringPanel(), BorderLayout.CENTER);
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 10));
+        add.setActionCommand("ADD");
+        add.addActionListener(this);
+        delete.setActionCommand("DELETE");
+        delete.addActionListener(this);
+        buttonPanel.add(add);
+        buttonPanel.add(delete);
+        add.setEnabled(true);
+        this.add(buttonPanel, BorderLayout.SOUTH);
     }
-
+    public static Map<String, SamplingStatCalculator> getResult(){
+        return Collections.unmodifiableMap(tableRows);
+        
+    }
     @Override
     public String getLabelResource() {
         return "non_function_test"; //$NON-NLS-1$
@@ -171,10 +168,9 @@ public class NfrListnerGui extends NfrAbstractVisualizer implements Clearable, A
     }
 
     /**
-     * Create a panel allowing the user to supply a list of string patterns to test
-     * against.
+     * Initialization of table
      *
-     * @return a new panel for adding string patterns
+     * @return a new panel with the table
      */
     /** A table of patterns to test against. */
     private JScrollPane createStringPanel() {
@@ -193,40 +189,101 @@ public class NfrListnerGui extends NfrAbstractVisualizer implements Clearable, A
         stringTable.setDefaultRenderer(String.class, renderer);
         stringTable.setDefaultEditor(String.class, new TextAreaTableCellEditor());
         stringTable.setPreferredScrollableViewportSize(new Dimension(100, 70));
+        List<HTTPSamplerProxy> listHTTPSamplerProxy = findFirstNodeOfTypeHTTPSamplerProxy();
+        JComboBox<String> nameComboBox = new JComboBox<>();
+        for (HTTPSamplerProxy httpSamplerProxy : listHTTPSamplerProxy) {
+            nameComboBox.addItem(httpSamplerProxy.getName());
+        }
+        stringTable.getColumnModel().getColumn(0).setCellEditor(new DefaultCellEditor(nameComboBox));
+        JComboBox<String> criteriaComboBox = new JComboBox<>();
+        criteriaComboBox.addItem("Avg");
+        criteriaComboBox.addItem("Min");
+        criteriaComboBox.addItem("Max");
+        criteriaComboBox.addItem("Error Rate");
+        criteriaComboBox.addItem("Sample Rate");
+        stringTable.getColumnModel().getColumn(1).setCellEditor(new DefaultCellEditor(criteriaComboBox));
+        JComboBox<String> symbolComboBox = new JComboBox<>();
+        symbolComboBox.addItem(">");
+        symbolComboBox.addItem(">=");
+        symbolComboBox.addItem("<");
+        symbolComboBox.addItem("<=");
+        symbolComboBox.addItem("=");
+        stringTable.getColumnModel().getColumn(2).setCellEditor(new DefaultCellEditor(symbolComboBox));
         return new JScrollPane(stringTable);
     }
 
-    /**
-     * Main visualizer setup.
-     */
-    private void init() { // WARNING: called from ctor so must not be overridden (i.e. must be private or
-                          // final)
-        this.setLayout(new BorderLayout());
-        // MAIN PANEL
-        JPanel mainPanel = new JPanel();
-        Border margin = new EmptyBorder(10, 10, 5, 10);
-        mainPanel.setBorder(margin);
-        mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
-        mainPanel.add(makeTitlePanel());
-        this.add(mainPanel, BorderLayout.NORTH);
-        this.add(createStringPanel(), BorderLayout.CENTER);
-        JPanel buttonPanel = new JPanel();
-        buttonPanel.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 10));
-        add.addActionListener(new AddPatternListener());
-        delete.addActionListener(new ClearPatternsListener());
-        buttonPanel.add(add);
-        buttonPanel.add(delete);
-        add.setEnabled(true);
-        this.add(buttonPanel, BorderLayout.SOUTH);
+    private List<HTTPSamplerProxy> findFirstNodeOfTypeHTTPSamplerProxy() {
+        JMeterTreeModel treeModel = GuiPackage.getInstance().getTreeModel();
+        List<JMeterTreeNode> listJMeterTreeNode = treeModel.getNodesOfType(HTTPSamplerProxy.class);
+        List<HTTPSamplerProxy> listHTTPSamplerProxy = new ArrayList<>();
+        for (JMeterTreeNode jMeterTreeNode : listJMeterTreeNode) {
+            listHTTPSamplerProxy.add((HTTPSamplerProxy) jMeterTreeNode.getTestElement());
+        }
+        return listHTTPSamplerProxy;
     }
 
     /**
-     * An ActionListener for deleting a pattern.
-     *
+     * An ActionListener for deleting a row of table
      */
-    private class ClearPatternsListener implements ActionListener {
-        @Override
-        public void actionPerformed(ActionEvent e) {
+    protected void checkButtonsStatus() {
+        // Disable DELETE if there are no rows in the table to delete.
+        if (tableModel.getRowCount() == 0) {
+            delete.setEnabled(false);
+        } else {
+            delete.setEnabled(true);
+        }
+    }
+
+    @Override
+    public void modifyTestElement(TestElement args) {
+        GuiUtils.stopTableEditing(stringTable);
+        super.modifyTestElement(args);
+        if (args instanceof NfrResultCollector) {
+            @SuppressWarnings("unchecked")
+            Iterator<NfrArgument> modelData = (Iterator<NfrArgument>) tableModel.iterator();
+            ((NfrResultCollector) args).getNfrlist().clear();
+            while (modelData.hasNext()) {
+                NfrArgument arg = modelData.next();
+                if (arg.getName() != null && !arg.getName().isEmpty()) {
+                    ((NfrResultCollector) args).getNfrlist().add(arg);
+                }
+            }
+        }
+        super.configureTestElement(args);
+    }
+
+    @Override
+    public void configure(TestElement el) {
+        super.configure(el);
+        if (el instanceof NfrResultCollector) {
+            tableModel.clearData();
+            for (NfrArgument nfrArgument : ((NfrResultCollector) el).getNfrlist()) {
+                tableModel.addRow(nfrArgument);
+            }
+        }
+        checkButtonsStatus();
+    }
+
+    /**
+     * Clear all rows from the table.
+     */
+    public void clear() {
+        GuiUtils.stopTableEditing(stringTable);
+        tableModel.clearData();
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        if (e.getActionCommand().equals("ADD")) {
+            GuiUtils.stopTableEditing(stringTable);
+            tableModel.addRow(new NfrArgument("", "", "", ""));
+            checkButtonsStatus();
+            // Highlight (select) and scroll to the appropriate row.
+            int rowToSelect = tableModel.getRowCount() - 1;
+            stringTable.setRowSelectionInterval(rowToSelect, rowToSelect);
+            stringTable.scrollRectToVisible(stringTable.getCellRect(rowToSelect, 0, true));
+        }
+        if (e.getActionCommand().equals("DELETE")) {
             GuiUtils.cancelEditing(stringTable);
             int[] rowsSelected = stringTable.getSelectedRows();
             stringTable.clearSelection();
@@ -245,93 +302,5 @@ public class NfrListnerGui extends NfrAbstractVisualizer implements Clearable, A
                 delete.setEnabled(false);
             }
         }
-    }
-
-    /**
-     * An ActionListener for adding a pattern.
-     */
-    private class AddPatternListener implements ActionListener {
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            // If a table cell is being edited, we should accept the current value
-            // and stop the editing before adding a new row.
-            GuiUtils.stopTableEditing(stringTable);
-            tableModel.addRow(new NfrArgument("", "", "", ""));
-            checkButtonsStatus();
-            // Highlight (select) and scroll to the appropriate row.
-            int rowToSelect = tableModel.getRowCount() - 1;
-            stringTable.setRowSelectionInterval(rowToSelect, rowToSelect);
-            stringTable.scrollRectToVisible(stringTable.getCellRect(rowToSelect, 0, true));
-        }
-    }
-
-    protected void checkButtonsStatus() {
-        // Disable DELETE if there are no rows in the table to delete.
-        if (tableModel.getRowCount() == 0) {
-            delete.setEnabled(false);
-        } else {
-            delete.setEnabled(true);
-        }
-    }
-
-    @Override
-    public TestElement createTestElement() {
-        NfrResultCollector args = getUnclonedParameters();
-        super.configureTestElement(args);
-        TestElement newTestElement = (TestElement) args.clone();
-        return newTestElement;
-    }
-
-    private NfrResultCollector getUnclonedParameters() {
-        @SuppressWarnings("unchecked") // only contains Argument (or HTTPArgument)
-        Iterator<NfrArgument> modelData = (Iterator<NfrArgument>) tableModel.iterator();
-        NfrResultCollector args = new NfrResultCollector();
-        while (modelData.hasNext()) {
-            NfrArgument arg = modelData.next();
-            args.addNfrArgument(arg);
-        }
-        return args;
-    }
-
-    @Override
-    public void modifyTestElement(TestElement args) {
-        GuiUtils.stopTableEditing(stringTable);
-        super.modifyTestElement(args);
-        if (args instanceof NfrResultCollector) {
-            Iterator<NfrArgument> modelData = (Iterator<NfrArgument>) tableModel.iterator();
-            ((NfrResultCollector) args).getNfrlist().clear();
-            while (modelData.hasNext()) {
-                NfrArgument arg = modelData.next();
-                if (arg.getName() != null && !arg.getName().isEmpty()) {
-                    ((NfrResultCollector) args).getNfrlist().add(arg);
-                }
-            }
-        }
-        
-         super.configureTestElement(args);
-    }
-
-    @Override
-    public void configure(TestElement el) {
-        super.configure(el);
-        if (el instanceof NfrResultCollector) {
-            tableModel.clearData();
-            for (NfrArgument nfrArgument :((NfrResultCollector) el).getNfrlist()) {
-                tableModel.addRow(nfrArgument);
-            }
-        }
-        checkButtonsStatus();
-    }
-
-    /**
-     * Clear all rows from the table.
-     */
-    public void clear() {
-        GuiUtils.stopTableEditing(stringTable);
-        tableModel.clearData();
-    }
-
-    @Override
-    public void actionPerformed(ActionEvent e) {
     }
 }

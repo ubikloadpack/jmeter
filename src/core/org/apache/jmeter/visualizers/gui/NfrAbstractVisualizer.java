@@ -24,7 +24,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 import javax.swing.JButton;
-import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -58,7 +57,7 @@ import org.slf4j.LoggerFactory;
  * Any additional parameters of your Visualizer need to be handled by you.</li>
  * <li>{@link org.apache.jmeter.gui.JMeterGUIComponent#createTestElement() createTestElement()}.
  * For most purposes, the default
- * {@link org.apache.jmeter.reporters.ResultCollector ResultCollector} created
+ * {@link org.apache.jmeter.reporters.NfrResultCollector NfrResultCollector} created
  * by this method is sufficient.</li>
  * <li>{@link org.apache.jmeter.gui.JMeterGUIComponent#getMenuCategories getMenuCategories()}.
  * To control where in the GUI your visualizer can be added.</li>
@@ -86,13 +85,13 @@ import org.slf4j.LoggerFactory;
  * {@link org.apache.jmeter.visualizers.Visualizer#add add(SampleResult)}
  * method and display the results as you see fit. This AbstractVisualizer and
  * the default
- * {@link org.apache.jmeter.reporters.ResultCollector ResultCollector} handle
+ * {@link org.apache.jmeter.reporters.NfrResultCollector NfrResultCollector} handle
  * logging and registering to receive SampleEvents for you - all you need to do
  * is include the JPanel created by makeTitlePanel somewhere in your gui to
  * allow users set the log file.
  * <p>
  * If you are doing more than that, you may need to extend
- * {@link org.apache.jmeter.reporters.ResultCollector ResultCollector} as well
+ * {@link org.apache.jmeter.reporters.NfrResultCollector NfrResultCollector} as well
  * and modify the {@link #configure(TestElement)},
  * {@link #modifyTestElement(TestElement)}, and {@link #createTestElement()}
  * methods to create and modify your alternate ResultCollector. For an example
@@ -114,38 +113,12 @@ public abstract class NfrAbstractVisualizer
     /** A panel allowing results to be saved. */
     private final FilePanel filePanel;
 
-    /** A checkbox choosing whether or not only errors should be logged. */
-    private final JCheckBox errorLogging;
-
-    /* A checkbox choosing whether or not only successes should be logged. */
-    private final JCheckBox successOnlyLogging;
-
     protected NfrResultCollector collector = new NfrResultCollector();
 
     protected boolean isStats = false;
 
     public NfrAbstractVisualizer() {
         super();
-
-        // errorLogging and successOnlyLogging are mutually exclusive
-        errorLogging = new JCheckBox(JMeterUtils.getResString("log_errors_only")); // $NON-NLS-1$
-        errorLogging.addActionListener(new ActionListener(){
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (errorLogging.isSelected()) {
-                    successOnlyLogging.setSelected(false);
-                }
-            }
-        });
-        successOnlyLogging = new JCheckBox(JMeterUtils.getResString("log_success_only")); // $NON-NLS-1$
-        successOnlyLogging.addActionListener(new ActionListener(){
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (successOnlyLogging.isSelected()) {
-                    errorLogging.setSelected(false);
-                }
-            }
-        });
         JButton saveConfigButton = new JButton(JMeterUtils.getResString("config_save_settings")); // $NON-NLS-1$
         saveConfigButton.addActionListener(new ActionListener() {
             @Override
@@ -163,8 +136,6 @@ public abstract class NfrAbstractVisualizer
         filePanel = new FilePanel(JMeterUtils.getResString("file_visualizer_output_file"), EXTS); // $NON-NLS-1$
         filePanel.addChangeListener(this);
         filePanel.add(new JLabel(JMeterUtils.getResString("log_only"))); // $NON-NLS-1$
-        filePanel.add(errorLogging);
-        filePanel.add(successOnlyLogging);
         filePanel.add(saveConfigButton);
 
     }
@@ -172,18 +143,6 @@ public abstract class NfrAbstractVisualizer
     @Override
     public boolean isStats() {
         return isStats;
-    }
-
-    /**
-     * Gets the checkbox which selects whether or not only errors should be
-     * logged. Subclasses don't normally need to worry about this checkbox,
-     * because it is automatically added to the GUI in {@link #makeTitlePanel()},
-     * and the behavior is handled in this base class.
-     *
-     * @return the error logging checkbox
-     */
-    protected JCheckBox getErrorLoggingCheckbox() {
-        return errorLogging;
     }
 
     /**
@@ -238,8 +197,6 @@ public abstract class NfrAbstractVisualizer
      * @see #getFilePanel()
      */
     public String getFile() {
-        // TODO: Does this method need to be public? It isn't currently
-        // called outside of this class.
         return filePanel.getFilename();
     }
 
@@ -255,7 +212,6 @@ public abstract class NfrAbstractVisualizer
     public void stateChanged(ChangeEvent e) {
         log.debug("getting new collector");
         collector = (NfrResultCollector) createTestElement();
-        //collector.loadExistingFile();
     }
 
     /* Implements JMeterGUIComponent.createTestElement() */
@@ -274,8 +230,6 @@ public abstract class NfrAbstractVisualizer
         configureTestElement((AbstractListenerElement) c);
         if (c instanceof NfrResultCollector) {
             NfrResultCollector rc = (NfrResultCollector) c;
-            rc.setErrorLogging(errorLogging.isSelected());
-            rc.setSuccessOnlyLogging(successOnlyLogging.isSelected());
             rc.setFilename(getFile());
             collector = rc;
         }
@@ -287,8 +241,6 @@ public abstract class NfrAbstractVisualizer
         super.configure(el);
         setFile(el.getPropertyAsString(NfrResultCollector.FILENAME));
         NfrResultCollector rc = (NfrResultCollector) el;
-        errorLogging.setSelected(rc.isErrorLogging());
-        successOnlyLogging.setSelected(rc.isSuccessOnlyLogging());
         if (collector == null) {
             collector = new NfrResultCollector();
         }
@@ -306,14 +258,6 @@ public abstract class NfrAbstractVisualizer
      *            the TestElement being created.
      */
     protected void configureTestElement(AbstractListenerElement mc) {
-        // TODO: Should the method signature of this method be changed to
-        // match the super-implementation (using a TestElement parameter
-        // instead of AbstractListenerElement)? This would require an
-        // instanceof check before adding the listener (below), but would
-        // also make the behavior a bit more obvious for sub-classes -- the
-        // Java rules dealing with this situation aren't always intuitive,
-        // and a subclass may think it is calling this version of the method
-        // when it is really calling the superclass version instead.
         super.configureTestElement(mc);
         mc.setListener(this);
     }

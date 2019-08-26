@@ -495,7 +495,7 @@ public class StandardJMeterEngine implements JMeterEngine, Runnable {
             }
             waitThreadsStopped(); // wait for Post threads to stop
         }
-        nfr();
+        runNFRTest();
         notifyTestListenersOfEnd(testListeners);
         JMeterContextService.endTest();
         if (JMeter.isNonGUI() && SYSTEM_EXIT_FORCED) {
@@ -504,12 +504,12 @@ public class StandardJMeterEngine implements JMeterEngine, Runnable {
         }
     }
 
-    private boolean nfr() {
+    private void runNFRTest() {
         JMeterTreeNode treeNode = findFirstNodeOfType(NfrResultCollector.class);
         if (treeNode != null) {
             NfrResultCollector nfrResultCollector = (NfrResultCollector) treeNode.getTestElement();
             for (NfrArgument nfrArgument : nfrResultCollector.getNfrlist()) {
-                SamplingStatCalculator samplingStatCalculator = NfrListnerGui.tableRows.get(nfrArgument.getName());
+                SamplingStatCalculator samplingStatCalculator = NfrListnerGui.getResult().get(nfrArgument.getName());
                 if (samplingStatCalculator != null) {
                     System.out.println("Key = " + nfrArgument.getName() + ", Value = " + samplingStatCalculator);
                     boolean result=getResultNfrTest(nfrArgument, samplingStatCalculator);
@@ -519,7 +519,6 @@ public class StandardJMeterEngine implements JMeterEngine, Runnable {
             }
             
         }
-        return false;
     }
 
     private boolean getResultNfrTest(NfrArgument nfrArgument, SamplingStatCalculator samplingStatCalculator) {
@@ -570,6 +569,7 @@ public class StandardJMeterEngine implements JMeterEngine, Runnable {
         JMeterTreeModel treeModel = GuiPackage.getInstance().getTreeModel();
         return treeModel.getNodesOfType(type).stream().filter(JMeterTreeNode::isEnabled).findFirst().orElse(null);
     }
+    
     private void startThreadGroup(AbstractThreadGroup group, int groupCount, SearchByClass<?> searcher, List<?> testLevelElements, ListenerNotifier notifier)
     {
         try {

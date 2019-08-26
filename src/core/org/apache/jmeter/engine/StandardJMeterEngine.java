@@ -39,6 +39,7 @@ import org.apache.jmeter.testbeans.TestBeanHelper;
 import org.apache.jmeter.testelement.TestElement;
 import org.apache.jmeter.testelement.TestPlan;
 import org.apache.jmeter.testelement.TestStateListener;
+import org.apache.jmeter.testelement.property.JMeterProperty;
 import org.apache.jmeter.threads.AbstractThreadGroup;
 import org.apache.jmeter.threads.JMeterContextService;
 import org.apache.jmeter.threads.ListenerNotifier;
@@ -509,7 +510,8 @@ public class StandardJMeterEngine implements JMeterEngine, Runnable {
         JMeterTreeNode treeNode = treeModel.getNodesOfType(NfrResultCollector.class).stream().filter(JMeterTreeNode::isEnabled).findFirst().orElse(null);
         if (treeNode != null) {
             NfrResultCollector nfrResultCollector = (NfrResultCollector) treeNode.getTestElement();
-            for (NfrArgument nfrArgument : nfrResultCollector.getNfrlist()) {
+            for (JMeterProperty jMeterProperty : nfrResultCollector.getNfrArguments()) {
+                NfrArgument nfrArgument = (NfrArgument) jMeterProperty.getObjectValue();
                 SamplingStatCalculator samplingStatCalculator = NfrListnerGui.getResult().get(nfrArgument.getName());
                 if (samplingStatCalculator != null) {
                     System.out.println("Key = " + nfrArgument.getName() + ", Value = " + samplingStatCalculator);

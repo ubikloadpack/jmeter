@@ -17,18 +17,8 @@
  */
 package org.apache.jmeter.reporters;
 
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.io.RandomAccessFile;
 import java.io.Serializable;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,15 +31,11 @@ import org.apache.jmeter.samplers.SampleEvent;
 import org.apache.jmeter.samplers.SampleListener;
 import org.apache.jmeter.samplers.SampleResult;
 import org.apache.jmeter.samplers.SampleSaveConfiguration;
-import org.apache.jmeter.save.CSVSaveService;
-import org.apache.jmeter.save.SaveService;
-import org.apache.jmeter.services.FileServer;
 import org.apache.jmeter.testelement.TestStateListener;
 import org.apache.jmeter.testelement.property.CollectionProperty;
 import org.apache.jmeter.testelement.property.ObjectProperty;
 import org.apache.jmeter.testelement.property.PropertyIterator;
 import org.apache.jmeter.testelement.property.TestElementProperty;
-import org.apache.jmeter.util.JMeterUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -59,42 +45,11 @@ import org.slf4j.LoggerFactory;
  */
 public class NfrResultCollector extends AbstractListenerElement
         implements SampleListener, Clearable, Serializable, TestStateListener, Remoteable, NoThreadClone {
-    /**
-     * @return the nfrlist
-     */
-    public List<NfrArgument> getNfrlist() {
-        return nfrlist;
-    }
-
-    /**
-     * @param nfrlist the nfrlist to set
-     */
-    public void setNfrlist(List<NfrArgument> nfrlist) {
-        this.nfrlist = nfrlist;
-    }
-
-    /**
-     * Keep track of the file writer and the configuration, as the instance used to
-     * close them is not the same as the instance that creates them. This means one
-     * cannot use the saved PrintWriter or use getSaveConfig()
-     */
-    private static class FileEntry {
-        final PrintWriter pw;
-        final SampleSaveConfiguration config;
-
-        FileEntry(PrintWriter printWriter, SampleSaveConfiguration sampleSaveConfiguration) {
-            this.pw = printWriter;
-            this.config = sampleSaveConfiguration;
-        }
-    }
 
     private static final class ShutdownHook implements Runnable {
         @Override
         public void run() {
             log.info("Shutdown hook started");
-            synchronized (LOCK) {
-                finalizeFileOutput();
-            }
             log.info("Shutdown hook ended");
         }
     }
@@ -104,23 +59,10 @@ public class NfrResultCollector extends AbstractListenerElement
     // This string is used to identify local test runs, so must not be a valid host
     // name
     private static final String TEST_IS_LOCAL = "*local*"; // $NON-NLS-1$
-    private static final String TESTRESULTS_START = "<testResults>"; // $NON-NLS-1$
-    private static final String TESTRESULTS_START_V1_1_PREVER = "<testResults version=\""; // $NON-NLS-1$
-    private static final String TESTRESULTS_START_V1_1_POSTVER = "\">"; // $NON-NLS-1$
-    private static final String TESTRESULTS_END = "</testResults>"; // $NON-NLS-1$
-    // we have to use version 1.0, see bug 59973
-    private static final String XML_HEADER = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"; // $NON-NLS-1$
-    private static final int MIN_XML_FILE_LEN = XML_HEADER.length() + TESTRESULTS_START.length()
-            + TESTRESULTS_END.length();
-    public static final String FILENAME = "filename"; // $NON-NLS-1$
     private static final String SAVE_CONFIG = "saveConfig"; // $NON-NLS-1$
-    /** AutoFlush on each line */
-    private static final boolean SAVING_AUTOFLUSH = JMeterUtils.getPropDefault("jmeter.save.saveservice.autoflush", //$NON-NLS-1$
-            false);
     // Static variables
     // Lock used to guard static mutable variables
     private static final Object LOCK = new Object();
-    private static final Map<String, FileEntry> files = new HashMap<>();
     /**
      * Shutdown Hook that ensures PrintWriter is flushed is CTRL+C or kill is called
      * during a test
@@ -133,8 +75,6 @@ public class NfrResultCollector extends AbstractListenerElement
      * started whilst the remote test is still running.
      */
     private static int instanceCount; // Keep track of how many instances are active
-    // Instance variables (guarded by volatile)
-    private transient volatile PrintWriter out;
     /**
      * Is a test running ?
      */
@@ -149,10 +89,7 @@ public class NfrResultCollector extends AbstractListenerElement
      */
     public NfrResultCollector() {
         this(null);
-        setProperty(new CollectionProperty(NFRARGUMENTS, new ArrayList<NfrArgument>()));
     }
-
-    List<NfrArgument> nfrlist = new ArrayList<NfrArgument>();
 
     /**
      * Constructor which sets the used {@link Summariser}
@@ -175,52 +112,6 @@ public class NfrResultCollector extends AbstractListenerElement
         clone.summariser = this.summariser;
         return clone;
     }
-
-    private void setFilenameProperty(String f) {
-        setProperty(FILENAME, f);
-    }
-
-    /**
-     * Get the filename of the file this collector uses
-     *
-     * @return The name of the file
-     */
-    public String getFilename() {
-        return getPropertyAsString(FILENAME);
-    }
-
-    /**
-     * Decides whether or not to a sample is wanted based on:
-     * <ul>
-     * <li>errorOnly</li>
-     * <li>successOnly</li>
-     * <li>sample success</li>
-     * </ul>
-     * This version is intended to be called by code that loops over many samples;
-     * it is cheaper than fetching the settings each time.
-     * 
-     * @param success     status of sample
-     * @param errorOnly   if errors only wanted
-     * @param successOnly if success only wanted
-     * @return whether to log/display the sample
-     */
-    public static boolean isSampleWanted(boolean success, boolean errorOnly, boolean successOnly) {
-        return (!errorOnly && !successOnly) || (success && successOnly) || (!success && errorOnly);
-        // successOnly and errorOnly cannot both be set
-    }
-
-    /**
-     * Sets the filename attribute of the ResultCollector object.
-     *
-     * @param f the new filename value
-     */
-    public void setFilename(String f) {
-        if (inTest) {
-            return;
-        }
-        setFilenameProperty(f);
-    }
-
     /**
      * Get the nfrarguments.
      *
@@ -409,8 +300,6 @@ public class NfrResultCollector extends AbstractListenerElement
                 } else {
                     log.warn("Should not happen: shutdownHook==null, instanceCount={}", instanceCount);
                 }
-                finalizeFileOutput();
-                out = null;
                 inTest = false;
             }
         }
@@ -428,14 +317,6 @@ public class NfrResultCollector extends AbstractListenerElement
             }
             instanceCount++;
             try {
-                if (out == null) {
-                    try {
-                        // Note: getFileWriter ignores a null filename
-                        out = getFileWriter(getFilename(), getSaveConfig());
-                    } catch (FileNotFoundException e) {
-                        out = null;
-                    }
-                }
                 if (getVisualizer() != null) {
                     this.isStats = getVisualizer().isStats();
                 }
@@ -459,122 +340,6 @@ public class NfrResultCollector extends AbstractListenerElement
         testStarted(TEST_IS_LOCAL);
     }
 
-    private static void writeFileStart(PrintWriter writer, SampleSaveConfiguration saveConfig) {
-        if (saveConfig.saveAsXml()) {
-            writer.print(XML_HEADER);
-            // Write the EOL separately so we generate LF line ends on Unix and Windows
-            writer.print("\n"); // $NON-NLS-1$
-            String pi = saveConfig.getXmlPi();
-            if (pi.length() > 0) {
-                writer.println(pi);
-            }
-            // Can't do it as a static initialisation, because SaveService
-            // is being constructed when this is called
-            writer.print(TESTRESULTS_START_V1_1_PREVER);
-            writer.print(SaveService.getVERSION());
-            writer.print(TESTRESULTS_START_V1_1_POSTVER);
-            // Write the EOL separately so we generate LF line ends on Unix and Windows
-            writer.print("\n"); // $NON-NLS-1$
-        } else if (saveConfig.saveFieldNames()) {
-            writer.println(CSVSaveService.printableFieldNamesToString(saveConfig));
-        }
-    }
-
-    private static void writeFileEnd(PrintWriter pw, SampleSaveConfiguration saveConfig) {
-        if (saveConfig.saveAsXml()) {
-            pw.print("\n"); // $NON-NLS-1$
-            pw.print(TESTRESULTS_END);
-            pw.print("\n");// Added in version 1.1 // $NON-NLS-1$
-        }
-    }
-
-    private static PrintWriter getFileWriter(final String pFilename, SampleSaveConfiguration saveConfig)
-            throws IOException {
-        if (pFilename == null || pFilename.length() == 0) {
-            return null;
-        }
-        if (log.isDebugEnabled()) {
-            log.debug("Getting file: {} in thread {}", pFilename, Thread.currentThread().getName());
-        }
-        String filename = FileServer.resolveBaseRelativeName(pFilename);
-        filename = new File(filename).getCanonicalPath(); // try to ensure uniqueness (Bug 60822)
-        FileEntry fe = files.get(filename);
-        PrintWriter writer = null;
-        boolean trimmed = true;
-        if (fe == null) {
-            if (saveConfig.saveAsXml()) {
-                trimmed = trimLastLine(filename);
-            } else {
-                trimmed = new File(filename).exists();
-            }
-            // Find the name of the directory containing the file
-            // and create it - if there is one
-            File pdir = new File(filename).getParentFile();
-            if (pdir != null) {
-                // returns false if directory already exists, so need to check again
-                if (pdir.mkdirs()) {
-                    if (log.isInfoEnabled()) {
-                        log.info("Folder at {} was created", pdir.getAbsolutePath());
-                    }
-                } // else if might have been created by another process so not a problem
-                if (!pdir.exists()) {
-                    log.warn("Error creating directories for {}", pdir);
-                }
-            }
-            writer = new PrintWriter(
-                    new OutputStreamWriter(new BufferedOutputStream(new FileOutputStream(filename, trimmed)),
-                            SaveService.getFileEncoding(StandardCharsets.UTF_8.name())),
-                    SAVING_AUTOFLUSH);
-            if (log.isDebugEnabled()) {
-                log.debug("Opened file: {} in thread {}", filename, Thread.currentThread().getName());
-            }
-            files.put(filename, new FileEntry(writer, saveConfig));
-        } else {
-            writer = fe.pw;
-        }
-        if (!trimmed) {
-            log.debug("Writing header to file: {}", filename);
-            writeFileStart(writer, saveConfig);
-        }
-        return writer;
-    }
-
-    // returns false if the file did not contain the terminator
-    private static boolean trimLastLine(String filename) {
-        try (RandomAccessFile raf = new RandomAccessFile(filename, "rw")) { // $NON-NLS-1$
-            long len = raf.length();
-            if (len < MIN_XML_FILE_LEN) {
-                return false;
-            }
-            raf.seek(len - TESTRESULTS_END.length() - 10);
-            String line;
-            long pos = raf.getFilePointer();
-            int end = 0;
-            while ((line = raf.readLine()) != null)// reads to end of line OR end of file
-            {
-                end = line.indexOf(TESTRESULTS_END);
-                if (end >= 0) // found the string
-                {
-                    break;
-                }
-                pos = raf.getFilePointer();
-            }
-            if (line == null) {
-                log.warn("Unexpected EOF trying to find XML end marker in {}", filename);
-                return false;
-            }
-            raf.setLength(pos + end);// Truncate the file
-        } catch (FileNotFoundException e) {
-            return false;
-        } catch (IOException e) {
-            if (log.isWarnEnabled()) {
-                log.warn("Error trying to find XML terminator. {}", e.toString());
-            }
-            return false;
-        }
-        return true;
-    }
-
     @Override
     public void sampleStarted(SampleEvent e) {
         // NOOP
@@ -594,18 +359,9 @@ public class NfrResultCollector extends AbstractListenerElement
     public void sampleOccurred(SampleEvent event) {
         SampleResult result = event.getResult();
         sendToVisualizer(result);
-        if (out != null && !isResultMarked(result) && !this.isStats) {
+        if (!this.isStats) {
             SampleSaveConfiguration config = getSaveConfig();
             result.setSaveConfig(config);
-            try {
-                if (config.saveAsXml()) {
-                    SaveService.saveSampleResult(event, out);
-                } else { // !saveAsXml
-                    CSVSaveService.saveSampleResult(event, out);
-                }
-            } catch (Exception err) {
-                log.error("Error trying to record a sample", err); // should throw exception back to caller
-            }
         }
         if (summariser != null) {
             summariser.sampleOccurred(event);
@@ -617,46 +373,6 @@ public class NfrResultCollector extends AbstractListenerElement
             getVisualizer().add(r);
         }
     }
-
-    /**
-     * Checks if the sample result is marked or not, and marks it
-     * 
-     * @param res - the sample result to check
-     * @return <code>true</code> if the result was marked
-     */
-    private boolean isResultMarked(SampleResult res) {
-        String filename = getFilename();
-        return res.markFile(filename);
-    }
-
-    /**
-     * Flush PrintWriter to synchronize file contents
-     */
-    public void flushFile() {
-        if (out != null) {
-            log.info("forced flush through ResultCollector#flushFile");
-            out.flush();
-        }
-    }
-
-    private static void finalizeFileOutput() {
-        for (Map.Entry<String, NfrResultCollector.FileEntry> me : files.entrySet()) {
-            String key = me.getKey();
-            NfrResultCollector.FileEntry value = me.getValue();
-            try {
-                log.debug("Closing: {}", key);
-                writeFileEnd(value.pw, value.config);
-                value.pw.close();
-                if (value.pw.checkError()) {
-                    log.warn("Problem detected during use of {}", key);
-                }
-            } catch (Exception ex) {
-                log.error("Error closing file {}", key, ex);
-            }
-        }
-        files.clear();
-    }
-
     /**
      * @return Returns the saveConfig.
      */

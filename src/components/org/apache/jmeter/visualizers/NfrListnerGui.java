@@ -19,6 +19,7 @@
 package org.apache.jmeter.visualizers;
 
 import java.awt.BorderLayout;
+import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -37,35 +38,39 @@ import javax.swing.DefaultCellEditor;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
 import org.apache.jmeter.config.NfrArgument;
-import org.apache.jmeter.gui.GUIMenuSortOrder;
 import org.apache.jmeter.gui.GuiPackage;
 import org.apache.jmeter.gui.SavePropertyDialog;
 import org.apache.jmeter.gui.tree.JMeterTreeModel;
 import org.apache.jmeter.gui.tree.JMeterTreeNode;
-import org.apache.jmeter.gui.util.FilePanel;
 import org.apache.jmeter.gui.util.HeaderAsPropertyRenderer;
 import org.apache.jmeter.gui.util.TextAreaCellRenderer;
 import org.apache.jmeter.gui.util.TextAreaTableCellEditor;
 import org.apache.jmeter.protocol.http.sampler.HTTPSamplerProxy;
+import org.apache.jmeter.reporters.AbstractListenerElement;
 import org.apache.jmeter.reporters.NfrResultCollector;
 import org.apache.jmeter.samplers.Clearable;
 import org.apache.jmeter.samplers.SampleResult;
+import org.apache.jmeter.samplers.SampleSaveConfiguration;
 import org.apache.jmeter.testelement.TestElement;
+import org.apache.jmeter.testelement.property.JMeterProperty;
 import org.apache.jmeter.util.JMeterUtils;
-import org.apache.jmeter.visualizers.gui.NfrAbstractVisualizer;
+import org.apache.jmeter.visualizers.gui.AbstractListenerGui;
 import org.apache.jorphan.gui.ComponentUtil;
 import org.apache.jorphan.gui.GuiUtils;
 import org.apache.jorphan.gui.ObjectTableModel;
 import org.apache.jorphan.reflect.Functor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Interface for Non-function-requirement Test.
@@ -74,8 +79,7 @@ import org.apache.jorphan.reflect.Functor;
  * @author sqq94
  *
  */
-@GUIMenuSortOrder(3)
-public class NfrListnerGui extends NfrAbstractVisualizer implements Clearable, ActionListener {
+public class NfrListnerGui extends AbstractListenerGui implements Clearable, ActionListener,Visualizer,ChangeListener{
     private static final long serialVersionUID = 242L;
     private final JCheckBox useGroupName = new JCheckBox(JMeterUtils.getResString("aggregate_graph_use_group_name")); //$NON-NLS-1$
     /** Lock used to protect tableRows update + model update */
@@ -87,11 +91,39 @@ public class NfrListnerGui extends NfrAbstractVisualizer implements Clearable, A
     private JTable stringTable;
     /** Table model for the pattern table. */
     private ObjectTableModel tableModel;
-    /** File Extensions */
-    private static final String[] EXTS = { ".xml", ".jtl", ".csv" }; // $NON-NLS-1$ $NON-NLS-2$ $NON-NLS-3$
-    /** A panel allowing results to be saved. */
-    private final FilePanel filePanel;
-
+    protected NfrResultCollector collector = new NfrResultCollector();
+    protected boolean isStats = false;
+    /** Logging. */
+    private static final Logger log = LoggerFactory.getLogger(NfrListnerGui.class);
+    @Override
+    public boolean isStats() {
+        return isStats;
+    }
+    protected NfrResultCollector getModel() {
+        return collector;
+    }
+    /**
+     * Invoked when the target of the listener has changed its state. This
+     * implementation assumes that the target is the FilePanel, and will update
+     * the result collector for the new filename.
+     *
+     * @param e
+     *            the event that has occurred
+     */
+    @Override
+    public void stateChanged(ChangeEvent e) {
+        log.debug("getting new collector");
+        collector = (NfrResultCollector) createTestElement();
+    }
+    /* Implements JMeterGUIComponent.createTestElement() */
+    @Override
+    public TestElement createTestElement() {
+        if (collector == null) {
+            collector = new NfrResultCollector();
+        }
+        modifyTestElement(collector);
+        return (TestElement) collector.clone();
+    }
     public NfrListnerGui() {
         super();
         JButton saveConfigButton = new JButton(JMeterUtils.getResString("config_save_settings")); // $NON-NLS-1$
@@ -106,11 +138,6 @@ public class NfrListnerGui extends NfrAbstractVisualizer implements Clearable, A
                 d.setVisible(true);
             }
         });
-        // FILE PANEL
-        filePanel = new FilePanel(JMeterUtils.getResString("file_visualizer_output_file"), EXTS); // $NON-NLS-1$
-        filePanel.addChangeListener(this);
-        filePanel.add(new JLabel(JMeterUtils.getResString("log_only"))); // $NON-NLS-1$
-        filePanel.add(saveConfigButton);
         this.setLayout(new BorderLayout());
         // MAIN PANEL
         JPanel mainPanel = new JPanel();
@@ -131,10 +158,11 @@ public class NfrListnerGui extends NfrAbstractVisualizer implements Clearable, A
         add.setEnabled(true);
         this.add(buttonPanel, BorderLayout.SOUTH);
     }
-    public static Map<String, SamplingStatCalculator> getResult(){
+
+    public static Map<String, SamplingStatCalculator> getResult() {
         return Collections.unmodifiableMap(tableRows);
-        
     }
+
     @Override
     public String getLabelResource() {
         return "non_function_test"; //$NON-NLS-1$
@@ -237,16 +265,16 @@ public class NfrListnerGui extends NfrAbstractVisualizer implements Clearable, A
     @Override
     public void modifyTestElement(TestElement args) {
         GuiUtils.stopTableEditing(stringTable);
-        super.modifyTestElement(args);
+        configureTestElement((AbstractListenerElement) args);
         if (args instanceof NfrResultCollector) {
+            NfrResultCollector rc = (NfrResultCollector) args;
+            collector = rc;
             @SuppressWarnings("unchecked")
             Iterator<NfrArgument> modelData = (Iterator<NfrArgument>) tableModel.iterator();
-            ((NfrResultCollector) args).getNfrlist().clear();
+            ((NfrResultCollector) args).removeAllNfrArguments();
             while (modelData.hasNext()) {
                 NfrArgument arg = modelData.next();
-                if (arg.getName() != null && !arg.getName().isEmpty()) {
-                    ((NfrResultCollector) args).getNfrlist().add(arg);
-                }
+                ((NfrResultCollector) args).addNfrArgument(arg);
             }
         }
         super.configureTestElement(args);
@@ -256,14 +284,33 @@ public class NfrListnerGui extends NfrAbstractVisualizer implements Clearable, A
     public void configure(TestElement el) {
         super.configure(el);
         if (el instanceof NfrResultCollector) {
+            NfrResultCollector rc = (NfrResultCollector) el;
+            if (collector == null) {
+                collector = new NfrResultCollector();
+            }
+            collector.setSaveConfig((SampleSaveConfiguration) rc.getSaveConfig().clone());
             tableModel.clearData();
-            for (NfrArgument nfrArgument : ((NfrResultCollector) el).getNfrlist()) {
-                tableModel.addRow(nfrArgument);
+            for (JMeterProperty jMeterProperty : ((NfrResultCollector) el).getNfrArguments()) {
+                NfrArgument arg = (NfrArgument) jMeterProperty.getObjectValue();
+                tableModel.addRow(arg);
             }
         }
         checkButtonsStatus();
     }
-
+    protected void configureTestElement(AbstractListenerElement mc) {
+        super.configureTestElement(mc);
+        mc.setListener(this);
+    }
+    @Override
+    protected Container makeTitlePanel() {
+        Container panel = super.makeTitlePanel();
+        // Note: the file panel already includes the error logging checkbox,
+        // so we don't have to add it explicitly.
+        return panel;
+    }
+    protected void setModel(NfrResultCollector collector) {
+        this.collector = collector;
+    }
     /**
      * Clear all rows from the table.
      */

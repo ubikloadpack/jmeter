@@ -121,6 +121,13 @@ public class NfrArgument extends AbstractTestElement implements Serializable {
         return getPropertyAsString(SYMBOL);
     }
     /**
+     * Create a new NfrArgument without a name, value, symbol, criteria.
+     */
+    public NfrArgument() {
+        this(null, null, null, null);
+    }
+
+    /**
     * Create a new Argument with the specified name, value, symbol, criteria.
     *
     * @param name

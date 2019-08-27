@@ -17,7 +17,6 @@
  */
 package org.apache.jmeter.extractor.json.jsonpath;
 
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -102,7 +101,7 @@ public class JMESExtractor extends AbstractScopedTestElement implements Serializ
                 ObjectMapper mapper = new ObjectMapper();
                 JsonNode actualObj = mapper.readValue(jsonResponse, JsonNode.class);
                 result = JMES_EXTRACTOR_CACHE.get(jsonPathExpression).search(actualObj);
-                List<String> resultList = split(result);
+                List<String> resultList = splitJson(result);
                 if (resultList.isEmpty()) {
                     vars.put(refName, defaultValue);
                     vars.put(refName + REF_MATCH_NR, "0"); //$NON-NLS-1$
@@ -162,7 +161,7 @@ public class JMESExtractor extends AbstractScopedTestElement implements Serializ
         }
     }
 
-    public List<String> split(JsonNode jsonNode) throws IOException {
+    public List<String> splitJson(JsonNode jsonNode) {
         List<String> splittedJsonElements = new ArrayList<>();
         if (jsonNode.isArray()) {
             ArrayNode arrayNode = (ArrayNode) jsonNode;
@@ -183,9 +182,9 @@ public class JMESExtractor extends AbstractScopedTestElement implements Serializ
         }
     }
 
-    private void placeObjectIntoVars(JMeterVariables vars, String currentRefName, List<String> extractedValues,
+    private void placeObjectIntoVars(JMeterVariables vars, String refName, List<String> extractedValues,
             int matchNr) {
-        vars.put(currentRefName, extractedValues.get(matchNr));
+        vars.put(refName, extractedValues.get(matchNr));
     }
 
     public String getJsonPathExpression() {

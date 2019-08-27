@@ -57,7 +57,6 @@ public class JMESExtractor extends AbstractScopedTestElement implements Serializ
     private static final String DEFAULT_VALUE = "JMESExtractor.defaultValue"; // $NON-NLS-1$
     private static final String MATCH_NUMBER = "JMESExtractor.match_number"; // $NON-NLS-1$
     private static final String REF_MATCH_NR = "_matchNr"; // $NON-NLS-1$
-    private static final String ALL_SUFFIX = "_ALL"; // $NON-NLS-1$
     private static final LoadingCache<String, Expression<JsonNode>> JMES_EXTRACTOR_CACHE;
     static {
         final int cacheSize = JMeterUtils.getPropDefault("JMESExtractor.parser.cache.size", 400);
@@ -106,8 +105,7 @@ public class JMESExtractor extends AbstractScopedTestElement implements Serializ
                     vars.put(refName, defaultValue);
                     vars.put(refName + REF_MATCH_NR, "0"); //$NON-NLS-1$
                     if (matchNumber < 0) {
-                        log.debug("No value extracted, storing empty in: {}{}", refName, ALL_SUFFIX);
-                        vars.put(refName + ALL_SUFFIX, "");
+                        log.debug("No value extracted, storing empty in: {}", refName);
                     }
                 } else {
                     // if more than one value extracted, suffix with "_index"
@@ -141,13 +139,8 @@ public class JMESExtractor extends AbstractScopedTestElement implements Serializ
                         // else just one value extracted
                         String suffix = (matchNumber < 0) ? "_1" : "";
                         placeObjectIntoVars(vars, refName + suffix, resultList, 0);
-                        if (matchNumber < 0) {
-                            vars.put(refName + ALL_SUFFIX, vars.get(refName + suffix));
-                        }
                     }
-                    if (matchNumber != 0) {
-                        vars.put(refName + REF_MATCH_NR, Integer.toString(resultList.size()));
-                    }
+                    vars.put(refName + REF_MATCH_NR, Integer.toString(resultList.size()));
                 }
             }
         } catch (Exception e) {
@@ -182,8 +175,7 @@ public class JMESExtractor extends AbstractScopedTestElement implements Serializ
         }
     }
 
-    private void placeObjectIntoVars(JMeterVariables vars, String refName, List<String> extractedValues,
-            int matchNr) {
+    private void placeObjectIntoVars(JMeterVariables vars, String refName, List<String> extractedValues, int matchNr) {
         vars.put(refName, extractedValues.get(matchNr));
     }
 

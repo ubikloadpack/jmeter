@@ -159,6 +159,7 @@ public class TestJMESExtractor {
         processor.process();
         assertThat(vars.get("varname"), CoreMatchers.is("value"));
         assertThat(vars.get("varname_1"), CoreMatchers.is(CoreMatchers.nullValue()));
+        assertThat(vars.get("varname_matchNr"), CoreMatchers.is("1"));
     }
 
     @Test
@@ -175,7 +176,7 @@ public class TestJMESExtractor {
                 CoreMatchers.is(CoreMatchers.anyOf(CoreMatchers.is("one"), CoreMatchers.is("two"))));
         assertThat(vars.get("varname_1"), CoreMatchers.is(CoreMatchers.nullValue()));
         assertThat(vars.get("varname_2"), CoreMatchers.is(CoreMatchers.nullValue()));
-        assertThat(vars.get("varname_matchNr"), CoreMatchers.is(CoreMatchers.nullValue()));
+        assertThat(vars.get("varname_matchNr"), CoreMatchers.is("2"));
     }
 
     @Test
@@ -184,8 +185,8 @@ public class TestJMESExtractor {
         JMESExtractor processor = setupProcessor(context, "-1");
         JMeterVariables vars = new JMeterVariables();
         processor.setJsonPathExpression("[*]");
-        context.setVariables(vars);
         vars.put("contentvar", "");
+        context.setVariables(vars);
         processor.process();
         assertThat(vars.get("varname_matchNr"), CoreMatchers.is(CoreMatchers.nullValue()));
         assertThat(vars.get("varname_1"), CoreMatchers.is(CoreMatchers.nullValue()));
@@ -203,6 +204,5 @@ public class TestJMESExtractor {
         vars.put("contentvar", "{\"a\": {\"b\": {\"c\": {\"d\": \"value\"}}}}");
         processor.process();
         assertThat(vars.get("varname"), CoreMatchers.is("NONE"));
-        assertThat(vars.get("varname_matchNr"), CoreMatchers.is(CoreMatchers.nullValue()));
     }
 }

@@ -17,7 +17,6 @@
  */
 package org.apache.jmeter.extractor;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 
 import org.apache.jmeter.extractor.json.jsonpath.JMESExtractor;
@@ -36,6 +35,19 @@ public class TestJMESExtractor {
         processor.setDefaultValue("NONE");
         processor.setScopeVariable("contentvar");
         return processor;
+    }
+    @Test
+    public void testJMESExtractorZeroMatch() {
+        // test1
+        JMeterContext context = JMeterContextService.getContext();
+        JMESExtractor processor = setupProcessor(context, "-1");
+        JMeterVariables vars = new JMeterVariables();
+        context.setVariables(vars);
+        processor.setJsonPathExpression("a.b.c.f");
+        vars.put("contentvar", "{\"a\": {\"b\": {\"c\": {\"d\": \"value\"}}}}");
+        processor.process();
+        assertThat(vars.get("varname"), CoreMatchers.is("NONE"));
+        assertThat(vars.get("varname_matchNr"), CoreMatchers.is("0"));
     }
 
     @Test
@@ -189,9 +201,7 @@ public class TestJMESExtractor {
         context.setVariables(vars);
         processor.process();
         assertThat(vars.get("varname_matchNr"), CoreMatchers.is(CoreMatchers.nullValue()));
-        assertThat(vars.get("varname_1"), CoreMatchers.is(CoreMatchers.nullValue()));
-        assertThat(vars.get("varname_2"), CoreMatchers.is(CoreMatchers.nullValue()));
-        assertEquals("NONE", vars.get("varname"));
+        assertThat(vars.get("varname"), CoreMatchers.is("NONE"));
     }
 
     @Test
@@ -204,5 +214,6 @@ public class TestJMESExtractor {
         vars.put("contentvar", "{\"a\": {\"b\": {\"c\": {\"d\": \"value\"}}}}");
         processor.process();
         assertThat(vars.get("varname"), CoreMatchers.is("NONE"));
+        assertThat(vars.get("varname_matchNr"), CoreMatchers.is("0"));
     }
 }

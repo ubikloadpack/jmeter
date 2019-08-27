@@ -100,14 +100,14 @@ public class JMESExtractor extends AbstractScopedTestElement implements Serializ
                 ObjectMapper mapper = new ObjectMapper();
                 JsonNode actualObj = mapper.readValue(jsonResponse, JsonNode.class);
                 result = JMES_EXTRACTOR_CACHE.get(jsonPathExpression).search(actualObj);
-                List<String> resultList = splitJson(result);
-                if (resultList.isEmpty()) {
+                if (result.isNull()) {
                     vars.put(refName, defaultValue);
                     vars.put(refName + REF_MATCH_NR, "0"); //$NON-NLS-1$
                     if (matchNumber < 0) {
                         log.debug("No value extracted, storing empty in: {}", refName);
                     }
                 } else {
+                    List<String> resultList = splitJson(result);
                     // if more than one value extracted, suffix with "_index"
                     if (resultList.size() > 1) {
                         if (matchNumber < 0) {

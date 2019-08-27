@@ -27,12 +27,15 @@ import org.hamcrest.CoreMatchers;
 import org.junit.Test;
 
 public class TestJMESExtractor {
+    private static final String DEFAULT_VALUE = "NONE"; // $NON-NLS-1$
+    private static final String REFERENCE_NAME = "varname"; // $NON-NLS-1$
+    private static final String REFERENCE_NAME_MATCH_NUMBER = "varname_matchNr"; // $NON-NLS-1$
     private JMESExtractor setupProcessor(JMeterContext context, String matchNumbers) {
         JMESExtractor processor = new JMESExtractor();
         processor.setThreadContext(context);
-        processor.setRefName("varname");
+        processor.setRefName(REFERENCE_NAME);
         processor.setMatchNumbers(matchNumbers);
-        processor.setDefaultValue("NONE");
+        processor.setDefaultValue(DEFAULT_VALUE);
         processor.setScopeVariable("contentvar");
         return processor;
     }
@@ -46,8 +49,8 @@ public class TestJMESExtractor {
         processor.setJsonPathExpression("a.b.c.f");
         vars.put("contentvar", "{\"a\": {\"b\": {\"c\": {\"d\": \"value\"}}}}");
         processor.process();
-        assertThat(vars.get("varname"), CoreMatchers.is("NONE"));
-        assertThat(vars.get("varname_matchNr"), CoreMatchers.is("0"));
+        assertThat(vars.get(REFERENCE_NAME), CoreMatchers.is(DEFAULT_VALUE));
+        assertThat(vars.get(REFERENCE_NAME_MATCH_NUMBER), CoreMatchers.is("0"));
     }
 
     @Test
@@ -60,17 +63,17 @@ public class TestJMESExtractor {
         context.setVariables(vars);
         vars.put("contentvar", "[\"one\"]");
         processor.process();
-        assertThat(vars.get("varname"), CoreMatchers.is(CoreMatchers.nullValue()));
-        assertThat(vars.get("varname_1"), CoreMatchers.is("one"));
-        assertThat(vars.get("varname_matchNr"), CoreMatchers.is("1"));
+        assertThat(vars.get(REFERENCE_NAME), CoreMatchers.is(CoreMatchers.nullValue()));
+        assertThat(vars.get(REFERENCE_NAME+"_1"), CoreMatchers.is("one"));
+        assertThat(vars.get(REFERENCE_NAME_MATCH_NUMBER), CoreMatchers.is("1"));
         // test2
         processor.setJsonPathExpression("a.b.c.d");
         context.setVariables(vars);
         vars.put("contentvar", "{\"a\": {\"b\": {\"c\": {\"d\": \"value\"}}}}");
         processor.process();
-        assertThat(vars.get("varname"), CoreMatchers.is(CoreMatchers.nullValue()));
-        assertThat(vars.get("varname_1"), CoreMatchers.is("value"));
-        assertThat(vars.get("varname_matchNr"), CoreMatchers.is("1"));
+        assertThat(vars.get(REFERENCE_NAME), CoreMatchers.is(CoreMatchers.nullValue()));
+        assertThat(vars.get(REFERENCE_NAME+"_1"), CoreMatchers.is("value"));
+        assertThat(vars.get(REFERENCE_NAME_MATCH_NUMBER), CoreMatchers.is("1"));
         // test3
         vars = new JMeterVariables();
         processor.setJsonPathExpression("people[2]");
@@ -81,7 +84,7 @@ public class TestJMESExtractor {
                         + "    {\"first\": \"Jayden\", \"last\": \"f\"},\r\n" + "    {\"missing\": \"different\"}\r\n"
                         + "  ],\r\n" + "  \"foo\": {\"bar\": \"baz\"}\r\n" + "}");
         processor.process();
-        assertThat(vars.get("varname_1"), CoreMatchers.is("{ \"first\" : \"Jayden\" , \"last\" : \"f\"}"));
+        assertThat(vars.get(REFERENCE_NAME+"_1"), CoreMatchers.is("{ \"first\" : \"Jayden\" , \"last\" : \"f\"}"));
     }
 
     @Test
@@ -94,10 +97,10 @@ public class TestJMESExtractor {
         context.setVariables(vars);
         vars.put("contentvar", "[\"one\", \"two\"]");
         processor.process();
-        assertThat(vars.get("varname"), CoreMatchers.is(CoreMatchers.nullValue()));
-        assertThat(vars.get("varname_1"), CoreMatchers.is("one"));
-        assertThat(vars.get("varname_2"), CoreMatchers.is("two"));
-        assertThat(vars.get("varname_matchNr"), CoreMatchers.is("2"));
+        assertThat(vars.get(REFERENCE_NAME), CoreMatchers.is(CoreMatchers.nullValue()));
+        assertThat(vars.get(REFERENCE_NAME+"_1"), CoreMatchers.is("one"));
+        assertThat(vars.get(REFERENCE_NAME+"_2"), CoreMatchers.is("two"));
+        assertThat(vars.get(REFERENCE_NAME_MATCH_NUMBER), CoreMatchers.is("2"));
         // test2
         context.setVariables(vars);
         vars = new JMeterVariables();
@@ -105,9 +108,9 @@ public class TestJMESExtractor {
         context.setVariables(vars);
         processor.setJsonPathExpression("[0:3]");
         processor.process();
-        assertThat(vars.get("varname_1"), CoreMatchers.is("a"));
-        assertThat(vars.get("varname_2"), CoreMatchers.is("b"));
-        assertThat(vars.get("varname_matchNr"), CoreMatchers.is("3"));
+        assertThat(vars.get(REFERENCE_NAME+"_1"), CoreMatchers.is("a"));
+        assertThat(vars.get(REFERENCE_NAME+"_2"), CoreMatchers.is("b"));
+        assertThat(vars.get(REFERENCE_NAME_MATCH_NUMBER), CoreMatchers.is("3"));
         // test3
         processor.setJsonPathExpression("people[:2].first");
         context.setVariables(vars);
@@ -119,9 +122,9 @@ public class TestJMESExtractor {
                         + "  ],\r\n" + "  \"foo\": {\"bar\": \"baz\"}\r\n" + "}");
         context.setVariables(vars);
         processor.process();
-        assertThat(vars.get("varname_1"), CoreMatchers.is("James"));
-        assertThat(vars.get("varname_2"), CoreMatchers.is("Jacob"));
-        assertThat(vars.get("varname_matchNr"), CoreMatchers.is("2"));
+        assertThat(vars.get(REFERENCE_NAME+"_1"), CoreMatchers.is("James"));
+        assertThat(vars.get(REFERENCE_NAME+"_2"), CoreMatchers.is("Jacob"));
+        assertThat(vars.get(REFERENCE_NAME_MATCH_NUMBER), CoreMatchers.is("2"));
     }
 
     @Test
@@ -140,23 +143,31 @@ public class TestJMESExtractor {
                         + "  ],\r\n" + "  \"foo\": {\"bar\": \"baz\"}\r\n" + "}");
         context.setVariables(vars);
         processor.process();
-        assertThat(vars.get("varname"), CoreMatchers.is("James"));
-        assertThat(vars.get("varname_matchNr"), CoreMatchers.is("3"));
+        assertThat(vars.get(REFERENCE_NAME), CoreMatchers.is("James"));
+        assertThat(vars.get(REFERENCE_NAME_MATCH_NUMBER), CoreMatchers.is("3"));
         // test2
         processor.setMatchNumbers("2");
         processor.setJsonPathExpression("people[:3].first");
         context.setVariables(vars);
         processor.process();
-        assertThat(vars.get("varname"), CoreMatchers.is("Jacob"));
-        assertThat(vars.get("varname_matchNr"), CoreMatchers.is("3"));
+        assertThat(vars.get(REFERENCE_NAME), CoreMatchers.is("Jacob"));
+        assertThat(vars.get(REFERENCE_NAME_MATCH_NUMBER), CoreMatchers.is("3"));
         // test3
         processor.setMatchNumbers("3");
         processor.setJsonPathExpression("people[:3].first");
         context.setVariables(vars);
         context.setVariables(vars);
         processor.process();
-        assertThat(vars.get("varname"), CoreMatchers.is("Jayden"));
-        assertThat(vars.get("varname_matchNr"), CoreMatchers.is("3"));
+        assertThat(vars.get(REFERENCE_NAME), CoreMatchers.is("Jayden"));
+        assertThat(vars.get(REFERENCE_NAME_MATCH_NUMBER), CoreMatchers.is("3"));
+        // test4
+        processor.setMatchNumbers("4");
+        processor.setJsonPathExpression("people[:3].first");
+        context.setVariables(vars);
+        context.setVariables(vars);
+        processor.process();
+        assertThat(vars.get(REFERENCE_NAME), CoreMatchers.is(DEFAULT_VALUE));
+        assertThat(vars.get(REFERENCE_NAME_MATCH_NUMBER), CoreMatchers.is("3"));
     }
 
     @Test
@@ -169,9 +180,9 @@ public class TestJMESExtractor {
         context.setVariables(vars);
         vars.put("contentvar", "{\"a\": {\"b\": {\"c\": {\"d\": \"value\"}}}}");
         processor.process();
-        assertThat(vars.get("varname"), CoreMatchers.is("value"));
-        assertThat(vars.get("varname_1"), CoreMatchers.is(CoreMatchers.nullValue()));
-        assertThat(vars.get("varname_matchNr"), CoreMatchers.is("1"));
+        assertThat(vars.get(REFERENCE_NAME), CoreMatchers.is("value"));
+        assertThat(vars.get(REFERENCE_NAME+"_1"), CoreMatchers.is(CoreMatchers.nullValue()));
+        assertThat(vars.get(REFERENCE_NAME_MATCH_NUMBER), CoreMatchers.is("1"));
     }
 
     @Test
@@ -184,11 +195,11 @@ public class TestJMESExtractor {
         context.setVariables(vars);
         vars.put("contentvar", "[\"one\", \"two\"]");
         processor.process();
-        assertThat(vars.get("varname"),
+        assertThat(vars.get(REFERENCE_NAME),
                 CoreMatchers.is(CoreMatchers.anyOf(CoreMatchers.is("one"), CoreMatchers.is("two"))));
-        assertThat(vars.get("varname_1"), CoreMatchers.is(CoreMatchers.nullValue()));
-        assertThat(vars.get("varname_2"), CoreMatchers.is(CoreMatchers.nullValue()));
-        assertThat(vars.get("varname_matchNr"), CoreMatchers.is("2"));
+        assertThat(vars.get(REFERENCE_NAME+"_1"), CoreMatchers.is(CoreMatchers.nullValue()));
+        assertThat(vars.get(REFERENCE_NAME+"_2"), CoreMatchers.is(CoreMatchers.nullValue()));
+        assertThat(vars.get(REFERENCE_NAME_MATCH_NUMBER), CoreMatchers.is("2"));
     }
 
     @Test
@@ -200,8 +211,8 @@ public class TestJMESExtractor {
         vars.put("contentvar", "");
         context.setVariables(vars);
         processor.process();
-        assertThat(vars.get("varname_matchNr"), CoreMatchers.is(CoreMatchers.nullValue()));
-        assertThat(vars.get("varname"), CoreMatchers.is("NONE"));
+        assertThat(vars.get(REFERENCE_NAME_MATCH_NUMBER), CoreMatchers.is(CoreMatchers.nullValue()));
+        assertThat(vars.get(REFERENCE_NAME), CoreMatchers.is(DEFAULT_VALUE));
     }
 
     @Test
@@ -213,7 +224,7 @@ public class TestJMESExtractor {
         context.setVariables(vars);
         vars.put("contentvar", "{\"a\": {\"b\": {\"c\": {\"d\": \"value\"}}}}");
         processor.process();
-        assertThat(vars.get("varname"), CoreMatchers.is("NONE"));
-        assertThat(vars.get("varname_matchNr"), CoreMatchers.is("0"));
+        assertThat(vars.get(REFERENCE_NAME), CoreMatchers.is(DEFAULT_VALUE));
+        assertThat(vars.get(REFERENCE_NAME_MATCH_NUMBER), CoreMatchers.is("0"));
     }
 }

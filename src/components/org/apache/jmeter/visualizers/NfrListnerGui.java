@@ -86,13 +86,12 @@ public class NfrListnerGui extends AbstractListenerGui
     /** Table model for the pattern table. */
     private ObjectTableModel tableModel;
     protected NfrArguments collector = new NfrArguments();
-    protected boolean isStats = false;
     /** Logging. */
     private static final Logger log = LoggerFactory.getLogger(NfrListnerGui.class);
 
     @Override
     public boolean isStats() {
-        return isStats;
+        return false;
     }
 
     protected NfrArguments getModel() {

@@ -28,9 +28,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.jmeter.JMeter;
-import org.apache.jmeter.config.NfrArgument;
 import org.apache.jmeter.gui.GuiPackage;
-import org.apache.jmeter.gui.tree.JMeterTreeModel;
 import org.apache.jmeter.gui.tree.JMeterTreeNode;
 import org.apache.jmeter.reporters.NfrArguments;
 import org.apache.jmeter.samplers.SampleEvent;
@@ -39,7 +37,6 @@ import org.apache.jmeter.testbeans.TestBeanHelper;
 import org.apache.jmeter.testelement.TestElement;
 import org.apache.jmeter.testelement.TestPlan;
 import org.apache.jmeter.testelement.TestStateListener;
-import org.apache.jmeter.testelement.property.JMeterProperty;
 import org.apache.jmeter.threads.AbstractThreadGroup;
 import org.apache.jmeter.threads.JMeterContextService;
 import org.apache.jmeter.threads.ListenerNotifier;
@@ -47,7 +44,6 @@ import org.apache.jmeter.threads.PostThreadGroup;
 import org.apache.jmeter.threads.SetupThreadGroup;
 import org.apache.jmeter.threads.TestCompiler;
 import org.apache.jmeter.util.JMeterUtils;
-import org.apache.jmeter.visualizers.SamplingStatCalculator;
 import org.apache.jorphan.collections.HashTree;
 import org.apache.jorphan.collections.ListedHashTree;
 import org.apache.jorphan.collections.SearchByClass;
@@ -495,7 +491,7 @@ public class StandardJMeterEngine implements JMeterEngine, Runnable {
             }
             waitThreadsStopped(); // wait for Post threads to stop
         }
-        runNFRTest();
+        NFRTest();
         notifyTestListenersOfEnd(testListeners);
         JMeterContextService.endTest();
         if (JMeter.isNonGUI() && SYSTEM_EXIT_FORCED) {
@@ -504,67 +500,13 @@ public class StandardJMeterEngine implements JMeterEngine, Runnable {
         }
     }
 
-    private void runNFRTest() {
-        JMeterTreeModel treeModel = GuiPackage.getInstance().getTreeModel();
-        JMeterTreeNode treeNode = treeModel.getNodesOfType(NfrArguments.class).stream()
+    private void NFRTest() {
+        JMeterTreeNode treeNode = GuiPackage.getInstance().getTreeModel().getNodesOfType(NfrArguments.class).stream()
                 .filter(JMeterTreeNode::isEnabled).findFirst().orElse(null);
         if (treeNode != null) {
             NfrArguments nfrResultCollector = (NfrArguments) treeNode.getTestElement();
-            for (JMeterProperty jMeterProperty : nfrResultCollector.getNfrArguments()) {
-                NfrArgument nfrArgument = (NfrArgument) jMeterProperty.getObjectValue();
-                SamplingStatCalculator samplingStatCalculator = nfrResultCollector
-                        .getNfrResultBySamplerName(nfrArgument.getName());
-                if (samplingStatCalculator != null) {
-                    System.out.println("Key = " + nfrArgument.getName() + ", Value = " + samplingStatCalculator);
-                    boolean result = getResultNfrTest(nfrArgument, samplingStatCalculator);
-                    System.out.println(result);
-                }
-            }
+            nfrResultCollector.runNFRTest();
         }
-    }
-
-    private boolean getResultNfrTest(NfrArgument nfrArgument, SamplingStatCalculator samplingStatCalculator) {
-        double valueOfsampler = getCriteria(nfrArgument, samplingStatCalculator);
-        double valueOfUser = Double.parseDouble(nfrArgument.getValue());
-        switch (nfrArgument.getSymbol()) {
-        case "=":
-            return valueOfsampler == valueOfUser;
-        case "<":
-            return valueOfsampler < valueOfUser;
-        case "<=":
-            return valueOfsampler <= valueOfUser;
-        case ">=":
-            return valueOfsampler >= valueOfUser;
-        case ">":
-            return valueOfsampler > valueOfUser;
-        default:
-            break;
-        }
-        return false;
-    }
-
-    private double getCriteria(NfrArgument nfrArgument, SamplingStatCalculator samplingStatCalculator) {
-        double value = 0;
-        switch (nfrArgument.getCriteria()) {
-        case "Avg":
-            value = samplingStatCalculator.getMedian().doubleValue();
-            break;
-        case "Min":
-            value = samplingStatCalculator.getMin().doubleValue();
-            break;
-        case "Max":
-            value = samplingStatCalculator.getMax().doubleValue();
-            break;
-        case "Error Rate":
-            value = samplingStatCalculator.getErrorPercentage();
-            break;
-        case "Sample Rate":
-            value = samplingStatCalculator.getRate();
-            break;
-        default:
-            break;
-        }
-        return value;
     }
 
     private void startThreadGroup(AbstractThreadGroup group, int groupCount, SearchByClass<?> searcher, List<?> testLevelElements, ListenerNotifier notifier)

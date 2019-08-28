@@ -33,6 +33,7 @@ import org.apache.jmeter.samplers.SampleListener;
 import org.apache.jmeter.samplers.SampleResult;
 import org.apache.jmeter.testelement.TestStateListener;
 import org.apache.jmeter.testelement.property.CollectionProperty;
+import org.apache.jmeter.testelement.property.JMeterProperty;
 import org.apache.jmeter.testelement.property.PropertyIterator;
 import org.apache.jmeter.testelement.property.TestElementProperty;
 import org.apache.jmeter.visualizers.SamplingStatCalculator;
@@ -46,18 +47,21 @@ import org.slf4j.LoggerFactory;
 public class NfrArguments extends AbstractListenerElement
         implements SampleListener, Clearable, Serializable, TestStateListener, Remoteable, NoThreadClone {
     private static Map<String, SamplingStatCalculator> tableRows = new ConcurrentHashMap<>();
+
     /**
      * @return the tableRows
      */
     public Map<String, SamplingStatCalculator> getNfrResult() {
         return tableRows;
     }
+
     /**
      * @return the tableRows
      */
     public SamplingStatCalculator getNfrResultBySamplerName(String name) {
         return tableRows.get(name);
     }
+
     /**
      * @return the tableRows
      */
@@ -72,6 +76,7 @@ public class NfrArguments extends AbstractListenerElement
             log.info("Shutdown hook ended");
         }
     }
+
     private static final Logger log = LoggerFactory.getLogger(NfrArguments.class);
     private static final long serialVersionUID = 234L;
     // This string is used to identify local test runs, so must not be a valid host
@@ -100,6 +105,7 @@ public class NfrArguments extends AbstractListenerElement
     /** the summarizer to which this result collector will forward the samples */
     private volatile Summariser summariser;
     public static final String NFRARGUMENTS = "NfrArguments.nfrarguments"; //$NON-NLS-1$
+
     /**
      * No-arg constructor.
      */
@@ -125,6 +131,7 @@ public class NfrArguments extends AbstractListenerElement
         clone.summariser = this.summariser;
         return clone;
     }
+
     /**
      * Get the nfrarguments.
      *
@@ -154,11 +161,6 @@ public class NfrArguments extends AbstractListenerElement
         Map<String, String> argMap = new LinkedHashMap<>();
         while (iter.hasNext()) {
             NfrArgument arg = (NfrArgument) iter.next().getObjectValue();
-            // Because CollectionProperty.mergeIn will not prevent adding two
-            // properties of the same name, we need to select the first value so
-            // that this element's values prevail over defaults provided by
-            // configuration
-            // elements:
             if (!argMap.containsKey(arg.getName())) {
                 argMap.put(arg.getName(), arg.getValue());
             }
@@ -341,7 +343,7 @@ public class NfrArguments extends AbstractListenerElement
         if (summariser != null) {
             summariser.testStarted(host);
         }
-    }  
+    }
 
     @Override
     public void testEnded() {
@@ -383,7 +385,6 @@ public class NfrArguments extends AbstractListenerElement
         }
     }
 
-
     // This is required so that
     // @see org.apache.jmeter.gui.tree.JMeterTreeModel.getNodesOfType()
     // can find the Clearable nodes - the userObject has to implement the interface.
@@ -391,5 +392,60 @@ public class NfrArguments extends AbstractListenerElement
     public void clearData() {
         super.clear();
     }
-    
+
+    private boolean getResultNfrTest(NfrArgument nfrArgument, SamplingStatCalculator samplingStatCalculator) {
+        double valueOfsampler = getCriteria(nfrArgument, samplingStatCalculator);
+        double valueOfUser = Double.parseDouble(nfrArgument.getValue());
+        switch (nfrArgument.getSymbol()) {
+        case "=":
+            return valueOfsampler == valueOfUser;
+        case "<":
+            return valueOfsampler < valueOfUser;
+        case "<=":
+            return valueOfsampler <= valueOfUser;
+        case ">=":
+            return valueOfsampler >= valueOfUser;
+        case ">":
+            return valueOfsampler > valueOfUser;
+        default:
+            break;
+        }
+        return false;
+    }
+
+    private double getCriteria(NfrArgument nfrArgument, SamplingStatCalculator samplingStatCalculator) {
+        double value = 0;
+        switch (nfrArgument.getCriteria()) {
+        case "Avg":
+            value = samplingStatCalculator.getMedian().doubleValue();
+            break;
+        case "Min":
+            value = samplingStatCalculator.getMin().doubleValue();
+            break;
+        case "Max":
+            value = samplingStatCalculator.getMax().doubleValue();
+            break;
+        case "Error Rate":
+            value = samplingStatCalculator.getErrorPercentage();
+            break;
+        case "Sample Rate":
+            value = samplingStatCalculator.getRate();
+            break;
+        default:
+            break;
+        }
+        return value;
+    }
+
+    public void runNFRTest() {
+        for (JMeterProperty jMeterProperty : getNfrArguments()) {
+            NfrArgument nfrArgument = (NfrArgument) jMeterProperty.getObjectValue();
+            SamplingStatCalculator samplingStatCalculator = getNfrResultBySamplerName(nfrArgument.getName());
+            if (samplingStatCalculator != null) {
+                System.out.println("Key = " + nfrArgument.getName() + ", Value = " + samplingStatCalculator);
+                boolean result = getResultNfrTest(nfrArgument, samplingStatCalculator);
+                System.out.println(result);
+            }
+        }
+    }
 }

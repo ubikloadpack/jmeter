@@ -45,18 +45,16 @@ import io.burt.jmespath.jackson.JacksonRuntime;
  * doc</a> </br>
  * <a href="http://jmespath.org/">JmesPath tutorial</a>
  * 
- * Should it replace {@link JSONPathAssertion} ? Or merge them ?
- * 
  */
 public class JmesPathAssertion extends AbstractTestElement implements Serializable, Assertion {
     private static final Logger log = LoggerFactory.getLogger(JSONPostProcessor.class);
     private static final long serialVersionUID = 1L;
     private static final String JMESPATH = "JMES_PATH";
-    public static final String EXPECTEDVALUE = "EXPECTED_VALUE";
-    public static final String JSONVALIDATION = "JSONVALIDATION";
-    public static final String EXPECT_NULL = "EXPECT_NULL";
-    public static final String INVERT = "INVERT";
-    public static final String ISREGEX = "ISREGEX";
+    private static final String EXPECTEDVALUE = "EXPECTED_VALUE";
+    private static final String JSONVALIDATION = "JSONVALIDATION";
+    private static final String EXPECT_NULL = "EXPECT_NULL";
+    private static final String INVERT = "INVERT";
+    private static final String ISREGEX = "ISREGEX";
     private static final String RESULT_VALUE_EMPTY_SUCCESS = "Result is empty and expected to be null or empty.";
     private static final String RESULT_VALUE_EMPTY_INVERT_SUCCESS = "Assertion has been successfully inverted. Expected value and result are both null or empty.";
     private static final String RESULT_VALUE_EQUALS_SUCCESS = "Query went well, result %s and expected value %s are matching.";
@@ -67,7 +65,6 @@ public class JmesPathAssertion extends AbstractTestElement implements Serializab
     private static final String VALUE_EMPTY_FAIL = "Value expected to be null, but found %s.";
     private static final String REGEX_SUCCESS = "Result %s and expected value %s pattern are matching.";
     private static final String REGEX_FAIL = "Result %s and expected value %s pattern are different.";
-    private static final JMESCacheLoader CACHE;
     /**
      * Initialize error message
      */
@@ -77,9 +74,8 @@ public class JmesPathAssertion extends AbstractTestElement implements Serializab
      */
     private static final LoadingCache<String, Expression<JsonNode>> JSON_EXPRESSION_CACHE;
     static {
-        CACHE = new JMESCacheLoader();
-        final int cacheSize = JMeterUtils.getPropDefault("JmesAssertion.parser.cache.size", 400);
-        JSON_EXPRESSION_CACHE = Caffeine.newBuilder().maximumSize(cacheSize).build(CACHE);
+        final int cacheSize = JMeterUtils.getPropDefault("jmesassertion.parser.cache.size", 400);
+        JSON_EXPRESSION_CACHE = Caffeine.newBuilder().maximumSize(cacheSize).build(new JMESCacheLoader());
     }
 
     /**
@@ -92,9 +88,6 @@ public class JmesPathAssertion extends AbstractTestElement implements Serializab
         // get the response data from the sender
         String responseData = samplerResult.getResponseDataAsString();
         try {
-            if (responseData.isEmpty()) {
-                return result.setResultForNull();
-            }
             /*
              * get the result from JmesPath query as boolean value true if query returns a
              * result, else false
@@ -127,13 +120,13 @@ public class JmesPathAssertion extends AbstractTestElement implements Serializab
         // cast the response data to JsonNode
         JsonNode input = mapper.readValue(responseDataAsJsonString, JsonNode.class);
         // get the JmesPath expression from the cache
-        // if it does not exist, compile it
-        Expression<JsonNode> expression = JSON_EXPRESSION_CACHE.get(getJmesPath(),
-                jmesPathExpression -> CACHE.load(jmesPathExpression));
+        // if it does not exist, compile it.
+        // Expression does not compile if JmesPath expression is empty or null
+        Expression<JsonNode> expression = JSON_EXPRESSION_CACHE.get(getJmesPath());
         // get the result from the JmesPath query
         JsonNode currentValue = expression.search(input);
         // cast JsonNode as String, and remove the extra ' " ' in the String
-        StringBuilder sb = new StringBuilder(mapper.writeValueAsString(currentValue));
+        StringBuilder sb  =  new StringBuilder(mapper.writeValueAsString(currentValue));
         // check if first and last characters are ", if yes, delete them
         if (sb.charAt(0) == '\"' && sb.charAt(sb.length() - 1) == '\"') {
             sb.deleteCharAt(0);
@@ -149,11 +142,12 @@ public class JmesPathAssertion extends AbstractTestElement implements Serializab
      * Used to check expected value and result data from JmesPath query.
      * 
      * @param result the JmesPath query result data.
-     * @return true only if both match and {@link #isInvert()} is false.
+     * @return true if both match and {@link #isInvert()} is false or if both
+     *         are different and {@link #isInvert()} is true.
      */
     private boolean checkResult(String result) {
         boolean isResultEmpty = StringUtils.isEmpty(result) || result == null || result.equals("null");
-        String expectedValue = "";
+        String expectedValue = null;
         if (isResultEmpty && isExpectNull() && !isInvert()) {
             setIsRegex(false);
             return setBooleanResult(true, RESULT_VALUE_EMPTY_SUCCESS);
@@ -161,7 +155,7 @@ public class JmesPathAssertion extends AbstractTestElement implements Serializab
             if (!isExpectNull()) {
                 expectedValue = getExpectedValue().trim();
             }
-            boolean isExpectedValueEmpty = StringUtils.isEmpty(expectedValue);
+            boolean isExpectedValueEmpty = StringUtils.isEmpty(expectedValue) || StringUtils.isBlank(expectedValue);
             // ======================= CHECK REGEX ================================
             if (isUseRegex()) {
                 if (checkIfRegexIsValid(result, expectedValue)) {
@@ -189,14 +183,6 @@ public class JmesPathAssertion extends AbstractTestElement implements Serializab
                             String.format(RESULT_VALUE_DIFFERENT_INVERT_SUCCESS, result, expectedValue));
                 }
                 // ======================= CHECK EMPTY =================================
-                /*
-                 * if result data is empty and if the expected value is empty but isExpectNull
-                 * is false, return false. Should it return true even if isExpectNull is false ?
-                 * 
-                 * TODO Uncomment below if yes.
-                 */
-//                      } else if (isResultEmpty && isExpectedValueEmpty){
-//                              return setBooleanResult(true, String.format("Result %s and expected Value %s are both empty or null.", result, expectedValue));
             } else if (isResultEmpty) {
                 return setBooleanResult(false, RESULT_EMPTY_FAIL);
             } else if (isExpectedValueEmpty) {
@@ -300,9 +286,9 @@ public class JmesPathAssertion extends AbstractTestElement implements Serializab
  *
  */
 class JMESCacheLoader implements CacheLoader<String, Expression<JsonNode>> {
+    final JmesPath<JsonNode> jmespath = new JacksonRuntime();
     @Override
     public Expression<JsonNode> load(String jsonPathExpression) {
-        final JmesPath<JsonNode> jmespath = new JacksonRuntime();
         return jmespath.compile(jsonPathExpression);
     }
 }

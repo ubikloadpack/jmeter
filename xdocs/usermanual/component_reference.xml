@@ -4901,13 +4901,24 @@ please ensure that you select "<code>Store the message using MIME (raw)</code>" 
     </properties>
 </component>
 
-<component name="JSON JmesPath Assertion" index="&sect-num;.5.15" anchor="JSON_JmesPath_Assertion" width="1095" height="307">
+<component name="JSON JmesPath Assertion" index="&sect-num;.5.15" anchor="JSON_JmesPath_Assertion" width="1095" height="307" screenshot="assertion/jmespath_assertion.png">
     <description>
         <p>
-            This component works the same way as <a href="#JSON_Assertion">JSON Assertion</a> except that it uses syntax from <a href="https://github.com/burtcorp/jmespath-java" target="blank">Burtcorp jmespath 0.3.0</a> instead.
-            You can see JmesPath documentation <a href="http://jmespath.org/" target="blank">here</a>.
+            This component allows you to perform validations of JSON documents.
+            First, it will parse the JSON and fail if the data is not JSON.
+            Second, it will search for specified path, using syntax from <a href="https://github.com/burtcorp/jmespath-java" target="blank">Burtcorp jmespath 0.3.0</a>. If the path is not found, it will fail.
+            Third, if JSON path was found in the document, and validation against expected value was requested, it will perform validation. For the <code>null</code> value there is special checkbox in the GUI.
+            Note that the path cannot be null or the expression JmesPath will not be compiled and an error will occur. Even if you expect a null value, you must put something in the JmesPath field.
         </p>
     </description>
+    <properties>
+        <property name="Assert JmesPath exists" required="Yes">Path to JSON element for assert.</property>
+        <property name="Additionally assert value" required="No">Select checkbox if you want make assert with some value</property>
+        <property name="Match as regular expression" required="No">Select checkbox if you want use regular expression</property>
+        <property name="Expected Value" required="No">Value for assert or regular expression for match</property>
+        <property name="Expect null" required="No">Select checkbox if you expect null</property>
+        <property name="Invert assertion (will fail if above conditions met)" required="No">Invert assertion (will fail if above conditions met)</property>
+    </properties>
 </component>
 
 <a href="#">^</a>

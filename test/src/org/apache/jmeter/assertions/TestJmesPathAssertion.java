@@ -249,5 +249,24 @@ public class TestJmesPathAssertion {
 		assertEquals(true, result.isFailure());
 		
 	}
+	
+	@Test
+	public void should_be_true_if_result_and_expected_value_null() {
+	    
+	    SampleResult samplerResult = new SampleResult();
+            String str = "{\"\":\"\"}";
+            samplerResult.setResponseData(str.getBytes());
+            JmesPathAssertion instance = new JmesPathAssertion();
+            instance.setJmesPath("foo");
+            instance.setJsonValidationBool(true);
+            instance.setIsRegex(false);
+            instance.setExpectNull(true);
+            instance.setExpectedValue(null);
+            AssertionResult expResult = new AssertionResult("");
+            AssertionResult result = instance.getResult(samplerResult);
+            assertEquals(expResult.getName(), result.getName());
+            assertEquals(false, result.isFailure());
+	    
+	}
 
 }

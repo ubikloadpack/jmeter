@@ -40,12 +40,19 @@ import org.apache.jorphan.gui.JLabeledTextField;
 public class JSONPathAssertionGui extends AbstractAssertionGui implements ChangeListener {
 
     private static final long serialVersionUID = -6008018002423594040L;
-    private JLabeledTextField jsonPath = null;
-    private JLabeledTextArea jsonValue = null;
-    private JCheckBox jsonValidation = null;
-    private JCheckBox expectNull = null;
-    private JCheckBox invert = null;
-    private JCheckBox isRegex;
+    private static final String JSON_ASSERTION_PATH = "json_assertion_path";
+    private static final String JSON_ASSERTION_VALIDATION = "json_assertion_validation";
+    private static final String JSON_ASSERTION_REGEX = "json_assertion_regex";
+    private static final String JSON_ASSERTION_EXPECTED_VALUE = "json_assertion_expected_value";
+    private static final String JSON_ASSERTION_NULL = "json_assertion_null";
+    private static final String JSON_ASSERTION_INVERT = "json_assertion_invert";
+    private static final String JSON_ASSERTION_TITLE = "json_assertion_title";
+    protected JLabeledTextField jsonPath =  new JLabeledTextField(JMeterUtils.getResString(JSON_ASSERTION_PATH));
+    protected JLabeledTextArea jsonValue = new JLabeledTextArea(JMeterUtils.getResString(JSON_ASSERTION_EXPECTED_VALUE));
+    protected JCheckBox jsonValidation = new JCheckBox(JMeterUtils.getResString(JSON_ASSERTION_VALIDATION));
+    protected JCheckBox expectNull = new JCheckBox(JMeterUtils.getResString(JSON_ASSERTION_NULL));
+    protected JCheckBox invert = new JCheckBox(JMeterUtils.getResString(JSON_ASSERTION_INVERT));
+    protected JCheckBox isRegex = new JCheckBox(JMeterUtils.getResString(JSON_ASSERTION_REGEX));
 
     public JSONPathAssertionGui() {
         init();
@@ -59,12 +66,6 @@ public class JSONPathAssertionGui extends AbstractAssertionGui implements Change
         VerticalPanel panel = new VerticalPanel();
         panel.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
 
-        jsonPath = new JLabeledTextField(JMeterUtils.getResString("json_assertion_path"));
-        jsonValidation = new JCheckBox(JMeterUtils.getResString("json_assertion_validation"));
-        isRegex = new JCheckBox(JMeterUtils.getResString("json_assertion_regex"));
-        jsonValue = new JLabeledTextArea(JMeterUtils.getResString("json_assertion_expected_value"));
-        expectNull = new JCheckBox(JMeterUtils.getResString("json_assertion_null"));
-        invert = new JCheckBox(JMeterUtils.getResString("json_assertion_invert"));
 
         jsonValidation.addChangeListener(this);
         expectNull.addChangeListener(this);
@@ -75,10 +76,10 @@ public class JSONPathAssertionGui extends AbstractAssertionGui implements Change
         panel.add(jsonValue);
         panel.add(expectNull);
         panel.add(invert);
-
+        
         add(panel, BorderLayout.CENTER);
     }
-
+    
     @Override
     public void clearGui() {
         super.clearGui();
@@ -99,7 +100,7 @@ public class JSONPathAssertionGui extends AbstractAssertionGui implements Change
 
     @Override
     public String getLabelResource() {
-        return "json_assertion_title";
+        return JSON_ASSERTION_TITLE;
     }
 
     @Override
@@ -119,13 +120,15 @@ public class JSONPathAssertionGui extends AbstractAssertionGui implements Change
     @Override
     public void configure(TestElement element) {
         super.configure(element);
-        JSONPathAssertion jpAssertion = (JSONPathAssertion) element;
-        jsonPath.setText(jpAssertion.getJsonPath());
-        jsonValue.setText(jpAssertion.getExpectedValue());
-        jsonValidation.setSelected(jpAssertion.isJsonValidationBool());
-        expectNull.setSelected(jpAssertion.isExpectNull());
-        invert.setSelected(jpAssertion.isInvert());
-        isRegex.setSelected(jpAssertion.isUseRegex());
+        if(element instanceof JSONPathAssertion) {
+            JSONPathAssertion jpAssertion = (JSONPathAssertion) element;
+            jsonPath.setText(jpAssertion.getJsonPath());
+            jsonValue.setText(jpAssertion.getExpectedValue());
+            jsonValidation.setSelected(jpAssertion.isJsonValidationBool());
+            expectNull.setSelected(jpAssertion.isExpectNull());
+            invert.setSelected(jpAssertion.isInvert());
+            isRegex.setSelected(jpAssertion.isUseRegex());
+        }
     }
 
     @Override

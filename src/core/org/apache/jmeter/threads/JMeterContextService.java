@@ -43,8 +43,6 @@ public final class JMeterContextService {
     private static int totalThreads = 0;
 
     private static UnmodifiableJMeterVariables variables;
-    
-    public static boolean isTestFinished=false;
 
 
     /**
@@ -95,7 +93,6 @@ public final class JMeterContextService {
             testStart = System.currentTimeMillis();
             JMeterUtils.setProperty("TESTSTART.MS",Long.toString(testStart));// $NON-NLS-1$
         }
-        isTestFinished=false;
     }
 
     /**
@@ -132,7 +129,6 @@ public final class JMeterContextService {
      * Clears start time field.
      */
     public static synchronized void endTest() {
-        isTestFinished=true;
         testStart = 0;
         resetClientSideVariables();
     }

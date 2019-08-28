@@ -47,6 +47,34 @@ import org.slf4j.LoggerFactory;
 public class NfrArguments extends AbstractListenerElement
         implements SampleListener, Clearable, Serializable, TestStateListener, Remoteable, NoThreadClone {
     private static Map<String, SamplingStatCalculator> tableRows = new ConcurrentHashMap<>();
+    private static final Logger log = LoggerFactory.getLogger(NfrArguments.class);
+    private static final long serialVersionUID = 234L;
+    // This string is used to identify local test runs, so must not be a valid host
+    // name
+    private static final String TEST_IS_LOCAL = "*local*"; // $NON-NLS-1$
+    // Static variables
+    // Lock used to guard static mutable variables
+    private static final Object LOCK = new Object();
+    /**
+     * Shutdown Hook that ensures PrintWriter is flushed is CTRL+C or kill is called
+     * during a test
+     */
+    private static Thread shutdownHook;
+    /**
+     * The instance count is used to keep track of whether any tests are currently
+     * running. It's not possible to use the constructor or threadStarted etc as
+     * tests may overlap e.g. a remote test may be started, and then a local test
+     * started whilst the remote test is still running.
+     */
+    private static int instanceCount; // Keep track of how many instances are active
+    /**
+     * Is a test running ?
+     */
+    private volatile boolean inTest = false;
+    private volatile boolean isStats = false;
+    /** the summarizer to which this result collector will forward the samples */
+    private volatile Summariser summariser;
+    public static final String NFRARGUMENTS = "NfrArguments.nfrarguments"; //$NON-NLS-1$
 
     /**
      * @return the tableRows
@@ -76,35 +104,6 @@ public class NfrArguments extends AbstractListenerElement
             log.info("Shutdown hook ended");
         }
     }
-
-    private static final Logger log = LoggerFactory.getLogger(NfrArguments.class);
-    private static final long serialVersionUID = 234L;
-    // This string is used to identify local test runs, so must not be a valid host
-    // name
-    private static final String TEST_IS_LOCAL = "*local*"; // $NON-NLS-1$
-    // Static variables
-    // Lock used to guard static mutable variables
-    private static final Object LOCK = new Object();
-    /**
-     * Shutdown Hook that ensures PrintWriter is flushed is CTRL+C or kill is called
-     * during a test
-     */
-    private static Thread shutdownHook;
-    /**
-     * The instance count is used to keep track of whether any tests are currently
-     * running. It's not possible to use the constructor or threadStarted etc as
-     * tests may overlap e.g. a remote test may be started, and then a local test
-     * started whilst the remote test is still running.
-     */
-    private static int instanceCount; // Keep track of how many instances are active
-    /**
-     * Is a test running ?
-     */
-    private volatile boolean inTest = false;
-    private volatile boolean isStats = false;
-    /** the summarizer to which this result collector will forward the samples */
-    private volatile Summariser summariser;
-    public static final String NFRARGUMENTS = "NfrArguments.nfrarguments"; //$NON-NLS-1$
 
     /**
      * No-arg constructor.

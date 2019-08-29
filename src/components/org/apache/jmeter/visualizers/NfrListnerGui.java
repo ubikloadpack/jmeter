@@ -38,6 +38,7 @@ import javax.swing.JComboBox;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
@@ -56,6 +57,7 @@ import org.apache.jmeter.reporters.NfrArguments;
 import org.apache.jmeter.samplers.Clearable;
 import org.apache.jmeter.samplers.SampleResult;
 import org.apache.jmeter.testelement.TestElement;
+import org.apache.jmeter.testelement.TestPlan;
 import org.apache.jmeter.testelement.property.JMeterProperty;
 import org.apache.jmeter.util.JMeterUtils;
 import org.apache.jmeter.visualizers.gui.AbstractListenerGui;
@@ -224,21 +226,25 @@ public class NfrListnerGui extends AbstractListenerGui
     }
 
     private List<HTTPSamplerProxy> findNodesOfTypeHTTPSamplerProxy() {
-        JMeterTreeNode threadGroup = GuiPackage.getInstance().getCurrentNode().getPathToThreadGroup().get(1);
-        
+        JMeterTreeNode parent = (JMeterTreeNode) GuiPackage.getInstance().getCurrentNode().getParent();
         List<HTTPSamplerProxy> listHTTPSamplerProxy = new ArrayList<>();
-        if(threadGroup.getTestElement().getClass().equals(org.apache.jmeter.threads.ThreadGroup.class))
-        {for (int i = 0; i < threadGroup.getChildCount(); i++) {
-            JMeterTreeNode child = (JMeterTreeNode) threadGroup.getChildAt(i);
-            if (child.getTestElement().getClass().equals(HTTPSamplerProxy.class)) {
-                listHTTPSamplerProxy.add((HTTPSamplerProxy) child.getTestElement());
+        if (parent.getTestElement().getClass().equals(HTTPSamplerProxy.class)) {
+            listHTTPSamplerProxy.add((HTTPSamplerProxy) parent.getTestElement());
+        } else {
+            if (parent.getTestElement().getClass().equals(TestPlan.class)) {
+                List<JMeterTreeNode> res = GuiPackage.getInstance().getTreeModel()
+                        .getNodesOfType(HTTPSamplerProxy.class);
+                for (JMeterTreeNode jm : res) {
+                    listHTTPSamplerProxy.add((HTTPSamplerProxy) jm.getTestElement());
+                }
+            } else {
+                for (int i = 0; i < parent.getChildCount(); i++) {
+                    JMeterTreeNode child = (JMeterTreeNode) parent.getChildAt(i);
+                    if (child.getTestElement().getClass().equals(HTTPSamplerProxy.class)) {
+                        listHTTPSamplerProxy.add((HTTPSamplerProxy) child.getTestElement());
+                    }
+                }
             }
-        }}
-        else {
-            List<JMeterTreeNode> res =  GuiPackage.getInstance().getTreeModel().getNodesOfType(HTTPSamplerProxy.class);
-            for (JMeterTreeNode jm : res) {
-                listHTTPSamplerProxy.add((HTTPSamplerProxy) jm.getTestElement());
-            } 
         }
         return listHTTPSamplerProxy;
     }
@@ -257,7 +263,6 @@ public class NfrListnerGui extends AbstractListenerGui
 
     @Override
     public void modifyTestElement(TestElement args) {
-        GuiUtils.stopTableEditing(stringTable);
         configureTestElement((AbstractListenerElement) args);
         if (args instanceof NfrArguments) {
             NfrArguments rc = (NfrArguments) args;
@@ -330,10 +335,15 @@ public class NfrListnerGui extends AbstractListenerGui
         if (e.getActionCommand().equals("UPDATE")) {
             NodesOfTypeHTTPSamplerProxy = findNodesOfTypeHTTPSamplerProxy();
             nameComboBox.removeAllItems();
+            if(findNodesOfTypeHTTPSamplerProxy().isEmpty()){
+                DefaultCellEditor singleclick = new DefaultCellEditor(new JTextField()); 
+                stringTable.getColumnModel().getColumn(0).setCellEditor(singleclick);               
+            }
+            else {
             for (HTTPSamplerProxy httpSamplerProxy : NodesOfTypeHTTPSamplerProxy) {
                 nameComboBox.addItem(httpSamplerProxy.getName());
             }
-            stringTable.getColumnModel().getColumn(0).setCellEditor(new DefaultCellEditor(nameComboBox));
+            stringTable.getColumnModel().getColumn(0).setCellEditor(new DefaultCellEditor(nameComboBox));}
         }
         if (e.getActionCommand().equals("ADD")) {
             GuiUtils.stopTableEditing(stringTable);

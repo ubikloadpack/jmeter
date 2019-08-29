@@ -188,8 +188,8 @@ public class NfrArguments extends AbstractListenerElement
      * @param symbol
      * @param value
      */
-    public void addNfrArgument(String name, String criteria, String symbol, String value) {
-        addNfrArgument(new NfrArgument(name, criteria, symbol, value));
+    public void addNfrArgument(String name, String criteria, String symbol, String value, String message) {
+        addNfrArgument(new NfrArgument(name, criteria, symbol, value, message));
     }
 
     /**
@@ -275,7 +275,7 @@ public class NfrArguments extends AbstractListenerElement
      * string as its name and value, and null metadata.
      */
     public void addEmptyNfrArgument() {
-        addNfrArgument(new NfrArgument("", "", "", ""));
+        addNfrArgument(new NfrArgument("", "", "", "", ""));
     }
 
     /**
@@ -443,6 +443,9 @@ public class NfrArguments extends AbstractListenerElement
             if (samplingStatCalculator != null) {
                 System.out.println("Key = " + nfrArgument.getName() + ", Value = " + samplingStatCalculator);
                 boolean result = getResultNfrTest(nfrArgument, samplingStatCalculator);
+                if (!result) {
+                    System.out.println(nfrArgument.getMessage());
+                }
                 System.out.println(result);
             }
         }

@@ -189,12 +189,14 @@ public class NfrListnerGui extends AbstractListenerGui
      */
     /** A table of patterns to test against. */
     private JScrollPane createStringPanel() {
-        tableModel = new ObjectTableModel(new String[] { "Name", "Criteria", "Symbol", "Value" }, NfrArgument.class,
-                new Functor[] { new Functor("getName"), // $NON-NLS-1$
-                        new Functor("getCriteria"), new Functor("getSymbol"), new Functor("getValue") }, // $NON-NLS-1$
+        tableModel = new ObjectTableModel(new String[] { "Name", "Criteria", "Symbol", "Value", "Message" },
+                NfrArgument.class, new Functor[] { new Functor("getName"), // $NON-NLS-1$
+                        new Functor("getCriteria"), new Functor("getSymbol"), new Functor("getValue"),
+                        new Functor("getMessage") }, // $NON-NLS-1$
                 new Functor[] { new Functor("setName"), // $NON-NLS-1$
-                        new Functor("setCriteria"), new Functor("setSymbol"), new Functor("setValue") }, // $NON-NLS-1$
-                new Class[] { String.class, String.class, String.class, String.class });
+                        new Functor("setCriteria"), new Functor("setSymbol"), new Functor("setValue"),
+                        new Functor("setMessage") }, // $NON-NLS-1$
+                new Class[] { String.class, String.class, String.class, String.class, String.class });
         stringTable = new JTable(tableModel);
         stringTable.getTableHeader().setDefaultRenderer(new HeaderAsPropertyRenderer());
         stringTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
@@ -327,7 +329,7 @@ public class NfrListnerGui extends AbstractListenerGui
         }
         if (e.getActionCommand().equals("ADD")) {
             GuiUtils.stopTableEditing(stringTable);
-            tableModel.addRow(new NfrArgument("", "", "", ""));
+            tableModel.addRow(new NfrArgument("", "", "", "", ""));
             checkButtonsStatus();
             // Highlight (select) and scroll to the appropriate row.
             int rowToSelect = tableModel.getRowCount() - 1;

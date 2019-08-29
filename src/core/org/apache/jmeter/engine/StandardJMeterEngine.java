@@ -501,12 +501,12 @@ public class StandardJMeterEngine implements JMeterEngine, Runnable {
     }
 
     private void NFRTest() {
-        JMeterTreeNode treeNode = GuiPackage.getInstance().getTreeModel().getNodesOfType(NfrArguments.class).stream()
-                .filter(JMeterTreeNode::isEnabled).findFirst().orElse(null);
+        List<JMeterTreeNode> treeNodes = GuiPackage.getInstance().getTreeModel().getNodesOfType(NfrArguments.class);
+        for(JMeterTreeNode treeNode:treeNodes) {
         if (treeNode != null) {
             NfrArguments nfrResultCollector = (NfrArguments) treeNode.getTestElement();
             nfrResultCollector.runNFRTest();
-        }
+        }}
     }
 
     private void startThreadGroup(AbstractThreadGroup group, int groupCount, SearchByClass<?> searcher, List<?> testLevelElements, ListenerNotifier notifier)

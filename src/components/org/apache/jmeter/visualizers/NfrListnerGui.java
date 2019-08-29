@@ -46,7 +46,6 @@ import javax.swing.event.ChangeListener;
 
 import org.apache.jmeter.config.NfrArgument;
 import org.apache.jmeter.gui.GuiPackage;
-import org.apache.jmeter.gui.tree.JMeterTreeModel;
 import org.apache.jmeter.gui.tree.JMeterTreeNode;
 import org.apache.jmeter.gui.util.HeaderAsPropertyRenderer;
 import org.apache.jmeter.gui.util.TextAreaCellRenderer;
@@ -82,12 +81,15 @@ public class NfrListnerGui extends AbstractListenerGui
     private Deque<SamplingStatCalculator> newRows = new ConcurrentLinkedDeque<>();
     private final JButton add = new JButton("add"); //$NON-NLS-1$
     private final JButton delete = new JButton("delete"); //$NON-NLS-1$
+    private final JButton update = new JButton("update"); //$NON-NLS-1$
     private JTable stringTable;
     /** Table model for the pattern table. */
     private ObjectTableModel tableModel;
     protected NfrArguments collector = new NfrArguments();
     /** Logging. */
     private static final Logger log = LoggerFactory.getLogger(NfrListnerGui.class);
+    List<HTTPSamplerProxy> NodesOfTypeHTTPSamplerProxy = new ArrayList<>();
+    JComboBox<String> nameComboBox = new JComboBox<>();
 
     @Override
     public boolean isStats() {
@@ -138,8 +140,11 @@ public class NfrListnerGui extends AbstractListenerGui
         add.addActionListener(this);
         delete.setActionCommand("DELETE");
         delete.addActionListener(this);
+        update.setActionCommand("UPDATE");
+        update.addActionListener(this);
         buttonPanel.add(add);
         buttonPanel.add(delete);
+        buttonPanel.add(update);
         add.setEnabled(true);
         this.add(buttonPanel, BorderLayout.SOUTH);
     }
@@ -199,12 +204,6 @@ public class NfrListnerGui extends AbstractListenerGui
         stringTable.setDefaultRenderer(String.class, renderer);
         stringTable.setDefaultEditor(String.class, new TextAreaTableCellEditor());
         stringTable.setPreferredScrollableViewportSize(new Dimension(100, 70));
-        List<HTTPSamplerProxy> listHTTPSamplerProxy = findFirstNodeOfTypeHTTPSamplerProxy();
-        JComboBox<String> nameComboBox = new JComboBox<>();
-        for (HTTPSamplerProxy httpSamplerProxy : listHTTPSamplerProxy) {
-            nameComboBox.addItem(httpSamplerProxy.getName());
-        }
-        stringTable.getColumnModel().getColumn(0).setCellEditor(new DefaultCellEditor(nameComboBox));
         JComboBox<String> criteriaComboBox = new JComboBox<>();
         criteriaComboBox.addItem("Avg");
         criteriaComboBox.addItem("Min");
@@ -222,12 +221,14 @@ public class NfrListnerGui extends AbstractListenerGui
         return new JScrollPane(stringTable);
     }
 
-    private List<HTTPSamplerProxy> findFirstNodeOfTypeHTTPSamplerProxy() {
-        JMeterTreeModel treeModel = GuiPackage.getInstance().getTreeModel();
-        List<JMeterTreeNode> listJMeterTreeNode = treeModel.getNodesOfType(HTTPSamplerProxy.class);
+    private List<HTTPSamplerProxy> findNodesOfTypeHTTPSamplerProxy() {
+        JMeterTreeNode threadGroup = GuiPackage.getInstance().getCurrentNode().getPathToThreadGroup().get(1);
         List<HTTPSamplerProxy> listHTTPSamplerProxy = new ArrayList<>();
-        for (JMeterTreeNode jMeterTreeNode : listJMeterTreeNode) {
-            listHTTPSamplerProxy.add((HTTPSamplerProxy) jMeterTreeNode.getTestElement());
+        for (int i = 0; i < threadGroup.getChildCount(); i++) {
+            JMeterTreeNode child = (JMeterTreeNode) threadGroup.getChildAt(i);
+            if (child.getTestElement().getClass().equals(HTTPSamplerProxy.class)) {
+                listHTTPSamplerProxy.add((HTTPSamplerProxy) child.getTestElement());
+            }
         }
         return listHTTPSamplerProxy;
     }
@@ -301,11 +302,29 @@ public class NfrListnerGui extends AbstractListenerGui
      */
     public void clear() {
         GuiUtils.stopTableEditing(stringTable);
-        tableModel.clearData();
+        if (tableModel != null) {
+            tableModel.clearData();
+        }
+    }
+
+    @Override
+    public void clearGui() {
+        GuiUtils.stopTableEditing(stringTable);
+        if (tableModel != null) {
+            tableModel.clearData();
+        }
     }
 
     @Override
     public void actionPerformed(ActionEvent e) {
+        if (e.getActionCommand().equals("UPDATE")) {
+            NodesOfTypeHTTPSamplerProxy = findNodesOfTypeHTTPSamplerProxy();
+            nameComboBox.removeAllItems();
+            for (HTTPSamplerProxy httpSamplerProxy : NodesOfTypeHTTPSamplerProxy) {
+                nameComboBox.addItem(httpSamplerProxy.getName());
+            }
+            stringTable.getColumnModel().getColumn(0).setCellEditor(new DefaultCellEditor(nameComboBox));
+        }
         if (e.getActionCommand().equals("ADD")) {
             GuiUtils.stopTableEditing(stringTable);
             tableModel.addRow(new NfrArgument("", "", "", ""));

@@ -336,8 +336,7 @@ public class NfrListnerGui extends AbstractListenerGui
             NodesOfTypeHTTPSamplerProxy = findNodesOfTypeHTTPSamplerProxy();
             nameComboBox.removeAllItems();
             if(findNodesOfTypeHTTPSamplerProxy().isEmpty()){
-                DefaultCellEditor singleclick = new DefaultCellEditor(new JTextField()); 
-                stringTable.getColumnModel().getColumn(0).setCellEditor(singleclick);               
+                stringTable.getColumnModel().getColumn(0).setCellEditor(new DefaultCellEditor(new JTextField()));               
             }
             else {
             for (HTTPSamplerProxy httpSamplerProxy : NodesOfTypeHTTPSamplerProxy) {

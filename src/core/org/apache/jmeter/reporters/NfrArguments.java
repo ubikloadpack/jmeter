@@ -440,7 +440,8 @@ public class NfrArguments extends AbstractListenerElement
         for (JMeterProperty jMeterProperty : getNfrArguments()) {
             NfrArgument nfrArgument = (NfrArgument) jMeterProperty.getObjectValue();
             SamplingStatCalculator samplingStatCalculator = getNfrResultBySamplerName(nfrArgument.getName());
-            if (samplingStatCalculator != null) {
+            if (samplingStatCalculator != null && !nfrArgument.getName().isEmpty() && !nfrArgument.getCriteria().isEmpty()
+                    && !nfrArgument.getCriteria().isEmpty() && !nfrArgument.getValue().isEmpty()) {
                 System.out.println("Key = " + nfrArgument.getName() + ", Value = " + samplingStatCalculator);
                 boolean result = getResultNfrTest(nfrArgument, samplingStatCalculator);
                 if (!result) {

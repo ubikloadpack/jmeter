@@ -225,12 +225,20 @@ public class NfrListnerGui extends AbstractListenerGui
 
     private List<HTTPSamplerProxy> findNodesOfTypeHTTPSamplerProxy() {
         JMeterTreeNode threadGroup = GuiPackage.getInstance().getCurrentNode().getPathToThreadGroup().get(1);
+        
         List<HTTPSamplerProxy> listHTTPSamplerProxy = new ArrayList<>();
-        for (int i = 0; i < threadGroup.getChildCount(); i++) {
+        if(threadGroup.getTestElement().getClass().equals(org.apache.jmeter.threads.ThreadGroup.class))
+        {for (int i = 0; i < threadGroup.getChildCount(); i++) {
             JMeterTreeNode child = (JMeterTreeNode) threadGroup.getChildAt(i);
             if (child.getTestElement().getClass().equals(HTTPSamplerProxy.class)) {
                 listHTTPSamplerProxy.add((HTTPSamplerProxy) child.getTestElement());
             }
+        }}
+        else {
+            List<JMeterTreeNode> res =  GuiPackage.getInstance().getTreeModel().getNodesOfType(HTTPSamplerProxy.class);
+            for (JMeterTreeNode jm : res) {
+                listHTTPSamplerProxy.add((HTTPSamplerProxy) jm.getTestElement());
+            } 
         }
         return listHTTPSamplerProxy;
     }

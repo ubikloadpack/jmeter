@@ -28,6 +28,9 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.jmeter.JMeter;
+import org.apache.jmeter.gui.GuiPackage;
+import org.apache.jmeter.gui.tree.JMeterTreeNode;
+import org.apache.jmeter.reporters.NfrArguments;
 import org.apache.jmeter.samplers.SampleEvent;
 import org.apache.jmeter.testbeans.TestBean;
 import org.apache.jmeter.testbeans.TestBeanHelper;
@@ -488,13 +491,22 @@ public class StandardJMeterEngine implements JMeterEngine, Runnable {
             }
             waitThreadsStopped(); // wait for Post threads to stop
         }
-
+        NFRTest();
         notifyTestListenersOfEnd(testListeners);
         JMeterContextService.endTest();
         if (JMeter.isNonGUI() && SYSTEM_EXIT_FORCED) {
             log.info("Forced JVM shutdown requested at end of test");
             System.exit(0); // NOSONAR Intentional
         }
+    }
+
+    private void NFRTest() {
+        List<JMeterTreeNode> treeNodes = GuiPackage.getInstance().getTreeModel().getNodesOfType(NfrArguments.class);
+        for(JMeterTreeNode treeNode:treeNodes) {
+        if (treeNode != null) {
+            NfrArguments nfrResultCollector = (NfrArguments) treeNode.getTestElement();
+            nfrResultCollector.runNFRTest();
+        }}
     }
 
     private void startThreadGroup(AbstractThreadGroup group, int groupCount, SearchByClass<?> searcher, List<?> testLevelElements, ListenerNotifier notifier)

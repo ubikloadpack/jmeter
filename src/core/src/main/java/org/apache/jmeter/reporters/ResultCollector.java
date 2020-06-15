@@ -55,6 +55,10 @@ import org.apache.jorphan.util.JMeterError;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.lmax.disruptor.RingBuffer;
+import com.lmax.disruptor.dsl.Disruptor;
+import com.lmax.disruptor.util.DaemonThreadFactory;
+
 /**
  * This class handles all saving of samples.
  * The class must be thread-safe because it is shared between threads (NoThreadClone).
@@ -140,7 +144,30 @@ public class ResultCollector extends AbstractListenerElement implements SampleLi
 
     // Instance variables (guarded by volatile)
     private transient volatile PrintWriter out;
+    
+    private transient volatile Disruptor<RingBufferEvent> disruptor;
+    
+    private static class RingBufferEvent{
+    	private SampleSaveConfiguration saveConfig;
+    	private SampleEvent sampleEvent;
+    	
+    	public SampleSaveConfiguration getSaveConfig() {
+			return saveConfig;
+		}
 
+		public void setSaveConfig(SampleSaveConfiguration saveConfig) {
+			this.saveConfig = saveConfig;
+		}
+		
+		public SampleEvent getSampleEvent() {
+			return sampleEvent;
+		}
+
+		public void setSampleEvent(SampleEvent sampleEvent) {
+			this.sampleEvent = sampleEvent;
+		}	
+    }
+    
     /**
      * Is a test running ?
      */
@@ -166,7 +193,7 @@ public class ResultCollector extends AbstractListenerElement implements SampleLi
         setErrorLogging(false);
         setSuccessOnlyLogging(false);
         setProperty(new ObjectProperty(SAVE_CONFIG, new SampleSaveConfiguration()));
-        summariser = summer;
+		summariser = summer;
     }
 
     // Ensure that the sample save config is not shared between copied nodes
@@ -289,6 +316,7 @@ public class ResultCollector extends AbstractListenerElement implements SampleLi
 
     @Override
     public void testEnded(String host) {
+    	disruptor.shutdown();
         synchronized(LOCK){
             instanceCount--;
             if (instanceCount <= 0) {
@@ -339,6 +367,20 @@ public class ResultCollector extends AbstractListenerElement implements SampleLi
         if(summariser != null) {
             summariser.testStarted(host);
         }
+        
+        disruptor = new Disruptor<>(RingBufferEvent::new, 1024, DaemonThreadFactory.INSTANCE);
+		disruptor.handleEventsWith((event, sequence, endOfBatch) -> {
+			try {
+                if (event.getSaveConfig().saveAsXml()) {
+                	SaveService.saveSampleResult(event.getSampleEvent(), out);
+                } else { // !saveAsXml
+                	CSVSaveService.saveSampleResult(event.getSampleEvent(), out);
+                }
+            } catch (Exception err) {
+                log.error("Error trying to record a sample", err); // should throw exception back to caller
+            }
+		});
+        disruptor.start();
     }
 
     @Override
@@ -451,9 +493,9 @@ public class ResultCollector extends AbstractListenerElement implements SampleLi
         FileEntry fe = files.get(filename);
         PrintWriter writer = null;
         boolean trimmed = true;
-
+        
         if (fe == null) {
-            if (saveConfig.saveAsXml()) {
+        	if (saveConfig.saveAsXml()) {
                 trimmed = trimLastLine(filename);
             } else {
                 trimmed = new File(filename).exists();
@@ -477,7 +519,8 @@ public class ResultCollector extends AbstractListenerElement implements SampleLi
             if(log.isDebugEnabled()) {
                 log.debug("Opened file: {} in thread {}", filename, Thread.currentThread().getName());
             }
-            files.put(filename, new FileEntry(writer, saveConfig));
+            fe = new FileEntry(writer, saveConfig);
+            files.put(filename, fe);
         } else {
             writer = fe.pw;
         }
@@ -549,15 +592,11 @@ public class ResultCollector extends AbstractListenerElement implements SampleLi
             if (out != null && !isResultMarked(result) && !this.isStats) {
                 SampleSaveConfiguration config = getSaveConfig();
                 result.setSaveConfig(config);
-                try {
-                    if (config.saveAsXml()) {
-                        SaveService.saveSampleResult(event, out);
-                    } else { // !saveAsXml
-                        CSVSaveService.saveSampleResult(event, out);
-                    }
-                } catch (Exception err) {
-                    log.error("Error trying to record a sample", err); // should throw exception back to caller
-                }
+                RingBuffer<RingBufferEvent> ringBuffer = disruptor.getRingBuffer();
+				ringBuffer.publishEvent((rbEvent, seq, sampleEvent, saveConfig) -> {
+					rbEvent.setSaveConfig(saveConfig);
+					rbEvent.setSampleEvent(sampleEvent);
+				}, event, config);
             }
         }
 

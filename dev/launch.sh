@@ -21,4 +21,10 @@ export HEAP
 mkdir $TEST_OUTDIR
 
 #-o $TEST_OUTDIR/report
-../bin/jmeter -Jthreads=$THREADS -Jrampup=$RAMPUP -Jduration=$DURATION -Jjmeter.save.ringbuffer.size=$RING_BUFFER_SIZE -f -n -t 'test.jmx' -l $TEST_OUTDIR/results.csv -j $TEST_OUTDIR/jmeter.log
+../bin/jmeter \
+  -Jthreads=$THREADS \
+  -Jrampup=$RAMPUP \
+  -Jduration=$DURATION \
+  -Jjmeter.save.ringbuffer.size=$RING_BUFFER_SIZE \
+  -Jsummariser.name='' \
+  -f -n -t 'test.jmx' -l $TEST_OUTDIR/results.csv -j $TEST_OUTDIR/jmeter.log

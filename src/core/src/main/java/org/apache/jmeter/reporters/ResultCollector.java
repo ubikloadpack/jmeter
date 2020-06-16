@@ -51,6 +51,7 @@ import org.apache.jmeter.testelement.property.ObjectProperty;
 import org.apache.jmeter.util.JMeterUtils;
 import org.apache.jmeter.visualizers.Visualizer;
 import org.apache.jorphan.util.JMeterError;
+import org.apache.logging.log4j.core.util.Integers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -125,7 +126,8 @@ public class ResultCollector extends AbstractListenerElement
 	private static final boolean SAVING_AUTOFLUSH = JMeterUtils.getPropDefault("jmeter.save.saveservice.autoflush", //$NON-NLS-1$
 			false);
 
-	private static final int RING_BUFFER_SIZE = JMeterUtils.getPropDefault("jmeter.save.ringbuffer.size", 0);
+	private static final int DEFAULT_RING_BUFFER_SIZE = 0;
+	private static final int RING_BUFFER_SIZE = JMeterUtils.getPropDefault("jmeter.save.ringbuffer.size", DEFAULT_RING_BUFFER_SIZE);
 
 	// Static variables
 
@@ -151,19 +153,10 @@ public class ResultCollector extends AbstractListenerElement
 	// Instance variables (guarded by volatile)
 	private transient volatile PrintWriter out;
 
-	private transient volatile Disruptor<RingBufferEvent> disruptor;
+	private transient volatile Disruptor<ResultCollectorEvent> disruptor;
 
-	private static class RingBufferEvent {
-		private SampleSaveConfiguration saveConfig;
+	private static class ResultCollectorEvent {
 		private SampleEvent sampleEvent;
-
-		public SampleSaveConfiguration getSaveConfig() {
-			return saveConfig;
-		}
-
-		public void setSaveConfig(SampleSaveConfiguration saveConfig) {
-			this.saveConfig = saveConfig;
-		}
 
 		public SampleEvent getSampleEvent() {
 			return sampleEvent;
@@ -320,13 +313,15 @@ public class ResultCollector extends AbstractListenerElement
 	@Override
 	public void testEnded(String host) {
 		synchronized (LOCK) {
+			
+			if (disruptor != null) {
+				log.info("Shutdown disruptor of ResultCollector {}", this.getName());
+				disruptor.shutdown();
+				log.info("Disruptor of ResultCollector {} stopped", this.getName());
+			}
+			
 			instanceCount--;
 			if (instanceCount <= 0) {
-
-				if (disruptor != null) {
-					log.info("Shutdown disruptor");
-					disruptor.shutdown();
-				}
 
 				// No need for the hook now
 				// Bug 57088 - prevent (im?)possible NPE
@@ -339,6 +334,7 @@ public class ResultCollector extends AbstractListenerElement
 				out = null;
 				inTest = false;
 			}
+			
 		}
 
 		if (summariser != null) {
@@ -346,6 +342,18 @@ public class ResultCollector extends AbstractListenerElement
 		}
 	}
 
+	private void saveSampleEvent(SampleEvent event, SampleSaveConfiguration saveConfig) {
+		try {
+			if (saveConfig.saveAsXml()) {
+				SaveService.saveSampleResult(event, out);
+			} else { // !saveAsXml
+				CSVSaveService.saveSampleResult(event, out);
+			}
+		} catch (Exception err) {
+			log.error("Error trying to record a sample", err); // should throw exception back to caller
+		}
+	}
+	
 	@Override
 	public void testStarted(String host) {
 		synchronized (LOCK) {
@@ -369,20 +377,13 @@ public class ResultCollector extends AbstractListenerElement
 			} catch (Exception e) {
 				log.error("Exception occurred while initializing file output.", e);
 			}
-			
+		
 			if (RING_BUFFER_SIZE > 0) {
-				log.info("Initializing disruptor with ring buffer size {}", RING_BUFFER_SIZE);
-				disruptor = new Disruptor<>(RingBufferEvent::new, RING_BUFFER_SIZE, DaemonThreadFactory.INSTANCE);
+				int ringBufferSize = Integers.ceilingNextPowerOfTwo(RING_BUFFER_SIZE);
+				log.info("Initializing disruptor for result collector {} with ring buffer size {}", this.getName(), ringBufferSize);
+				disruptor = new Disruptor<>(ResultCollectorEvent::new, ringBufferSize, DaemonThreadFactory.INSTANCE);
 				disruptor.handleEventsWith((event, sequence, endOfBatch) -> {
-					try {
-						if (event.getSaveConfig().saveAsXml()) {
-							SaveService.saveSampleResult(event.getSampleEvent(), out);
-						} else { // !saveAsXml
-							CSVSaveService.saveSampleResult(event.getSampleEvent(), out);
-						}
-					} catch (Exception err) {
-						log.error("Error trying to record a sample", err); // should throw exception back to caller
-					}
+					saveSampleEvent(event.getSampleEvent(), getSaveConfig());
 				});
 				disruptor.start();
 			}
@@ -602,21 +603,12 @@ public class ResultCollector extends AbstractListenerElement
 				result.setSaveConfig(config);
 
 				if (disruptor != null) {
-					RingBuffer<RingBufferEvent> ringBuffer = disruptor.getRingBuffer();
-					ringBuffer.publishEvent((rbEvent, seq, sampleEvent, saveConfig) -> {
-						rbEvent.setSaveConfig(saveConfig);
+					RingBuffer<ResultCollectorEvent> ringBuffer = disruptor.getRingBuffer();
+					ringBuffer.publishEvent((rbEvent, seq, sampleEvent) -> {
 						rbEvent.setSampleEvent(sampleEvent);
-					}, event, config);
+					}, event);
 				} else {
-					try {
-						if (config.saveAsXml()) {
-							SaveService.saveSampleResult(event, out);
-						} else { // !saveAsXml
-							CSVSaveService.saveSampleResult(event, out);
-						}
-					} catch (Exception err) {
-						log.error("Error trying to record a sample", err); // should throw exception back to caller
-					}
+					saveSampleEvent(event, config);
 				}
 
 			}

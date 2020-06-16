@@ -59,6 +59,7 @@ import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.util.DaemonThreadFactory;
 
+
 /**
  * This class handles all saving of samples. The class must be thread-safe
  * because it is shared between threads (NoThreadClone).
@@ -167,6 +168,9 @@ public class ResultCollector extends AbstractListenerElement
 		}
 	}
 
+	private Long sampleCount;
+	private final Object sampleCountLock = new Object();
+	
 	/**
 	 * Is a test running ?
 	 */
@@ -333,10 +337,11 @@ public class ResultCollector extends AbstractListenerElement
 				finalizeFileOutput();
 				out = null;
 				inTest = false;
+				log.info("Samples count: {}", sampleCount);
 			}
 			
 		}
-
+		
 		if (summariser != null) {
 			summariser.testEnded(host);
 		}
@@ -361,6 +366,7 @@ public class ResultCollector extends AbstractListenerElement
 				shutdownHook = new Thread(new ShutdownHook());
 				Runtime.getRuntime().addShutdownHook(shutdownHook);
 			}
+			sampleCount = new Long(0);
 			instanceCount++;
 			try {
 				if (out == null) {
@@ -594,8 +600,11 @@ public class ResultCollector extends AbstractListenerElement
 	 */
 	@Override
 	public void sampleOccurred(SampleEvent event) {
+		synchronized (sampleCountLock) {
+			sampleCount++;
+		}
+		
 		SampleResult result = event.getResult();
-
 		if (isSampleWanted(result.isSuccessful())) {
 			sendToVisualizer(result);
 			if (out != null && !isResultMarked(result) && !this.isStats) {

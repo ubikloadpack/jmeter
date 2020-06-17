@@ -28,7 +28,7 @@ export HEAP
 mkdir $TEST_OUTDIR
 
 #-o $TEST_OUTDIR/report
-../bin/jmeter $SUMMARIZER_ARG \
+../bin/jmeter -Lcom.lmax.disruptor=DEBUG $SUMMARIZER_ARG \
   -Jthreads=$THREADS \
   -Jrampup=$RAMPUP \
   -Jduration=$DURATION \

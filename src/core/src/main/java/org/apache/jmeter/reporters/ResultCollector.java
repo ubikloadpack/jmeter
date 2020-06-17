@@ -316,9 +316,9 @@ public class ResultCollector extends AbstractListenerElement
 		synchronized (LOCK) {
 			
 			if (disruptor != null) {
-				log.info("Shutdown disruptor of ResultCollector {}", this.getName());
+				log.info("Shutdown disruptor of ResultCollector '{}'", getName());
 				disruptor.shutdown();
-				log.info("Disruptor of ResultCollector {} stopped", this.getName());
+				log.info("Disruptor of ResultCollector '{}' stopped", getName());
 			}
 			
 			instanceCount--;
@@ -381,7 +381,7 @@ public class ResultCollector extends AbstractListenerElement
 		
 			if (RING_BUFFER_SIZE > 0) {
 				int ringBufferSize = Integers.ceilingNextPowerOfTwo(RING_BUFFER_SIZE);
-				log.info("Initializing disruptor for result collector {} with ring buffer size {}", this.getName(), ringBufferSize);
+				log.info("Initializing disruptor for result collector '{}' with ring buffer size {}", getName(), ringBufferSize);
 				disruptor = new Disruptor<>(ResultCollectorEvent::new, ringBufferSize, DaemonThreadFactory.INSTANCE);
 				disruptor.handleEventsWith((event, sequence, endOfBatch) -> {
 					saveSampleEvent(event.getSampleEvent(), getSaveConfig());

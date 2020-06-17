@@ -2,9 +2,16 @@ THREADS=${1:-500}
 RAMPUP=${2:-60}
 DURATION=${3:-300}
 RING_BUFFER_SIZE=${4:-65536}
+WITH_SUMMARIZER=$5
 
 REV=$(git rev-parse --short HEAD)
-TEST_OUTDIR="test-$REV-$THREADS-$RING_BUFFER_SIZE-$(date +%Y%m%d-%H%M%S)"
+if [ -z "$WITH_SUMMARIZER" ]
+then
+  SUMMARIZER_ARG="-Jsummariser.name="
+  TEST_OUTDIR="test-$REV-$THREADS-$RING_BUFFER_SIZE-$(date +%Y%m%d-%H%M%S)"
+else
+  TEST_OUTDIR="test-$REV-$THREADS-$RING_BUFFER_SIZE-$(date +%Y%m%d-%H%M%S)-WITH-SUMMMARIZER"
+fi
 
 HEAP="-XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=$TEST_OUTDIR"
 # Flight recorder
@@ -21,10 +28,9 @@ export HEAP
 mkdir $TEST_OUTDIR
 
 #-o $TEST_OUTDIR/report
-../bin/jmeter \
+../bin/jmeter $SUMMARIZER_ARG \
   -Jthreads=$THREADS \
   -Jrampup=$RAMPUP \
   -Jduration=$DURATION \
   -Jjmeter.save.ringbuffer.size=$RING_BUFFER_SIZE \
-  -Jsummariser.name='' \
   -f -n -t 'test.jmx' -l $TEST_OUTDIR/results.csv -j $TEST_OUTDIR/jmeter.log

@@ -55,10 +55,15 @@ import org.apache.logging.log4j.core.util.Integers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.lmax.disruptor.BlockingWaitStrategy;
+import com.lmax.disruptor.BusySpinWaitStrategy;
 import com.lmax.disruptor.RingBuffer;
+import com.lmax.disruptor.SleepingWaitStrategy;
+import com.lmax.disruptor.WaitStrategy;
+import com.lmax.disruptor.YieldingWaitStrategy;
 import com.lmax.disruptor.dsl.Disruptor;
+import com.lmax.disruptor.dsl.ProducerType;
 import com.lmax.disruptor.util.DaemonThreadFactory;
-
 
 /**
  * This class handles all saving of samples. The class must be thread-safe
@@ -128,7 +133,20 @@ public class ResultCollector extends AbstractListenerElement
 			false);
 
 	private static final int DEFAULT_RING_BUFFER_SIZE = 0;
-	private static final int RING_BUFFER_SIZE = JMeterUtils.getPropDefault("jmeter.save.ringbuffer.size", DEFAULT_RING_BUFFER_SIZE);
+	private static final int RING_BUFFER_SIZE = JMeterUtils.getPropDefault("jmeter.save.disruptor.ringbuffer.size",
+			DEFAULT_RING_BUFFER_SIZE);
+
+	private enum WaitingStrategy {
+		BlockingWaitStrategy, SleepingWaitStrategy, YieldingWaitStrategy, BusySpinWaitStrategy;
+		// LiteBlockingWaitStrategy experimental
+		// LiteTimeoutBlockingWaitStrategy undocumented
+		// PhasedBackoffWaitStrategy undocumented
+		// TimeoutBlockingWaitStrategy undocumented
+	}
+
+	private static final WaitingStrategy DEFAULT_WAIT_STRATEGY = WaitingStrategy.BlockingWaitStrategy;
+	private static final String WAIT_STRATEGY_STR = JMeterUtils.getPropDefault("jmeter.save.disruptor.wait-strategy",
+			DEFAULT_WAIT_STRATEGY.name());
 
 	// Static variables
 
@@ -314,13 +332,13 @@ public class ResultCollector extends AbstractListenerElement
 	@Override
 	public void testEnded(String host) {
 		synchronized (LOCK) {
-			
+
 			if (disruptor != null) {
 				log.info("Shutdown disruptor of ResultCollector '{}'", getName());
 				disruptor.shutdown();
 				log.info("Disruptor of ResultCollector '{}' stopped", getName());
 			}
-			
+
 			instanceCount--;
 			if (instanceCount <= 0) {
 
@@ -335,9 +353,9 @@ public class ResultCollector extends AbstractListenerElement
 				out = null;
 				inTest = false;
 			}
-			
+
 		}
-		
+
 		if (summariser != null) {
 			summariser.testEnded(host);
 		}
@@ -354,7 +372,26 @@ public class ResultCollector extends AbstractListenerElement
 			log.error("Error trying to record a sample", err); // should throw exception back to caller
 		}
 	}
-	
+
+	private WaitStrategy buildWaitStrategy(WaitingStrategy strategy) {
+		WaitStrategy result;
+		switch (strategy) {
+		case BusySpinWaitStrategy:
+			result = new BusySpinWaitStrategy();
+			break;
+		case SleepingWaitStrategy:
+			result = new SleepingWaitStrategy();
+			break;
+		case YieldingWaitStrategy:
+			result = new YieldingWaitStrategy();
+			break;
+		default:
+			result = new BlockingWaitStrategy();
+			break;
+		}
+		return result;
+	}
+
 	@Override
 	public void testStarted(String host) {
 		synchronized (LOCK) {
@@ -378,17 +415,20 @@ public class ResultCollector extends AbstractListenerElement
 			} catch (Exception e) {
 				log.error("Exception occurred while initializing file output.", e);
 			}
-		
+
 			if (RING_BUFFER_SIZE > 0) {
 				int ringBufferSize = Integers.ceilingNextPowerOfTwo(RING_BUFFER_SIZE);
-				log.info("Initializing disruptor for result collector '{}' with ring buffer size {}", getName(), ringBufferSize);
-				disruptor = new Disruptor<>(ResultCollectorEvent::new, ringBufferSize, DaemonThreadFactory.INSTANCE);
+				WaitingStrategy waitingStrategy = WaitingStrategy.valueOf(WAIT_STRATEGY_STR);
+				log.info("Initializing disruptor for result collector '{}' with ring buffer size: {} and wait strategy: {} ", getName(),
+						ringBufferSize, waitingStrategy);
+				disruptor = new Disruptor<>(ResultCollectorEvent::new, ringBufferSize, DaemonThreadFactory.INSTANCE,
+						ProducerType.MULTI, buildWaitStrategy(waitingStrategy));
 				disruptor.handleEventsWith((event, sequence, endOfBatch) -> {
 					saveSampleEvent(event.getSampleEvent(), getSaveConfig());
 				});
 				disruptor.start();
 			}
-			
+
 		}
 		inTest = true;
 

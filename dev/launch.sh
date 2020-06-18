@@ -2,15 +2,16 @@ THREADS=${1:-500}
 RAMPUP=${2:-60}
 DURATION=${3:-300}
 RING_BUFFER_SIZE=${4:-65536}
-WITH_SUMMARIZER=$5
+STRATEGY=${5:-BlockingWaitStrategy}
+WITH_SUMMARIZER=$6
 
 REV=$(git rev-parse --short HEAD)
 if [ -z "$WITH_SUMMARIZER" ]
 then
   SUMMARIZER_ARG="-Jsummariser.name="
-  TEST_OUTDIR="test-$REV-$THREADS-$RING_BUFFER_SIZE-$(date +%Y%m%d-%H%M%S)"
+  TEST_OUTDIR="test-$REV-$THREADS-$RING_BUFFER_SIZE-$STRATEGY-$(date +%Y%m%d-%H%M%S)"
 else
-  TEST_OUTDIR="test-$REV-$THREADS-$RING_BUFFER_SIZE-$(date +%Y%m%d-%H%M%S)-WITH-SUMMMARIZER"
+  TEST_OUTDIR="test-$REV-$THREADS-$RING_BUFFER_SIZE-$STRATEGY-$(date +%Y%m%d-%H%M%S)-WITH-SUMMMARIZER"
 fi
 
 HEAP="-XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=$TEST_OUTDIR"
@@ -32,5 +33,6 @@ mkdir $TEST_OUTDIR
   -Jthreads=$THREADS \
   -Jrampup=$RAMPUP \
   -Jduration=$DURATION \
-  -Jjmeter.save.ringbuffer.size=$RING_BUFFER_SIZE \
+  -Jjmeter.save.disruptor.ringbuffer.size=$RING_BUFFER_SIZE \
+  -Jjmeter.save.disruptor.wait-strategy=$STRATEGY \
   -f -n -t 'test.jmx' -l $TEST_OUTDIR/results.csv -j $TEST_OUTDIR/jmeter.log

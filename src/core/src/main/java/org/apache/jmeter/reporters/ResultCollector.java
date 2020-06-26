@@ -33,6 +33,7 @@ import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ThreadFactory;
 
 import org.apache.jmeter.engine.util.NoThreadClone;
 import org.apache.jmeter.gui.GuiPackage;
@@ -62,7 +63,6 @@ import com.lmax.disruptor.WaitStrategy;
 import com.lmax.disruptor.YieldingWaitStrategy;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.dsl.ProducerType;
-import com.lmax.disruptor.util.DaemonThreadFactory;
 
 /**
  * This class handles all saving of samples.
@@ -126,6 +126,8 @@ public class ResultCollector extends AbstractListenerElement implements SampleLi
 
     /** AutoFlush on each line */
     private static final boolean SAVING_AUTOFLUSH = JMeterUtils.getPropDefault("jmeter.save.saveservice.autoflush", false); //$NON-NLS-1$
+    
+    private static final int BUFFER_SIZE = JMeterUtils.getPropDefault("jmeter.save.saveservice.buffer", 256*1024); //$NON-NLS-1$
 
     private static final int DEFAULT_RING_BUFFER_SIZE = 0;
     private static final int RING_BUFFER_SIZE = JMeterUtils.getPropDefault("jmeter.save.disruptor.ringbuffer.size",
@@ -180,6 +182,8 @@ public class ResultCollector extends AbstractListenerElement implements SampleLi
         }
     }
 
+    private final Object queueFullEnqueueLock = new Object();
+    
     /**
      * Is a test running ?
      */
@@ -436,6 +440,30 @@ public class ResultCollector extends AbstractListenerElement implements SampleLi
         }
     }
 
+    /**
+     * Access to a ThreadFactory instance. All threads are created with setDaemon(true).
+     */
+	enum DaemonThreadFactory implements ThreadFactory
+    {
+		INSTANCE;
+		
+    	long backgroundThreadId;
+
+		@Override
+        public Thread newThread(final Runnable r)
+        {
+            Thread t = new Thread(r, "ResultCollectorRBProcessor");
+            backgroundThreadId = t.getId();
+            t.setDaemon(true);
+            return t;
+        }
+    }
+	
+    
+    private boolean synchronizeEnqueueWhenQueueFull() {
+        return false && DaemonThreadFactory.INSTANCE.backgroundThreadId != Thread.currentThread().getId();
+    }
+
     @Override
     public void testEnded() {
         testEnded(TEST_IS_LOCAL);
@@ -568,7 +596,7 @@ public class ResultCollector extends AbstractListenerElement implements SampleLi
                 }
             }
             writer = new PrintWriter(new OutputStreamWriter(new BufferedOutputStream(new FileOutputStream(filename,
-                    trimmed)), SaveService.getFileEncoding(StandardCharsets.UTF_8.name())), SAVING_AUTOFLUSH);
+                    trimmed), BUFFER_SIZE), SaveService.getFileEncoding(StandardCharsets.UTF_8.name())), SAVING_AUTOFLUSH);
             if(log.isDebugEnabled()) {
                 log.debug("Opened file: {} in thread {}", filename, Thread.currentThread().getName());
             }
@@ -647,9 +675,17 @@ public class ResultCollector extends AbstractListenerElement implements SampleLi
 
                 if (disruptor != null) {
                     RingBuffer<ResultCollectorEvent> ringBuffer = disruptor.getRingBuffer();
-                    ringBuffer.publishEvent((rbEvent, seq, sampleEvent) -> {
-                        rbEvent.setSampleEvent(sampleEvent);
-                    }, event);
+                	if (synchronizeEnqueueWhenQueueFull()) {
+                		synchronized (queueFullEnqueueLock) {
+	                		ringBuffer.publishEvent((rbEvent, seq, sampleEvent) -> {
+	                			rbEvent.setSampleEvent(sampleEvent);
+	                		}, event);
+                		}
+                	} else {
+                		ringBuffer.publishEvent((rbEvent, seq, sampleEvent) -> {
+                			rbEvent.setSampleEvent(sampleEvent);
+                		}, event); 
+                	}
                 } else {
                     saveSampleEvent(event, config);
                 }
